@@ -6,8 +6,15 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		4FC8893F2F5AC17000DC035E /* GRPCCore in Frameworks */ = {isa = PBXBuildFile; productRef = 4FC8893E2F5AC17000DC035E /* GRPCCore */; };
+		4FC889422F5AC1C900DC035E /* GRPCProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 4FC889412F5AC1C900DC035E /* GRPCProtobuf */; };
+		4FC889452F5AC22300DC035E /* GRPCNIOTransportHTTP2 in Frameworks */ = {isa = PBXBuildFile; productRef = 4FC889442F5AC22300DC035E /* GRPCNIOTransportHTTP2 */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		4FC8890E2F59C09700DC035E /* BusKit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BusKit.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6F94B72AAAA44ABCB6E691A0 /* SidecarBin */ = {isa = PBXFileReference; lastKnownFileType = folder; path = SidecarBin; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -23,6 +30,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4FC889452F5AC22300DC035E /* GRPCNIOTransportHTTP2 in Frameworks */,
+				4FC8893F2F5AC17000DC035E /* GRPCCore in Frameworks */,
+				4FC889422F5AC1C900DC035E /* GRPCProtobuf in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -32,6 +42,7 @@
 		4FC889052F59C09700DC035E = {
 			isa = PBXGroup;
 			children = (
+				6F94B72AAAA44ABCB6E691A0 /* SidecarBin */,
 				4FC889102F59C09700DC035E /* BusKit */,
 				4FC8890F2F59C09700DC035E /* Products */,
 			);
@@ -52,6 +63,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4FC889192F59C09800DC035E /* Build configuration list for PBXNativeTarget "BusKit" */;
 			buildPhases = (
+				D56E9D3707B04D03A2FA3ADD /* Build Sidecar */,
 				4FC8890A2F59C09700DC035E /* Sources */,
 				4FC8890B2F59C09700DC035E /* Frameworks */,
 				4FC8890C2F59C09700DC035E /* Resources */,
@@ -65,6 +77,9 @@
 			);
 			name = BusKit;
 			packageProductDependencies = (
+				4FC8893E2F5AC17000DC035E /* GRPCCore */,
+				4FC889412F5AC1C900DC035E /* GRPCProtobuf */,
+				4FC889442F5AC22300DC035E /* GRPCNIOTransportHTTP2 */,
 			);
 			productName = BusKit;
 			productReference = 4FC8890E2F59C09700DC035E /* BusKit.app */;
@@ -79,6 +94,7 @@
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
+				ORGANIZATIONNAME = "";
 				TargetAttributes = {
 					4FC8890D2F59C09700DC035E = {
 						CreatedOnToolsVersion = 26.2;
@@ -94,6 +110,11 @@
 			);
 			mainGroup = 4FC889052F59C09700DC035E;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				4FC8893D2F5AC17000DC035E /* XCRemoteSwiftPackageReference "grpc-swift-2" */,
+				4FC889402F5AC1C900DC035E /* XCRemoteSwiftPackageReference "grpc-swift-protobuf" */,
+				4FC889432F5AC22300DC035E /* XCRemoteSwiftPackageReference "grpc-swift-nio-transport" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4FC8890F2F59C09700DC035E /* Products */;
 			projectDirPath = "";
@@ -113,6 +134,26 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		D56E9D3707B04D03A2FA3ADD /* Build Sidecar */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Sidecar/BusKit.Sidecar/BusKit.Sidecar.csproj",
+			);
+			name = "Build Sidecar";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/$(WRAPPER_NAME)/Contents/Resources/SidecarBin/BusKit.Sidecar",
+				"$(BUILT_PRODUCTS_DIR)/$(WRAPPER_NAME)/Contents/Resources/SidecarBin/BusKit.Sidecar.dll",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "\"${SRCROOT}/Scripts/build-sidecar.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		4FC8890A2F59C09700DC035E /* Sources */ = {
@@ -251,14 +292,22 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_CFBundleDisplayName = "BusKit by Peter Karda";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Peter Karda";
+				"INFOPLIST_KEY_NSHumanReadableCopyright[sdk=*]" = "Peter Karda";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/BusKit/Resources/Sidecar",
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = PKA.BusKit;
@@ -266,7 +315,7 @@
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
@@ -281,14 +330,22 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_CFBundleDisplayName = "BusKit by Peter Karda";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Peter Karda";
+				"INFOPLIST_KEY_NSHumanReadableCopyright[sdk=*]" = "Peter Karda";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/BusKit/Resources/Sidecar",
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = PKA.BusKit;
@@ -296,7 +353,7 @@
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
@@ -325,6 +382,51 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4FC8893D2F5AC17000DC035E /* XCRemoteSwiftPackageReference "grpc-swift-2" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/grpc/grpc-swift-2.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.2.1;
+			};
+		};
+		4FC889402F5AC1C900DC035E /* XCRemoteSwiftPackageReference "grpc-swift-protobuf" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/grpc/grpc-swift-protobuf.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.2.0;
+			};
+		};
+		4FC889432F5AC22300DC035E /* XCRemoteSwiftPackageReference "grpc-swift-nio-transport" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/grpc/grpc-swift-nio-transport.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.3;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4FC8893E2F5AC17000DC035E /* GRPCCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4FC8893D2F5AC17000DC035E /* XCRemoteSwiftPackageReference "grpc-swift-2" */;
+			productName = GRPCCore;
+		};
+		4FC889412F5AC1C900DC035E /* GRPCProtobuf */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4FC889402F5AC1C900DC035E /* XCRemoteSwiftPackageReference "grpc-swift-protobuf" */;
+			productName = GRPCProtobuf;
+		};
+		4FC889442F5AC22300DC035E /* GRPCNIOTransportHTTP2 */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4FC889432F5AC22300DC035E /* XCRemoteSwiftPackageReference "grpc-swift-nio-transport" */;
+			productName = GRPCNIOTransportHTTP2;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 4FC889062F59C09700DC035E /* Project object */;
 }

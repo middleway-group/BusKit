@@ -1,24 +1,31 @@
-//
-//  ContentView.swift
-//  BusKit
-//
-//  Created by Peter Karda on 05/03/2026.
-//
-
 import SwiftUI
 
+@available(macOS 15.0, *)
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
+    @Environment(GRPCManager.self) var grpc
+    @State private var connectionString: String = ""
+    @State private var selection: SidebarSelection?
 
-#Preview {
-    ContentView()
+    var body: some View {
+        NavigationSplitView {
+            SidebarView(selection: $selection)
+                .navigationSplitViewColumnWidth(min: 220, ideal: 300)
+        } detail: {
+            switch selection {
+            case .queue(let queue):
+                QueueDetailView(queue: queue)
+            case .subscription(let sub):
+                SubscriptionDetailView(subscription: sub)
+            case nil:
+                Text("Select a queue or subscription")
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .navigationTitle("BusKit")
+        .toolbar {
+            ToolbarItem(placement: .automatic) {
+                ConnectionToolbar(connectionString: $connectionString)
+            }
+        }
+    }
 }

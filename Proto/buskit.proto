@@ -1,0 +1,211 @@
+syntax = "proto3";
+
+package buskit;
+
+option csharp_namespace = "BusKit.Sidecar.Grpc";
+
+// ─── Services ───────────────────────────────────────
+
+service BusKitService {
+  rpc Connect (ConnectRequest) returns (ConnectReply);
+  rpc Disconnect (DisconnectRequest) returns (DisconnectReply);
+  rpc ListQueues (ListQueuesRequest) returns (ListQueuesReply);
+  rpc ListTopics (ListTopicsRequest) returns (ListTopicsReply);
+  rpc ListSubscriptions (ListSubscriptionsRequest) returns (ListSubscriptionsReply);
+  rpc ListRules (ListRulesRequest) returns (ListRulesReply);
+  rpc GetQueueProperties (GetQueuePropertiesRequest) returns (GetQueuePropertiesReply);
+  rpc GetSubscriptionProperties (GetSubscriptionPropertiesRequest) returns (GetSubscriptionPropertiesReply);
+  rpc PurgeMessages (PurgeMessagesRequest) returns (PurgeMessagesReply);
+  rpc PeekMessages (PeekMessagesRequest) returns (PeekMessagesReply);
+  rpc SendMessage (SendMessageRequest) returns (SendMessageReply);
+  rpc SubscribeMessages (SubscribeRequest) returns (stream BusMessage);
+}
+
+// ─── Connection ─────────────────────────────────────
+
+message ConnectRequest {
+  string connection_string = 1;
+}
+
+message ConnectReply {
+  bool success = 1;
+  string error = 2;
+}
+
+message DisconnectRequest {}
+message DisconnectReply {
+  bool success = 1;
+}
+
+// ─── Queues ─────────────────────────────────────────
+
+message ListQueuesRequest {}
+
+message ListQueuesReply {
+  repeated QueueInfo queues = 1;
+}
+
+message QueueInfo {
+  string name = 1;
+  int64 message_count = 2;
+  int64 dead_letter_count = 3;
+}
+
+// ─── Topics ─────────────────────────────────────────
+
+message ListTopicsRequest {}
+
+message ListTopicsReply {
+  repeated TopicInfo topics = 1;
+}
+
+message TopicInfo {
+  string name = 1;
+}
+
+// ─── Subscriptions ───────────────────────────────────
+
+message ListSubscriptionsRequest {
+  string topic_name = 1;
+}
+
+message ListSubscriptionsReply {
+  repeated SubscriptionInfo subscriptions = 1;
+}
+
+message SubscriptionInfo {
+  string name = 1;
+  int64 active_message_count = 2;
+  int64 dead_letter_count = 3;
+}
+
+// ─── Rules ───────────────────────────────────────────
+
+message ListRulesRequest {
+  string topic_name = 1;
+  string subscription_name = 2;
+}
+
+message ListRulesReply {
+  repeated RuleInfo rules = 1;
+}
+
+message RuleInfo {
+  string name = 1;
+  string filter = 2;
+}
+
+// ─── Queue Properties ────────────────────────────────
+
+message GetQueuePropertiesRequest {
+  string name = 1;
+}
+
+message GetQueuePropertiesReply {
+  QueueDetails properties = 1;
+}
+
+message QueueDetails {
+  string name = 1;
+  int64 max_size_mb = 2;
+  int64 default_message_ttl_seconds = 3;
+  int64 lock_duration_seconds = 4;
+  bool requires_duplicate_detection = 5;
+  bool requires_session = 6;
+  int32 max_delivery_count = 7;
+  bool dead_lettering_on_expiration = 8;
+  string status = 9;
+  int64 created_at_unix = 10;
+  int64 updated_at_unix = 11;
+  int64 active_message_count = 12;
+  int64 dead_letter_count = 13;
+  int64 size_bytes = 14;
+  string forward_to = 15;
+  int64 auto_delete_on_idle_seconds = 16;
+}
+
+// ─── Subscription Properties ─────────────────────────
+
+message GetSubscriptionPropertiesRequest {
+  string topic_name = 1;
+  string subscription_name = 2;
+}
+
+message GetSubscriptionPropertiesReply {
+  SubscriptionDetails properties = 1;
+}
+
+message SubscriptionDetails {
+  string topic_name = 1;
+  string name = 2;
+  int64 default_message_ttl_seconds = 3;
+  int64 lock_duration_seconds = 4;
+  int32 max_delivery_count = 5;
+  bool dead_lettering_on_expiration = 6;
+  bool dead_lettering_on_filter_evaluation = 7;
+  string status = 8;
+  int64 created_at_unix = 9;
+  int64 updated_at_unix = 10;
+  int64 active_message_count = 11;
+  int64 dead_letter_count = 12;
+  string forward_to = 13;
+  int64 auto_delete_on_idle_seconds = 14;
+}
+
+// ─── Messages ───────────────────────────────────────
+
+message PeekMessagesRequest {
+  string queue_name = 1;
+  int32 max_messages = 2;
+  string topic_name = 3;
+  string subscription_name = 4;
+  bool dead_letter = 5;
+}
+
+message PeekMessagesReply {
+  repeated BusMessage messages = 1;
+}
+
+message SendMessageRequest {
+  string queue_name = 1;
+  string body = 2;
+  string content_type = 3;
+  map<string, string> properties = 4;
+}
+
+message SendMessageReply {
+  bool success = 1;
+  string message_id = 2;
+}
+
+message SubscribeRequest {
+  string queue_name = 1;
+}
+
+message PurgeMessagesRequest {
+  string queue_name = 1;
+  string topic_name = 2;
+  string subscription_name = 3;
+  bool dead_letter = 4;
+}
+
+message PurgeMessagesReply {
+  int32 purged_count = 1;
+}
+
+message BusMessage {
+  string message_id = 1;
+  string body = 2;
+  string content_type = 3;
+  int64 enqueued_time_unix = 4;
+  map<string, string> properties = 5;
+  int64 sequence_number = 6;
+  int32 delivery_count = 7;
+  int64 expires_at_unix = 8;
+  string subject = 9;
+  string correlation_id = 10;
+  string reply_to = 11;
+  string to_address = 12;
+  string session_id = 13;
+  string partition_key = 14;
+}
