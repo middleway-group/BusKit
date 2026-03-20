@@ -1,7 +1,11 @@
+using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
+using Azure.ResourceManager;
+using Azure.ResourceManager.ServiceBus;
 using BusKit.Sidecar.Grpc;
 using Grpc.Core;
+using Microsoft.Identity.Client;
 
 namespace BusKit.Sidecar.Services;
 
@@ -10,8 +14,9 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
     private ServiceBusClient? _client;
     private ServiceBusAdministrationClient? _adminClient;
     private string? _connectionString;
+    private Azure.Core.TokenCredential? _azureCredential;
 
-    // ── Connect ──────────────────────────────────────────
+    // ── Connect (connection string) ───────────────────────
 
     public override async Task<ConnectReply> Connect(
         ConnectRequest request, ServerCallContext context)
@@ -22,10 +27,10 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
             _client = new ServiceBusClient(_connectionString);
             _adminClient = new ServiceBusAdministrationClient(_connectionString);
 
-            // Test connection by listing queues
+            // Verify connectivity by listing queues (one attempt is enough).
             await foreach (var _ in _adminClient.GetQueuesAsync())
             {
-                break; // just need one to confirm
+                break;
             }
 
             return new ConnectReply { Success = true };
@@ -34,6 +39,195 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         {
             return new ConnectReply { Success = false, Error = ex.Message };
         }
+    }
+
+    // ── Connect with Azure AD (RBAC) ─────────────────────
+
+    public override async Task<ConnectReply> ConnectWithAzureAD(
+        ConnectWithAzureADRequest request, ServerCallContext context)
+    {
+        try
+        {
+            if (_azureCredential == null)
+                return new ConnectReply { Success = false, Error = "Not signed in to Azure. Call ListAzureSubscriptions first." };
+
+            var fqns = request.FullyQualifiedNamespace;
+            _connectionString = null;
+            _client = new ServiceBusClient(fqns, _azureCredential);
+            _adminClient = new ServiceBusAdministrationClient(fqns, _azureCredential);
+
+            // ── 1. Verify admin (HTTP) connectivity ──────────────────────────
+            // Collect the first queue and topic/sub while we're at it so we
+            // can warm the AMQP path below.
+            string? firstQueue = null;
+            string? firstTopic = null;
+            string? firstSub   = null;
+
+            await foreach (var q in _adminClient.GetQueuesAsync())
+            {
+                firstQueue = q.Name;
+                break;
+            }
+
+            await foreach (var t in _adminClient.GetTopicsAsync())
+            {
+                firstTopic = t.Name;
+                await foreach (var s in _adminClient.GetSubscriptionsAsync(t.Name))
+                {
+                    firstSub = s.SubscriptionName;
+                    break;
+                }
+                break;
+            }
+
+            // ── 2. Warm the AMQP messaging token (ServiceBusClient) ──────────
+            // The HTTP admin path above primes the BearerTokenAuthenticationPolicy
+            // cache, but ServiceBusClient uses a separate AMQP CBS connection that
+            // acquires its token lazily on first use. Without this warm-up, the
+            // very first PeekMessages/receive call would trigger an interactive
+            // browser auth at an unexpected moment (e.g. Dead Letter tab).
+            //
+            // We force the AMQP connection to establish right here, during the
+            // explicit "Connect" step where a browser prompt is acceptable.
+            try
+            {
+                ServiceBusReceiver? warmReceiver = null;
+
+                if (firstQueue != null)
+                    warmReceiver = _client.CreateReceiver(firstQueue);
+                else if (firstTopic != null && firstSub != null)
+                    warmReceiver = _client.CreateReceiver(firstTopic, firstSub);
+
+                if (warmReceiver != null)
+                {
+                    await using (warmReceiver)
+                    {
+                        await warmReceiver.PeekMessagesAsync(1, cancellationToken: CancellationToken.None);
+                    }
+                }
+            }
+            catch
+            {
+                // Non-fatal: the AMQP warm-up may fail if the entity has no
+                // messages or if RBAC doesn't allow peek. The token is still
+                // cached in MSAL from the attempt.
+            }
+
+            return new ConnectReply { Success = true };
+        }
+        catch (Exception ex)
+        {
+            return new ConnectReply { Success = false, Error = ex.Message };
+        }
+    }
+
+    // ── List Azure Subscriptions (triggers browser login if not yet signed in) ─
+
+    public override async Task<ListAzureSubscriptionsReply> ListAzureSubscriptions(
+        ListAzureSubscriptionsRequest request, ServerCallContext context)
+    {
+        var reply = new ListAzureSubscriptionsReply();
+        try
+        {
+            // Tear down any existing connection so a sign-in always starts clean.
+            if (_client != null)
+            {
+                await _client.DisposeAsync();
+                _client = null;
+                _adminClient = null;
+            }
+            _connectionString = null;
+
+            // Build a fresh MSAL public client with an in-memory cache.
+            // A new instance every time means no cached accounts are carried
+            // over, so the account picker is always shown regardless of any
+            // prior sign-in — the user can switch accounts freely.
+            var msalApp = PublicClientApplicationBuilder
+                .Create("04b07795-8ddb-461a-bbee-02f9e1bf7b46") // Azure CLI public client
+                .WithAuthority(AzureCloudInstance.AzurePublic,
+                               AadAuthorityAudience.AzureAdAndPersonalMicrosoftAccount)
+                .WithDefaultRedirectUri()
+                .Build();
+
+            // Prompt.SelectAccount always shows the account picker in the
+            // browser — SSO never auto-signs in the previous account.
+            var authResult = await msalApp
+                .AcquireTokenInteractive(new[] { "https://management.azure.com/.default" })
+                .WithPrompt(Prompt.SelectAccount)
+                .ExecuteAsync(CancellationToken.None);
+
+            _azureCredential = new MsalTokenCredential(msalApp, authResult.Account);
+
+            var armClient = new ArmClient(_azureCredential);
+
+            await foreach (var sub in armClient.GetSubscriptions().GetAllAsync())
+            {
+                reply.Subscriptions.Add(new AzureSubscriptionInfo
+                {
+                    SubscriptionId = sub.Data.SubscriptionId,
+                    DisplayName = sub.Data.DisplayName ?? sub.Data.SubscriptionId
+                });
+            }
+
+            // Pre-warm the Service Bus token using the refresh token already
+            // held by MSAL. On first use this may open a second browser for
+            // SB consent; afterwards it is always silent.
+            try
+            {
+                await _azureCredential.GetTokenAsync(
+                    new Azure.Core.TokenRequestContext(
+                        new[] { "https://servicebus.azure.net/.default" }),
+                    CancellationToken.None);
+            }
+            catch (Exception warmEx)
+            {
+                Console.WriteLine($"[BusKit] SB token pre-warm failed: {warmEx.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            if (reply.Subscriptions.Count == 0)
+                _azureCredential = null;
+            reply.Error = ex.Message;
+        }
+        return reply;
+    }
+
+    // ── List Service Bus Namespaces ───────────────────────
+
+    public override async Task<ListServiceBusNamespacesReply> ListServiceBusNamespaces(
+        ListServiceBusNamespacesRequest request, ServerCallContext context)
+    {
+        var reply = new ListServiceBusNamespacesReply();
+        try
+        {
+            if (_azureCredential == null)
+            {
+                reply.Error = "Not signed in to Azure. Call ListAzureSubscriptions first.";
+                return reply;
+            }
+
+            var armClient = new ArmClient(_azureCredential);
+            var subscriptionId = new Azure.Core.ResourceIdentifier($"/subscriptions/{request.SubscriptionId}");
+            var subscription = armClient.GetSubscriptionResource(subscriptionId);
+
+            await foreach (var ns in subscription.GetServiceBusNamespacesAsync())
+            {
+                var fqns = $"{ns.Data.Name}.servicebus.windows.net";
+                var resourceGroup = ns.Id.ResourceGroupName ?? "";
+                reply.Namespaces.Add(new ServiceBusNamespaceInfo
+                {
+                    Name = ns.Data.Name,
+                    FullyQualifiedNamespace = fqns,
+                    ResourceGroup = resourceGroup
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            reply.Error = ex.Message;
+        }
+        return reply;
     }
 
     // ── Disconnect ───────────────────────────────────────
@@ -47,6 +241,11 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
             _client = null;
             _adminClient = null;
         }
+        _connectionString = null;
+        // Do NOT clear _azureCredential here — authentication state is separate
+        // from connection state. Clearing it forces a full re-sign-in just to
+        // switch namespaces. It is only cleared when the user explicitly signs out
+        // via ListAzureSubscriptions (which resets and re-creates the credential).
         return new DisconnectReply { Success = true };
     }
 
@@ -388,5 +587,52 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
 
         await processor.StopProcessingAsync();
         await processor.DisposeAsync();
+    }
+
+    // ── MSAL token credential wrapper ────────────────────
+    // Wraps an already-authenticated MSAL account so that Azure SDK clients
+    // (ArmClient, ServiceBusClient, etc.) can silently refresh tokens via the
+    // MSAL refresh-token grant without triggering another browser window.
+    // Falls back to interactive auth (without forcing account selection) only
+    // if the refresh token itself has expired.
+
+    private sealed class MsalTokenCredential : Azure.Core.TokenCredential
+    {
+        private readonly IPublicClientApplication _app;
+        private IAccount _account;
+
+        public MsalTokenCredential(IPublicClientApplication app, IAccount account)
+        {
+            _app = app;
+            _account = account;
+        }
+
+        public override Azure.Core.AccessToken GetToken(
+            Azure.Core.TokenRequestContext requestContext, CancellationToken cancellationToken)
+            => GetTokenAsync(requestContext, cancellationToken).AsTask().GetAwaiter().GetResult();
+
+        public override async ValueTask<Azure.Core.AccessToken> GetTokenAsync(
+            Azure.Core.TokenRequestContext requestContext, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var result = await _app
+                    .AcquireTokenSilent(requestContext.Scopes, _account)
+                    .ExecuteAsync(cancellationToken);
+                _account = result.Account;
+                return new Azure.Core.AccessToken(result.AccessToken, result.ExpiresOn);
+            }
+            catch (MsalUiRequiredException)
+            {
+                // Refresh token expired — go interactive with the known account
+                // (no Prompt.SelectAccount here; this is a background refresh).
+                var result = await _app
+                    .AcquireTokenInteractive(requestContext.Scopes)
+                    .WithAccount(_account)
+                    .ExecuteAsync(cancellationToken);
+                _account = result.Account;
+                return new Azure.Core.AccessToken(result.AccessToken, result.ExpiresOn);
+            }
+        }
     }
 }

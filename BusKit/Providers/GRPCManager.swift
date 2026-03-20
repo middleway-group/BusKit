@@ -16,6 +16,27 @@ final class GRPCManager {
     var errorMessage: String?
     var namespaceName: String?
 
+    // MARK: - Azure AD Login State
+
+    enum AzureLoginPhase: Equatable {
+        /// Not signed in to Azure.
+        case idle
+        /// Browser is open waiting for the user to authenticate.
+        case signingIn
+        /// Signed in — subscription + namespace pickers are available.
+        case ready
+        /// Connecting to the selected namespace.
+        case connecting
+    }
+
+    var azureLoginPhase: AzureLoginPhase = .idle
+    var azureLoginError: String?
+    var azureSubscriptions: [Buskit_AzureSubscriptionInfo] = []
+    var azureNamespaces: [Buskit_ServiceBusNamespaceInfo] = []
+    var selectedAzureSubscriptionId: String = ""
+    var selectedAzureNamespaceFQNS: String = ""
+    var isLoadingAzureNamespaces: Bool = false
+
     private var grpcClient: GRPCClient<HTTP2ClientTransport.Posix>?
     private var buskit: Buskit_BusKitService.Client<HTTP2ClientTransport.Posix>?
     private var runTask: Task<Void, Never>?
@@ -218,7 +239,7 @@ final class GRPCManager {
         connectionState = .disconnected
     }
 
-    // MARK: - Connect
+    // MARK: - Connect (connection string)
 
     func connect(connectionString: String) async throws -> Buskit_ConnectReply {
         guard let buskit else { throw GRPCManagerError.notConnected }
@@ -240,6 +261,46 @@ final class GRPCManager {
         }
     }
 
+    // MARK: - Connect (Azure AD / RBAC)
+
+    func listAzureSubscriptions() async throws -> [Buskit_AzureSubscriptionInfo] {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        let req = Buskit_ListAzureSubscriptionsRequest()
+        let reply: Buskit_ListAzureSubscriptionsReply = try await buskit.listAzureSubscriptions(req)
+        if !reply.error.isEmpty { throw GRPCManagerError.azureError(reply.error) }
+        return Array(reply.subscriptions).sorted { $0.displayName.localizedCompare($1.displayName) == .orderedAscending }
+    }
+
+    func listServiceBusNamespaces(subscriptionId: String) async throws -> [Buskit_ServiceBusNamespaceInfo] {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_ListServiceBusNamespacesRequest()
+        req.subscriptionID = subscriptionId
+        let reply: Buskit_ListServiceBusNamespacesReply = try await buskit.listServiceBusNamespaces(req)
+        if !reply.error.isEmpty { throw GRPCManagerError.azureError(reply.error) }
+        return Array(reply.namespaces).sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
+    }
+
+    func connectWithAzureAD(fullyQualifiedNamespace: String) async throws -> Buskit_ConnectReply {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_ConnectWithAzureADRequest()
+        req.fullyQualifiedNamespace = fullyQualifiedNamespace
+        connectionState = .connecting
+        do {
+            let reply = try await buskit.connectWithAzureAD(req)
+            if reply.success {
+                connectionState = .connected
+                namespaceName = fullyQualifiedNamespace
+                    .components(separatedBy: ".").first
+            } else {
+                connectionState = .error(reply.error)
+            }
+            return reply
+        } catch {
+            connectionState = .error(error.localizedDescription)
+            throw error
+        }
+    }
+
     // MARK: - Disconnect
 
     func disconnect() async throws -> Buskit_DisconnectReply {
@@ -248,7 +309,20 @@ final class GRPCManager {
         let reply = try await buskit.disconnect(req)
         connectionState = .disconnected
         namespaceName = nil
+        // Do NOT reset Azure login state here — the user stays signed in so
+        // they can immediately switch to another namespace. Call
+        // resetAzureLoginState() explicitly when the user clicks "Sign out".
         return reply
+    }
+
+    func resetAzureLoginState() {
+        azureLoginPhase = .idle
+        azureLoginError = nil
+        azureSubscriptions = []
+        azureNamespaces = []
+        selectedAzureSubscriptionId = ""
+        selectedAzureNamespaceFQNS = ""
+        isLoadingAzureNamespaces = false
     }
 
     private static func extractNamespace(from connectionString: String) -> String? {
@@ -446,10 +520,12 @@ final class GRPCManager {
 @available(macOS 15.0, *)
 enum GRPCManagerError: LocalizedError {
     case notConnected
+    case azureError(String)
 
     var errorDescription: String? {
         switch self {
         case .notConnected: return "gRPC client is not connected. Call startSidecar() first."
+        case .azureError(let msg): return msg
         }
     }
 }

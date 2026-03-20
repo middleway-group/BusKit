@@ -32,6 +32,18 @@ internal enum Buskit_BusKitService: Sendable {
                 method: "Connect"
             )
         }
+        /// Namespace for "ConnectWithAzureAD" metadata.
+        internal enum ConnectWithAzureAD: Sendable {
+            /// Request type for "ConnectWithAzureAD".
+            internal typealias Input = Buskit_ConnectWithAzureADRequest
+            /// Response type for "ConnectWithAzureAD".
+            internal typealias Output = Buskit_ConnectReply
+            /// Descriptor for "ConnectWithAzureAD".
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "ConnectWithAzureAD"
+            )
+        }
         /// Namespace for "Disconnect" metadata.
         internal enum Disconnect: Sendable {
             /// Request type for "Disconnect".
@@ -42,6 +54,30 @@ internal enum Buskit_BusKitService: Sendable {
             internal static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
                 method: "Disconnect"
+            )
+        }
+        /// Namespace for "ListAzureSubscriptions" metadata.
+        internal enum ListAzureSubscriptions: Sendable {
+            /// Request type for "ListAzureSubscriptions".
+            internal typealias Input = Buskit_ListAzureSubscriptionsRequest
+            /// Response type for "ListAzureSubscriptions".
+            internal typealias Output = Buskit_ListAzureSubscriptionsReply
+            /// Descriptor for "ListAzureSubscriptions".
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "ListAzureSubscriptions"
+            )
+        }
+        /// Namespace for "ListServiceBusNamespaces" metadata.
+        internal enum ListServiceBusNamespaces: Sendable {
+            /// Request type for "ListServiceBusNamespaces".
+            internal typealias Input = Buskit_ListServiceBusNamespacesRequest
+            /// Response type for "ListServiceBusNamespaces".
+            internal typealias Output = Buskit_ListServiceBusNamespacesReply
+            /// Descriptor for "ListServiceBusNamespaces".
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "ListServiceBusNamespaces"
             )
         }
         /// Namespace for "ListQueues" metadata.
@@ -167,7 +203,10 @@ internal enum Buskit_BusKitService: Sendable {
         /// Descriptors for all methods in the "buskit.BusKitService" service.
         internal static let descriptors: [GRPCCore.MethodDescriptor] = [
             Connect.descriptor,
+            ConnectWithAzureAD.descriptor,
             Disconnect.descriptor,
+            ListAzureSubscriptions.descriptor,
+            ListServiceBusNamespaces.descriptor,
             ListQueues.descriptor,
             ListTopics.descriptor,
             ListSubscriptions.descriptor,
@@ -216,6 +255,25 @@ extension Buskit_BusKitService {
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_ConnectReply>) async throws -> Result
         ) async throws -> Result where Result: Sendable
 
+        /// Call the "ConnectWithAzureAD" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_ConnectWithAzureADRequest` message.
+        ///   - serializer: A serializer for `Buskit_ConnectWithAzureADRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_ConnectReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func connectWithAzureAD<Result>(
+            request: GRPCCore.ClientRequest<Buskit_ConnectWithAzureADRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_ConnectWithAzureADRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_ConnectReply>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_ConnectReply>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
         /// Call the "Disconnect" method.
         ///
         /// - Parameters:
@@ -233,6 +291,44 @@ extension Buskit_BusKitService {
             deserializer: some GRPCCore.MessageDeserializer<Buskit_DisconnectReply>,
             options: GRPCCore.CallOptions,
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DisconnectReply>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "ListAzureSubscriptions" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_ListAzureSubscriptionsRequest` message.
+        ///   - serializer: A serializer for `Buskit_ListAzureSubscriptionsRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_ListAzureSubscriptionsReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func listAzureSubscriptions<Result>(
+            request: GRPCCore.ClientRequest<Buskit_ListAzureSubscriptionsRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_ListAzureSubscriptionsRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_ListAzureSubscriptionsReply>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_ListAzureSubscriptionsReply>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "ListServiceBusNamespaces" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_ListServiceBusNamespacesRequest` message.
+        ///   - serializer: A serializer for `Buskit_ListServiceBusNamespacesRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_ListServiceBusNamespacesReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func listServiceBusNamespaces<Result>(
+            request: GRPCCore.ClientRequest<Buskit_ListServiceBusNamespacesRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_ListServiceBusNamespacesRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_ListServiceBusNamespacesReply>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_ListServiceBusNamespacesReply>) async throws -> Result
         ) async throws -> Result where Result: Sendable
 
         /// Call the "ListQueues" method.
@@ -472,6 +568,36 @@ extension Buskit_BusKitService {
             )
         }
 
+        /// Call the "ConnectWithAzureAD" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_ConnectWithAzureADRequest` message.
+        ///   - serializer: A serializer for `Buskit_ConnectWithAzureADRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_ConnectReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        internal func connectWithAzureAD<Result>(
+            request: GRPCCore.ClientRequest<Buskit_ConnectWithAzureADRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_ConnectWithAzureADRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_ConnectReply>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_ConnectReply>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Buskit_BusKitService.Method.ConnectWithAzureAD.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
         /// Call the "Disconnect" method.
         ///
         /// - Parameters:
@@ -495,6 +621,66 @@ extension Buskit_BusKitService {
             try await self.client.unary(
                 request: request,
                 descriptor: Buskit_BusKitService.Method.Disconnect.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "ListAzureSubscriptions" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_ListAzureSubscriptionsRequest` message.
+        ///   - serializer: A serializer for `Buskit_ListAzureSubscriptionsRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_ListAzureSubscriptionsReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        internal func listAzureSubscriptions<Result>(
+            request: GRPCCore.ClientRequest<Buskit_ListAzureSubscriptionsRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_ListAzureSubscriptionsRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_ListAzureSubscriptionsReply>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_ListAzureSubscriptionsReply>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Buskit_BusKitService.Method.ListAzureSubscriptions.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "ListServiceBusNamespaces" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_ListServiceBusNamespacesRequest` message.
+        ///   - serializer: A serializer for `Buskit_ListServiceBusNamespacesRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_ListServiceBusNamespacesReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        internal func listServiceBusNamespaces<Result>(
+            request: GRPCCore.ClientRequest<Buskit_ListServiceBusNamespacesRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_ListServiceBusNamespacesRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_ListServiceBusNamespacesReply>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_ListServiceBusNamespacesReply>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Buskit_BusKitService.Method.ListServiceBusNamespaces.descriptor,
                 serializer: serializer,
                 deserializer: deserializer,
                 options: options,
@@ -830,6 +1016,31 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
+    /// Call the "ConnectWithAzureAD" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_ConnectWithAzureADRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func connectWithAzureAD<Result>(
+        request: GRPCCore.ClientRequest<Buskit_ConnectWithAzureADRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_ConnectReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.connectWithAzureAD(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_ConnectWithAzureADRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_ConnectReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
     /// Call the "Disconnect" method.
     ///
     /// - Parameters:
@@ -850,6 +1061,56 @@ extension Buskit_BusKitService.ClientProtocol {
             request: request,
             serializer: GRPCProtobuf.ProtobufSerializer<Buskit_DisconnectRequest>(),
             deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_DisconnectReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "ListAzureSubscriptions" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_ListAzureSubscriptionsRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func listAzureSubscriptions<Result>(
+        request: GRPCCore.ClientRequest<Buskit_ListAzureSubscriptionsRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_ListAzureSubscriptionsReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.listAzureSubscriptions(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_ListAzureSubscriptionsRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_ListAzureSubscriptionsReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "ListServiceBusNamespaces" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_ListServiceBusNamespacesRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func listServiceBusNamespaces<Result>(
+        request: GRPCCore.ClientRequest<Buskit_ListServiceBusNamespacesRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_ListServiceBusNamespacesReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.listServiceBusNamespaces(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_ListServiceBusNamespacesRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_ListServiceBusNamespacesReply>(),
             options: options,
             onResponse: handleResponse
         )
@@ -1136,6 +1397,35 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
+    /// Call the "ConnectWithAzureAD" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func connectWithAzureAD<Result>(
+        _ message: Buskit_ConnectWithAzureADRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_ConnectReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Buskit_ConnectWithAzureADRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.connectWithAzureAD(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
     /// Call the "Disconnect" method.
     ///
     /// - Parameters:
@@ -1159,6 +1449,64 @@ extension Buskit_BusKitService.ClientProtocol {
             metadata: metadata
         )
         return try await self.disconnect(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "ListAzureSubscriptions" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func listAzureSubscriptions<Result>(
+        _ message: Buskit_ListAzureSubscriptionsRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_ListAzureSubscriptionsReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Buskit_ListAzureSubscriptionsRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.listAzureSubscriptions(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "ListServiceBusNamespaces" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func listServiceBusNamespaces<Result>(
+        _ message: Buskit_ListServiceBusNamespacesRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_ListServiceBusNamespacesReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Buskit_ListServiceBusNamespacesRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.listServiceBusNamespaces(
             request: request,
             options: options,
             onResponse: handleResponse

@@ -27,5 +27,13 @@ struct ContentView: View {
                 ConnectionToolbar(connectionString: $connectionString)
             }
         }
+        .onChange(of: grpc.connectionState) { _, newState in
+            // Clear the detail panel whenever we disconnect or start reconnecting
+            // to a different namespace, so stale data from the previous
+            // connection is never shown.
+            if newState != .connected {
+                selection = nil
+            }
+        }
     }
 }

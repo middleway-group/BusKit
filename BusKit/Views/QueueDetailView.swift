@@ -162,6 +162,7 @@ private struct MessagesTab: View {
 
     @State private var messages: [MessageItem] = []
     @State private var isLoading = false
+    @State private var loadError: String?
     @State private var selectedMessageID: String?
 
     private var selectedMessage: MessageItem? {
@@ -175,6 +176,15 @@ private struct MessagesTab: View {
                 if isLoading {
                     ProgressView("Loading messages…")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let error = loadError {
+                    VStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.largeTitle).foregroundStyle(.red)
+                        Text(error).foregroundStyle(.secondary).font(.caption)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if messages.isEmpty {
                     Text("No \(isDLQ ? "dead-letter " : "")messages in \(queue.name)")
                         .foregroundStyle(.secondary)
@@ -252,12 +262,16 @@ private struct MessagesTab: View {
 
     private func loadMessages() async {
         isLoading = true
+        loadError = nil
         defer { isLoading = false }
         do {
             messages = try await grpc.peekMessages(queueName: queue.name,
                                                    isDLQ: isDLQ,
                                                    maxCount: requestedCount)
-        } catch { }
+        } catch {
+            messages = []
+            loadError = error.localizedDescription
+        }
     }
 }
 
