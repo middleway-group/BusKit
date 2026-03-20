@@ -32,6 +32,18 @@ public struct Buskit_ConnectRequest: Sendable {
   public init() {}
 }
 
+public struct Buskit_ConnectWithAzureADRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var fullyQualifiedNamespace: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
 public struct Buskit_ConnectReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -62,6 +74,86 @@ public struct Buskit_DisconnectReply: Sendable {
   // methods supported on all messages.
 
   public var success: Bool = false
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_ListAzureSubscriptionsRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_ListAzureSubscriptionsReply: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var subscriptions: [Buskit_AzureSubscriptionInfo] = []
+
+  public var error: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_AzureSubscriptionInfo: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var subscriptionID: String = String()
+
+  public var displayName: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_ListServiceBusNamespacesRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var subscriptionID: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_ListServiceBusNamespacesReply: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var namespaces: [Buskit_ServiceBusNamespaceInfo] = []
+
+  public var error: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_ServiceBusNamespaceInfo: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var name: String = String()
+
+  public var fullyQualifiedNamespace: String = String()
+
+  public var resourceGroup: String = String()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -546,6 +638,36 @@ extension Buskit_ConnectRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
   }
 }
 
+extension Buskit_ConnectWithAzureADRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ConnectWithAzureADRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}fully_qualified_namespace\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.fullyQualifiedNamespace) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.fullyQualifiedNamespace.isEmpty {
+      try visitor.visitSingularStringField(value: self.fullyQualifiedNamespace, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_ConnectWithAzureADRequest, rhs: Buskit_ConnectWithAzureADRequest) -> Bool {
+    if lhs.fullyQualifiedNamespace != rhs.fullyQualifiedNamespace {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
 extension Buskit_ConnectReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ConnectReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}success\0\u{1}error\0")
@@ -625,6 +747,200 @@ extension Buskit_DisconnectReply: SwiftProtobuf.Message, SwiftProtobuf._MessageI
 
   public static func ==(lhs: Buskit_DisconnectReply, rhs: Buskit_DisconnectReply) -> Bool {
     if lhs.success != rhs.success {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_ListAzureSubscriptionsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ListAzureSubscriptionsRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    // Load everything into unknown fields
+    while try decoder.nextFieldNumber() != nil {}
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_ListAzureSubscriptionsRequest, rhs: Buskit_ListAzureSubscriptionsRequest) -> Bool {
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_ListAzureSubscriptionsReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ListAzureSubscriptionsReply"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}subscriptions\0\u{1}error\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.subscriptions) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.error) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.subscriptions.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.subscriptions, fieldNumber: 1)
+    }
+    if !self.error.isEmpty {
+      try visitor.visitSingularStringField(value: self.error, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_ListAzureSubscriptionsReply, rhs: Buskit_ListAzureSubscriptionsReply) -> Bool {
+    if lhs.subscriptions != rhs.subscriptions {return false}
+    if lhs.error != rhs.error {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_AzureSubscriptionInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".AzureSubscriptionInfo"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}subscription_id\0\u{3}display_name\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.subscriptionID) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.displayName) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.subscriptionID.isEmpty {
+      try visitor.visitSingularStringField(value: self.subscriptionID, fieldNumber: 1)
+    }
+    if !self.displayName.isEmpty {
+      try visitor.visitSingularStringField(value: self.displayName, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_AzureSubscriptionInfo, rhs: Buskit_AzureSubscriptionInfo) -> Bool {
+    if lhs.subscriptionID != rhs.subscriptionID {return false}
+    if lhs.displayName != rhs.displayName {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_ListServiceBusNamespacesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ListServiceBusNamespacesRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}subscription_id\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.subscriptionID) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.subscriptionID.isEmpty {
+      try visitor.visitSingularStringField(value: self.subscriptionID, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_ListServiceBusNamespacesRequest, rhs: Buskit_ListServiceBusNamespacesRequest) -> Bool {
+    if lhs.subscriptionID != rhs.subscriptionID {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_ListServiceBusNamespacesReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ListServiceBusNamespacesReply"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}namespaces\0\u{1}error\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.namespaces) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.error) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.namespaces.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.namespaces, fieldNumber: 1)
+    }
+    if !self.error.isEmpty {
+      try visitor.visitSingularStringField(value: self.error, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_ListServiceBusNamespacesReply, rhs: Buskit_ListServiceBusNamespacesReply) -> Bool {
+    if lhs.namespaces != rhs.namespaces {return false}
+    if lhs.error != rhs.error {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_ServiceBusNamespaceInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ServiceBusNamespaceInfo"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{3}fully_qualified_namespace\0\u{3}resource_group\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.name) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.fullyQualifiedNamespace) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.resourceGroup) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.name.isEmpty {
+      try visitor.visitSingularStringField(value: self.name, fieldNumber: 1)
+    }
+    if !self.fullyQualifiedNamespace.isEmpty {
+      try visitor.visitSingularStringField(value: self.fullyQualifiedNamespace, fieldNumber: 2)
+    }
+    if !self.resourceGroup.isEmpty {
+      try visitor.visitSingularStringField(value: self.resourceGroup, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_ServiceBusNamespaceInfo, rhs: Buskit_ServiceBusNamespaceInfo) -> Bool {
+    if lhs.name != rhs.name {return false}
+    if lhs.fullyQualifiedNamespace != rhs.fullyQualifiedNamespace {return false}
+    if lhs.resourceGroup != rhs.resourceGroup {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

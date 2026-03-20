@@ -27,5 +27,15 @@ protoc \
   --grpc-swift-2_opt=Client=true,Server=false \
   "$PROTO_DIR/buskit.proto"
 
+# Remove `type: .<kind>` lines emitted by newer plugin versions that are
+# incompatible with the gRPC-Swift library pinned in this project.
+sed -i '' \
+  '/^[[:space:]]*type: \./d' \
+  "$OUT_DIR/buskit.grpc.swift"
+# Clean up the trailing comma left on the preceding `method:` line.
+sed -i '' \
+  's/\(method: "[^"]*"\),$/\1/' \
+  "$OUT_DIR/buskit.grpc.swift"
+
 echo "✅ Generated files in $OUT_DIR:"
 ls -la "$OUT_DIR"

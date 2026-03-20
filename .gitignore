@@ -76,6 +76,9 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
+# MSBuild binary log
+*.binlog
+
 # NuGet
 *.nupkg
 *.snupkg
@@ -86,20 +89,33 @@ bld/
 project.lock.json
 project.fragment.lock.json
 artifacts/
+nuget.config
 
-# MSTest
+# MSTest / test results
 TestResult.xml
 [Tt]est[Rr]esult*/
+TestResults/
 [Bb]uild[Ll]og.*
 *.VisualState.xml
-TestResult.xml
 [Rr]elease/
+
+# Code coverage
+coverage*.xml
+coverage*.json
+coverage*.info
+*.opencover.xml
+*.cobertura.xml
+lcov.info
+**/coverage/
 
 # User-specific
 *.rsuser
 *.user
 *.userosscache
 *.sln.docstates
+*.csproj.user
+*.vbproj.user
+*.fsproj.user
 
 # Visual Studio cache / options
 .vs/
@@ -110,6 +126,28 @@ TestResult.xml
 *.opensdf
 *.vsp
 *.vspx
+*.aps
+*.pch
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+# NCrunch
+_NCrunch_*
+.*crunch*.local.xml
+nCrunchTemp_*
+
+# StyleCop
+StyleCopReport.xml
 
 # Rider
 .idea/
@@ -121,8 +159,13 @@ TestResult.xml
 !.vscode/tasks.json
 !.vscode/launch.json
 
+# dotnet tools / SDK
+.dotnet/
+.toolset/
+
 # ASP.NET
 ScaffoldingReadMe.txt
+BundleConfig.xml
 
 # Entity Framework
 migrations/
@@ -131,6 +174,9 @@ migrations/
 publish/
 **/publish/
 PublishScripts/
+
+# Docker
+**/docker-compose*.override.yml
 
 # ========================
 # General

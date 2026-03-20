@@ -44,17 +44,72 @@ struct ConnectionToolbar: View {
     }
 }
 
+// MARK: - Connection mode
+
+private enum ConnectionMode: String, CaseIterable {
+    case connectionString = "Connection String"
+    case azureAD          = "Azure Login"
+}
+
+// MARK: - Main popover
+
 @available(macOS 15.0, *)
 private struct ConnectionPopover: View {
     @Environment(GRPCManager.self) var grpc
     @Binding var connectionString: String
     @Binding var isConnecting: Bool
 
+    @State private var mode: ConnectionMode = .connectionString
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Azure Service Bus Connection")
                 .font(.headline)
 
+            Picker("", selection: $mode) {
+                ForEach(ConnectionMode.allCases, id: \.self) { m in
+                    Text(m.rawValue).tag(m)
+                }
+            }
+            .pickerStyle(.segmented)
+            .disabled(grpc.connectionState == .connected || isConnecting
+                      || grpc.azureLoginPhase == .signingIn
+                      || grpc.azureLoginPhase == .connecting)
+
+            switch mode {
+            case .connectionString:
+                ConnectionStringPanel(
+                    connectionString: $connectionString,
+                    isConnecting: $isConnecting
+                )
+                .environment(grpc)
+            case .azureAD:
+                AzureADPanel(isConnecting: $isConnecting)
+                    .environment(grpc)
+            }
+        }
+        .padding()
+        .frame(width: 480)
+        .onAppear {
+            // Restore the Azure tab whenever an Azure login is in progress or
+            // the user is already signed in.
+            if grpc.azureLoginPhase != .idle {
+                mode = .azureAD
+            }
+        }
+    }
+}
+
+// MARK: - Connection string panel (existing behaviour)
+
+@available(macOS 15.0, *)
+private struct ConnectionStringPanel: View {
+    @Environment(GRPCManager.self) var grpc
+    @Binding var connectionString: String
+    @Binding var isConnecting: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
             TextEditor(text: $connectionString)
                 .font(.system(.body, design: .monospaced))
                 .frame(width: 440, height: 100)
@@ -65,32 +120,23 @@ private struct ConnectionPopover: View {
                 .disabled(grpc.connectionState == .connected || isConnecting)
 
             if case .error(let message) = grpc.connectionState {
-                HStack(alignment: .top, spacing: 6) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.red)
-                        .padding(.top, 1)
-                    Text(message)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                ErrorBanner(message: message)
             }
 
             HStack {
                 Spacer()
                 if isConnecting || (grpc.connectionState == .connecting && !grpc.isSidecarReady) {
-                    ProgressView()
-                        .controlSize(.small)
+                    ProgressView().controlSize(.small)
                 }
                 Button(grpc.connectionState == .connected ? "Disconnect" : "Connect") {
                     Task { await toggleConnection() }
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(!grpc.isSidecarReady || connectionString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isConnecting)
+                .disabled(!grpc.isSidecarReady
+                          || connectionString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                          || isConnecting)
             }
         }
-        .padding()
-        .frame(width: 480)
     }
 
     private func toggleConnection() async {
@@ -102,8 +148,268 @@ private struct ConnectionPopover: View {
             } else {
                 _ = try await grpc.connect(connectionString: connectionString.trimmingCharacters(in: .whitespacesAndNewlines))
             }
+        } catch {}
+    }
+}
+
+// MARK: - Azure AD / RBAC panel
+
+@available(macOS 15.0, *)
+private struct AzureADPanel: View {
+    @Environment(GRPCManager.self) var grpc
+    @Binding var isConnecting: Bool
+
+    var body: some View {
+        switch grpc.azureLoginPhase {
+        case .idle:
+            AzureSignInPrompt(isConnecting: $isConnecting)
+                .environment(grpc)
+        case .signingIn:
+            AzureSigningInView()
+        case .ready, .connecting:
+            AzureNamespaceForm(isConnecting: $isConnecting)
+                .environment(grpc)
+        }
+    }
+}
+
+// ── Not yet signed in ──────────────────────────────────
+
+@available(macOS 15.0, *)
+private struct AzureSignInPrompt: View {
+    @Environment(GRPCManager.self) var grpc
+    @Binding var isConnecting: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Sign in with your Azure account to browse and connect to Service Bus namespaces.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let err = grpc.azureLoginError {
+                ErrorBanner(message: err)
+            }
+
+            HStack {
+                Spacer()
+                Button("Sign in with Azure…") {
+                    Task { await signIn() }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!grpc.isSidecarReady || isConnecting)
+            }
+        }
+    }
+
+    private func signIn() async {
+        grpc.azureLoginError = nil
+        grpc.azureLoginPhase = .signingIn
+        isConnecting = true
+        defer { isConnecting = false }
+        do {
+            let subs = try await grpc.listAzureSubscriptions()
+            grpc.azureSubscriptions = subs
+            grpc.selectedAzureSubscriptionId = subs.first?.subscriptionID ?? ""
+            grpc.azureLoginPhase = .ready
         } catch {
-            // connectionState is updated by GRPCManager on error
+            grpc.azureLoginError = error.localizedDescription
+            grpc.azureLoginPhase = .idle
+        }
+    }
+}
+
+// ── Browser open, waiting for auth ────────────────────
+
+private struct AzureSigningInView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
+                ProgressView().controlSize(.small)
+                Text("A browser window has opened — sign in with your Azure credentials.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Text("A second window may open on first use for Azure Service Bus access.")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+// ── Signed-in form: subscription + namespace pickers ──
+
+@available(macOS 15.0, *)
+private struct AzureNamespaceForm: View {
+    @Environment(GRPCManager.self) var grpc
+    @Binding var isConnecting: Bool
+
+    var body: some View {
+        @Bindable var grpcBindable = grpc
+
+        VStack(alignment: .leading, spacing: 10) {
+            // ── Connected status badge ──
+            if grpc.connectionState == .connected, let ns = grpc.namespaceName {
+                HStack(spacing: 6) {
+                    Circle().fill(Color.green).frame(width: 7, height: 7)
+                    Text("Connected to \(ns)")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            // ── Subscription picker ──
+            LabeledContent("Subscription") {
+                Picker("", selection: $grpcBindable.selectedAzureSubscriptionId) {
+                    ForEach(grpc.azureSubscriptions, id: \.subscriptionID) { sub in
+                        Text(sub.displayName).tag(sub.subscriptionID)
+                    }
+                }
+                .labelsHidden()
+                .frame(maxWidth: .infinity)
+                .disabled(isConnecting || grpc.azureLoginPhase == .connecting)
+            }
+
+            // ── Namespace picker ──
+            LabeledContent("Namespace") {
+                if grpc.isLoadingAzureNamespaces {
+                    HStack(spacing: 6) {
+                        ProgressView().controlSize(.mini)
+                        Text("Loading…").font(.callout).foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else if grpc.azureNamespaces.isEmpty {
+                    Text("No Service Bus namespaces found")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    Picker("", selection: $grpcBindable.selectedAzureNamespaceFQNS) {
+                        ForEach(grpc.azureNamespaces, id: \.fullyQualifiedNamespace) { ns in
+                            Text(ns.name).tag(ns.fullyQualifiedNamespace)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity)
+                    .disabled(isConnecting || grpc.azureLoginPhase == .connecting)
+                }
+            }
+
+            if let err = grpc.azureLoginError {
+                ErrorBanner(message: err)
+            }
+            if case .error(let message) = grpc.connectionState {
+                ErrorBanner(message: message)
+            }
+
+            // ── Action buttons ──
+            HStack {
+                Button("Sign out") {
+                    grpc.resetAzureLoginState()
+                }
+                .foregroundStyle(.secondary)
+                .buttonStyle(.plain)
+                .disabled(isConnecting || grpc.azureLoginPhase == .connecting)
+
+                Spacer()
+
+                if isConnecting || grpc.azureLoginPhase == .connecting {
+                    ProgressView().controlSize(.small)
+                }
+
+                if grpc.connectionState == .connected {
+                    Button("Disconnect") {
+                        Task { await disconnect() }
+                    }
+                    .disabled(isConnecting)
+
+                    Button("Switch") {
+                        Task { await connect() }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isConnecting
+                              || grpc.selectedAzureNamespaceFQNS.isEmpty
+                              || grpc.azureLoginPhase == .connecting)
+                } else {
+                    Button("Connect") {
+                        Task { await connect() }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isConnecting
+                              || grpc.selectedAzureNamespaceFQNS.isEmpty
+                              || grpc.isLoadingAzureNamespaces
+                              || grpc.azureLoginPhase == .connecting)
+                }
+            }
+        }
+        .onAppear { loadNamespacesIfNeeded() }
+        .onChange(of: grpc.selectedAzureSubscriptionId) { _, _ in
+            Task { await loadNamespaces() }
+        }
+    }
+
+    // MARK: - Actions
+
+    private func loadNamespacesIfNeeded() {
+        guard grpc.azureNamespaces.isEmpty,
+              !grpc.selectedAzureSubscriptionId.isEmpty,
+              !grpc.isLoadingAzureNamespaces else { return }
+        Task { await loadNamespaces() }
+    }
+
+    private func loadNamespaces() async {
+        guard !grpc.selectedAzureSubscriptionId.isEmpty else { return }
+        grpc.azureLoginError = nil
+        grpc.isLoadingAzureNamespaces = true
+        grpc.azureNamespaces = []
+        grpc.selectedAzureNamespaceFQNS = ""
+        defer { grpc.isLoadingAzureNamespaces = false }
+        do {
+            let nsList = try await grpc.listServiceBusNamespaces(subscriptionId: grpc.selectedAzureSubscriptionId)
+            grpc.azureNamespaces = nsList
+            grpc.selectedAzureNamespaceFQNS = nsList.first?.fullyQualifiedNamespace ?? ""
+        } catch {
+            grpc.azureLoginError = error.localizedDescription
+        }
+    }
+
+    private func connect() async {
+        grpc.azureLoginError = nil
+        grpc.azureLoginPhase = .connecting
+        isConnecting = true
+        defer {
+            isConnecting = false
+            grpc.azureLoginPhase = .ready
+        }
+        do {
+            _ = try await grpc.connectWithAzureAD(fullyQualifiedNamespace: grpc.selectedAzureNamespaceFQNS)
+        } catch {
+            grpc.azureLoginError = error.localizedDescription
+        }
+    }
+
+    private func disconnect() async {
+        do { _ = try await grpc.disconnect() } catch {}
+        // Stay in .ready phase so the pickers remain accessible for switching.
+        grpc.azureLoginPhase = .ready
+    }
+}
+
+// MARK: - Shared error banner
+
+private struct ErrorBanner: View {
+    let message: String
+    var body: some View {
+        HStack(alignment: .top, spacing: 6) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.red)
+                .padding(.top, 1)
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.red)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

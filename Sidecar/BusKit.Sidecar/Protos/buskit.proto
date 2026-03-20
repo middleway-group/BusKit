@@ -8,7 +8,10 @@ option csharp_namespace = "BusKit.Sidecar.Grpc";
 
 service BusKitService {
   rpc Connect (ConnectRequest) returns (ConnectReply);
+  rpc ConnectWithAzureAD (ConnectWithAzureADRequest) returns (ConnectReply);
   rpc Disconnect (DisconnectRequest) returns (DisconnectReply);
+  rpc ListAzureSubscriptions (ListAzureSubscriptionsRequest) returns (ListAzureSubscriptionsReply);
+  rpc ListServiceBusNamespaces (ListServiceBusNamespacesRequest) returns (ListServiceBusNamespacesReply);
   rpc ListQueues (ListQueuesRequest) returns (ListQueuesReply);
   rpc ListTopics (ListTopicsRequest) returns (ListTopicsReply);
   rpc ListSubscriptions (ListSubscriptionsRequest) returns (ListSubscriptionsReply);
@@ -27,6 +30,10 @@ message ConnectRequest {
   string connection_string = 1;
 }
 
+message ConnectWithAzureADRequest {
+  string fully_qualified_namespace = 1;
+}
+
 message ConnectReply {
   bool success = 1;
   string error = 2;
@@ -35,6 +42,35 @@ message ConnectReply {
 message DisconnectRequest {}
 message DisconnectReply {
   bool success = 1;
+}
+
+// ─── Azure AD / RBAC ────────────────────────────────
+
+message ListAzureSubscriptionsRequest {}
+
+message ListAzureSubscriptionsReply {
+  repeated AzureSubscriptionInfo subscriptions = 1;
+  string error = 2;
+}
+
+message AzureSubscriptionInfo {
+  string subscription_id = 1;
+  string display_name = 2;
+}
+
+message ListServiceBusNamespacesRequest {
+  string subscription_id = 1;
+}
+
+message ListServiceBusNamespacesReply {
+  repeated ServiceBusNamespaceInfo namespaces = 1;
+  string error = 2;
+}
+
+message ServiceBusNamespaceInfo {
+  string name = 1;
+  string fully_qualified_namespace = 2;
+  string resource_group = 3;
 }
 
 // ─── Queues ─────────────────────────────────────────
