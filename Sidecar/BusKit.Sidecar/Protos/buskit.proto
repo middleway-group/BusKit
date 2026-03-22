@@ -12,6 +12,7 @@ service BusKitService {
   rpc Disconnect (DisconnectRequest) returns (DisconnectReply);
   rpc ListAzureSubscriptions (ListAzureSubscriptionsRequest) returns (ListAzureSubscriptionsReply);
   rpc ListServiceBusNamespaces (ListServiceBusNamespacesRequest) returns (ListServiceBusNamespacesReply);
+  rpc CheckRbacPermissions (CheckRbacPermissionsRequest) returns (CheckRbacPermissionsReply);
   rpc ListQueues (ListQueuesRequest) returns (ListQueuesReply);
   rpc ListTopics (ListTopicsRequest) returns (ListTopicsReply);
   rpc ListSubscriptions (ListSubscriptionsRequest) returns (ListSubscriptionsReply);
@@ -71,6 +72,21 @@ message ServiceBusNamespaceInfo {
   string name = 1;
   string fully_qualified_namespace = 2;
   string resource_group = 3;
+}
+
+// ─── RBAC Permission Check ───────────────────────────
+
+message CheckRbacPermissionsRequest {
+  string subscription_id = 1;
+  string resource_group = 2;
+  string namespace_name = 3;
+}
+
+message CheckRbacPermissionsReply {
+  bool has_data_owner_role = 1;
+  bool has_contributor_role = 2;
+  string error = 3;
+  bool check_failed = 4;
 }
 
 // ─── Queues ─────────────────────────────────────────

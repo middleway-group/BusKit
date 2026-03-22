@@ -26,27 +26,39 @@ struct SubscriptionDetailView: View {
                 .tabItem { Label("Description", systemImage: "info.circle") }
                 .tag(0)
 
-            SubMessagesTab(subscription: subscription, isDLQ: false,
-                           trigger: messagesTrigger, requestedCount: messagesCount)
-                .tabItem { Label("Messages", systemImage: "list.bullet.rectangle") }
-                .tag(1)
+            if grpc.rbacAccessLevel.hasDataAccess {
+                SubMessagesTab(subscription: subscription, isDLQ: false,
+                               trigger: messagesTrigger, requestedCount: messagesCount)
+                    .tabItem { Label("Messages", systemImage: "list.bullet.rectangle") }
+                    .tag(1)
 
-            SubMessagesTab(subscription: subscription, isDLQ: true,
-                           trigger: dlqTrigger, requestedCount: dlqCount)
-                .tabItem { Label("Deadletter Messages", systemImage: "tray.and.arrow.down") }
-                .tag(2)
+                SubMessagesTab(subscription: subscription, isDLQ: true,
+                               trigger: dlqTrigger, requestedCount: dlqCount)
+                    .tabItem { Label("Deadletter Messages", systemImage: "tray.and.arrow.down") }
+                    .tag(2)
+            } else {
+                DataAccessRestrictedView()
+                    .tabItem { Label("Messages", systemImage: "list.bullet.rectangle") }
+                    .tag(1)
+
+                DataAccessRestrictedView()
+                    .tabItem { Label("Deadletter Messages", systemImage: "tray.and.arrow.down") }
+                    .tag(2)
+            }
         }
         .navigationTitle("\(subscription.topicName) / \(subscription.name)")
         .onChange(of: actionStore.pendingAction) { _, action in
             guard let action, action.entityKey == entityKey else { return }
-            if action.isDLQ {
-                dlqCount    = action.count
-                dlqTrigger  = UUID()
-                selectedTab = 2
-            } else {
-                messagesCount   = action.count
-                messagesTrigger = UUID()
-                selectedTab     = 1
+            if grpc.rbacAccessLevel.hasDataAccess {
+                if action.isDLQ {
+                    dlqCount    = action.count
+                    dlqTrigger  = UUID()
+                    selectedTab = 2
+                } else {
+                    messagesCount   = action.count
+                    messagesTrigger = UUID()
+                    selectedTab     = 1
+                }
             }
         }
     }
@@ -341,6 +353,27 @@ private struct SubMessagePropertiesPanel: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Data Access Restricted View
+
+@available(macOS 15.0, *)
+private struct DataAccessRestrictedView: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "lock.shield")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+            Text("Message Operations Restricted")
+                .font(.headline)
+            Text("The **Azure Service Bus Data Owner** role is required to peek, receive, or manage messages.\n\nContact your Azure administrator to assign this role.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 360)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

@@ -80,6 +80,18 @@ internal enum Buskit_BusKitService: Sendable {
                 method: "ListServiceBusNamespaces"
             )
         }
+        /// Namespace for "CheckRbacPermissions" metadata.
+        internal enum CheckRbacPermissions: Sendable {
+            /// Request type for "CheckRbacPermissions".
+            internal typealias Input = Buskit_CheckRbacPermissionsRequest
+            /// Response type for "CheckRbacPermissions".
+            internal typealias Output = Buskit_CheckRbacPermissionsReply
+            /// Descriptor for "CheckRbacPermissions".
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "CheckRbacPermissions"
+            )
+        }
         /// Namespace for "ListQueues" metadata.
         internal enum ListQueues: Sendable {
             /// Request type for "ListQueues".
@@ -207,6 +219,7 @@ internal enum Buskit_BusKitService: Sendable {
             Disconnect.descriptor,
             ListAzureSubscriptions.descriptor,
             ListServiceBusNamespaces.descriptor,
+            CheckRbacPermissions.descriptor,
             ListQueues.descriptor,
             ListTopics.descriptor,
             ListSubscriptions.descriptor,
@@ -329,6 +342,25 @@ extension Buskit_BusKitService {
             deserializer: some GRPCCore.MessageDeserializer<Buskit_ListServiceBusNamespacesReply>,
             options: GRPCCore.CallOptions,
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_ListServiceBusNamespacesReply>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "CheckRbacPermissions" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_CheckRbacPermissionsRequest` message.
+        ///   - serializer: A serializer for `Buskit_CheckRbacPermissionsRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_CheckRbacPermissionsReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func checkRbacPermissions<Result>(
+            request: GRPCCore.ClientRequest<Buskit_CheckRbacPermissionsRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_CheckRbacPermissionsRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_CheckRbacPermissionsReply>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_CheckRbacPermissionsReply>) async throws -> Result
         ) async throws -> Result where Result: Sendable
 
         /// Call the "ListQueues" method.
@@ -681,6 +713,36 @@ extension Buskit_BusKitService {
             try await self.client.unary(
                 request: request,
                 descriptor: Buskit_BusKitService.Method.ListServiceBusNamespaces.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "CheckRbacPermissions" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_CheckRbacPermissionsRequest` message.
+        ///   - serializer: A serializer for `Buskit_CheckRbacPermissionsRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_CheckRbacPermissionsReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        internal func checkRbacPermissions<Result>(
+            request: GRPCCore.ClientRequest<Buskit_CheckRbacPermissionsRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_CheckRbacPermissionsRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_CheckRbacPermissionsReply>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_CheckRbacPermissionsReply>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Buskit_BusKitService.Method.CheckRbacPermissions.descriptor,
                 serializer: serializer,
                 deserializer: deserializer,
                 options: options,
@@ -1116,6 +1178,31 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
+    /// Call the "CheckRbacPermissions" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_CheckRbacPermissionsRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func checkRbacPermissions<Result>(
+        request: GRPCCore.ClientRequest<Buskit_CheckRbacPermissionsRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_CheckRbacPermissionsReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.checkRbacPermissions(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_CheckRbacPermissionsRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_CheckRbacPermissionsReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
     /// Call the "ListQueues" method.
     ///
     /// - Parameters:
@@ -1507,6 +1594,35 @@ extension Buskit_BusKitService.ClientProtocol {
             metadata: metadata
         )
         return try await self.listServiceBusNamespaces(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "CheckRbacPermissions" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func checkRbacPermissions<Result>(
+        _ message: Buskit_CheckRbacPermissionsRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_CheckRbacPermissionsReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Buskit_CheckRbacPermissionsRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.checkRbacPermissions(
             request: request,
             options: options,
             onResponse: handleResponse

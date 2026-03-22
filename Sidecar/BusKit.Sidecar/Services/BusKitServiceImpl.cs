@@ -1,3 +1,5 @@
+using System.Net.Http.Headers;
+using System.Text.Json;
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
@@ -15,6 +17,14 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
     private ServiceBusAdministrationClient? _adminClient;
     private string? _connectionString;
     private Azure.Core.TokenCredential? _azureCredential;
+    private string? _userObjectId;
+
+    private static readonly HttpClient _httpClient = new();
+
+    // Known built-in role definition IDs
+    private const string RoleIdDataOwner   = "090c5cfd-751d-490a-894a-3ce6f1109419";
+    private const string RoleIdContributor = "b24988ac-6180-42a0-ab88-20f7382dd24c";
+    private const string RoleIdOwner       = "8e3af657-a8ff-443c-a75c-2fe8c4bcb635";
 
     // ── Connect (connection string) ───────────────────────
 
@@ -157,6 +167,7 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
                 .ExecuteAsync(CancellationToken.None);
 
             _azureCredential = new MsalTokenCredential(msalApp, authResult.Account);
+            _userObjectId    = authResult.Account.HomeAccountId.ObjectId;
 
             var armClient = new ArmClient(_azureCredential);
 
@@ -228,6 +239,226 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
             reply.Error = ex.Message;
         }
         return reply;
+    }
+
+    // ── Check RBAC Permissions ───────────────────────────
+
+    public override async Task<CheckRbacPermissionsReply> CheckRbacPermissions(
+        CheckRbacPermissionsRequest request, ServerCallContext context)
+    {
+        var reply = new CheckRbacPermissionsReply();
+
+        if (_azureCredential == null || string.IsNullOrEmpty(_userObjectId))
+        {
+            reply.CheckFailed = true;
+            reply.Error = "Not signed in to Azure.";
+            return reply;
+        }
+
+        try
+        {
+            // Acquire a management plane token.
+            var tokenCtx = new Azure.Core.TokenRequestContext(
+                new[] { "https://management.azure.com/.default" });
+            var token = await _azureCredential.GetTokenAsync(tokenCtx, context.CancellationToken);
+
+            // Build the target namespace resource scope.
+            var namespaceScope =
+                $"/subscriptions/{request.SubscriptionId}" +
+                $"/resourceGroups/{request.ResourceGroup}" +
+                $"/providers/Microsoft.ServiceBus/namespaces/{request.NamespaceName}";
+
+            // Collect role assignments at namespace, resource-group, and subscription scopes
+            // so inherited assignments are captured.
+            var scopes = new[]
+            {
+                namespaceScope,
+                $"/subscriptions/{request.SubscriptionId}/resourceGroups/{request.ResourceGroup}",
+                $"/subscriptions/{request.SubscriptionId}",
+            };
+
+            var assignedRoleDefIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var scope in scopes)
+            {
+                var url =
+                    $"https://management.azure.com{scope}" +
+                    $"/providers/Microsoft.Authorization/roleAssignments" +
+                    $"?$filter=principalId+eq+%27{_userObjectId}%27&api-version=2022-04-01";
+
+                using var req = new HttpRequestMessage(HttpMethod.Get, url);
+                req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
+                req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                using var resp = await _httpClient.SendAsync(req, context.CancellationToken);
+                if (!resp.IsSuccessStatusCode) continue;
+
+                var json = await resp.Content.ReadAsStringAsync(context.CancellationToken);
+                using var doc = JsonDocument.Parse(json);
+
+                if (!doc.RootElement.TryGetProperty("value", out var values)) continue;
+
+                foreach (var assignment in values.EnumerateArray())
+                {
+                    if (!assignment.TryGetProperty("properties", out var props)) continue;
+
+                    // Ensure this assignment actually covers our namespace (scope check).
+                    if (props.TryGetProperty("scope", out var scopeProp))
+                    {
+                        var assignmentScope = scopeProp.GetString() ?? "";
+                        // The assignment is effective if the namespace scope starts with it.
+                        if (!namespaceScope.StartsWith(assignmentScope, StringComparison.OrdinalIgnoreCase))
+                            continue;
+                    }
+
+                    if (!props.TryGetProperty("roleDefinitionId", out var roleDefProp)) continue;
+                    var rolePath = roleDefProp.GetString() ?? "";
+                    // ARM returns the full path; extract the GUID at the end.
+                    var roleGuid = rolePath.Split('/').Last();
+                    assignedRoleDefIds.Add(roleGuid);
+                }
+            }
+
+            // Check for Data Owner: exact role ID or Owner (which implies all perms).
+            reply.HasDataOwnerRole = assignedRoleDefIds.Contains(RoleIdDataOwner)
+                                  || assignedRoleDefIds.Contains(RoleIdOwner)
+                                  || await HasDataOwnerActionsAsync(request, token.Token, namespaceScope, context.CancellationToken);
+
+            // Check for Contributor/Owner (management plane).
+            reply.HasContributorRole = assignedRoleDefIds.Contains(RoleIdContributor)
+                                    || assignedRoleDefIds.Contains(RoleIdOwner)
+                                    || await HasContributorActionsAsync(request, token.Token, namespaceScope, context.CancellationToken);
+        }
+        catch (Exception ex)
+        {
+            reply.CheckFailed = true;
+            reply.Error = ex.Message;
+        }
+
+        return reply;
+    }
+
+    // Checks whether any custom role assigned to the user grants full Service Bus data actions.
+    private async Task<bool> HasDataOwnerActionsAsync(
+        CheckRbacPermissionsRequest request,
+        string bearerToken,
+        string namespaceScope,
+        CancellationToken ct)
+    {
+        return await HasRoleWithActionsAsync(
+            request, bearerToken, namespaceScope, ct,
+            dataAction: "Microsoft.ServiceBus/namespaces/messages/send/action",
+            wildcardAction: "Microsoft.ServiceBus/*");
+    }
+
+    private async Task<bool> HasContributorActionsAsync(
+        CheckRbacPermissionsRequest request,
+        string bearerToken,
+        string namespaceScope,
+        CancellationToken ct)
+    {
+        return await HasRoleWithActionsAsync(
+            request, bearerToken, namespaceScope, ct,
+            dataAction: null,
+            wildcardAction: "Microsoft.ServiceBus/*",
+            managementAction: "Microsoft.ServiceBus/namespaces/write");
+    }
+
+    // Resolves custom roles assigned to the user and checks their action lists.
+    private async Task<bool> HasRoleWithActionsAsync(
+        CheckRbacPermissionsRequest request,
+        string bearerToken,
+        string namespaceScope,
+        CancellationToken ct,
+        string? dataAction,
+        string? wildcardAction,
+        string? managementAction = null)
+    {
+        try
+        {
+            // Enumerate assignments at subscription scope to find custom roles.
+            var url =
+                $"https://management.azure.com/subscriptions/{request.SubscriptionId}" +
+                $"/providers/Microsoft.Authorization/roleAssignments" +
+                $"?$filter=principalId+eq+%27{_userObjectId}%27&api-version=2022-04-01";
+
+            using var req = new HttpRequestMessage(HttpMethod.Get, url);
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+            req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            using var resp = await _httpClient.SendAsync(req, ct);
+            if (!resp.IsSuccessStatusCode) return false;
+
+            var json = await resp.Content.ReadAsStringAsync(ct);
+            using var doc = JsonDocument.Parse(json);
+
+            if (!doc.RootElement.TryGetProperty("value", out var values)) return false;
+
+            foreach (var assignment in values.EnumerateArray())
+            {
+                if (!assignment.TryGetProperty("properties", out var props)) continue;
+
+                if (props.TryGetProperty("scope", out var scopeProp))
+                {
+                    var assignmentScope = scopeProp.GetString() ?? "";
+                    if (!namespaceScope.StartsWith(assignmentScope, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                }
+
+                if (!props.TryGetProperty("roleDefinitionId", out var roleDefProp)) continue;
+                var rolePath = roleDefProp.GetString() ?? "";
+                var roleGuid = rolePath.Split('/').Last();
+
+                // Skip built-ins already handled by role ID.
+                if (roleGuid.Equals(RoleIdDataOwner, StringComparison.OrdinalIgnoreCase) ||
+                    roleGuid.Equals(RoleIdContributor, StringComparison.OrdinalIgnoreCase) ||
+                    roleGuid.Equals(RoleIdOwner, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // Fetch the role definition to inspect its actions/dataActions.
+                var roleDefUrl =
+                    $"https://management.azure.com{rolePath}?api-version=2022-04-01";
+                using var defReq = new HttpRequestMessage(HttpMethod.Get, roleDefUrl);
+                defReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+                defReq.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                using var defResp = await _httpClient.SendAsync(defReq, ct);
+                if (!defResp.IsSuccessStatusCode) continue;
+
+                var defJson = await defResp.Content.ReadAsStringAsync(ct);
+                using var defDoc = JsonDocument.Parse(defJson);
+
+                if (!defDoc.RootElement.TryGetProperty("properties", out var defProps)) continue;
+                if (!defProps.TryGetProperty("permissions", out var permissions)) continue;
+
+                foreach (var permission in permissions.EnumerateArray())
+                {
+                    if (wildcardAction != null && HasAction(permission, "actions", wildcardAction))      return true;
+                    if (wildcardAction != null && HasAction(permission, "dataActions", wildcardAction))  return true;
+                    if (dataAction      != null && HasAction(permission, "dataActions", dataAction))     return true;
+                    if (managementAction != null && HasAction(permission, "actions", managementAction))  return true;
+                }
+            }
+        }
+        catch { /* Non-fatal: custom-role check is best-effort */ }
+
+        return false;
+    }
+
+    private static bool HasAction(JsonElement permission, string propertyName, string targetAction)
+    {
+        if (!permission.TryGetProperty(propertyName, out var actions)) return false;
+        foreach (var action in actions.EnumerateArray())
+        {
+            var val = action.GetString();
+            if (val == null) continue;
+            if (val == "*" || val == targetAction) return true;
+            // Wildcard prefix match, e.g. "Microsoft.ServiceBus/*"
+            if (val.EndsWith("/*") &&
+                targetAction.StartsWith(val[..^2], StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
     }
 
     // ── Disconnect ───────────────────────────────────────

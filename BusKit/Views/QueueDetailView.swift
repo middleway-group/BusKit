@@ -22,25 +22,37 @@ struct QueueDetailView: View {
                 .tabItem { Label("Description", systemImage: "info.circle") }
                 .tag(0)
 
-            MessagesTab(queue: queue, isDLQ: false, trigger: messagesTrigger, requestedCount: messagesCount)
-                .tabItem { Label("Messages", systemImage: "list.bullet.rectangle") }
-                .tag(1)
+            if grpc.rbacAccessLevel.hasDataAccess {
+                MessagesTab(queue: queue, isDLQ: false, trigger: messagesTrigger, requestedCount: messagesCount)
+                    .tabItem { Label("Messages", systemImage: "list.bullet.rectangle") }
+                    .tag(1)
 
-            MessagesTab(queue: queue, isDLQ: true, trigger: dlqTrigger, requestedCount: dlqCount)
-                .tabItem { Label("Deadletter Messages", systemImage: "tray.and.arrow.down") }
-                .tag(2)
+                MessagesTab(queue: queue, isDLQ: true, trigger: dlqTrigger, requestedCount: dlqCount)
+                    .tabItem { Label("Deadletter Messages", systemImage: "tray.and.arrow.down") }
+                    .tag(2)
+            } else {
+                DataAccessRestrictedView()
+                    .tabItem { Label("Messages", systemImage: "list.bullet.rectangle") }
+                    .tag(1)
+
+                DataAccessRestrictedView()
+                    .tabItem { Label("Deadletter Messages", systemImage: "tray.and.arrow.down") }
+                    .tag(2)
+            }
         }
         .navigationTitle(queue.name)
         .onChange(of: actionStore.pendingAction) { _, action in
             guard let action, action.entityKey == EntityActionStore.queueKey(queue.name) else { return }
-            if action.isDLQ {
-                dlqCount    = action.count
-                dlqTrigger  = UUID()
-                selectedTab = 2
-            } else {
-                messagesCount   = action.count
-                messagesTrigger = UUID()
-                selectedTab     = 1
+            if grpc.rbacAccessLevel.hasDataAccess {
+                if action.isDLQ {
+                    dlqCount    = action.count
+                    dlqTrigger  = UUID()
+                    selectedTab = 2
+                } else {
+                    messagesCount   = action.count
+                    messagesTrigger = UUID()
+                    selectedTab     = 1
+                }
             }
         }
     }
@@ -429,6 +441,27 @@ private struct MessagePropertiesPanel: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Data Access Restricted View
+
+@available(macOS 15.0, *)
+private struct DataAccessRestrictedView: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "lock.shield")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+            Text("Message Operations Restricted")
+                .font(.headline)
+            Text("The **Azure Service Bus Data Owner** role is required to peek, receive, or manage messages.\n\nContact your Azure administrator to assign this role.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 360)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

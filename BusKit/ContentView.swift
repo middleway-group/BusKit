@@ -6,6 +6,11 @@ struct ContentView: View {
     @State private var connectionString: String = ""
     @State private var selection: SidebarSelection?
 
+    // RBAC dialog: track which access level is currently shown so the sheet
+    // is not re-triggered if the user has already dismissed it for this session.
+    @State private var shownRbacLevel: RbacAccessLevel?
+    @State private var showRbacDialog = false
+
     var body: some View {
         NavigationSplitView {
             SidebarView(selection: $selection)
@@ -28,12 +33,46 @@ struct ContentView: View {
             }
         }
         .onChange(of: grpc.connectionState) { _, newState in
-            // Clear the detail panel whenever we disconnect or start reconnecting
-            // to a different namespace, so stale data from the previous
-            // connection is never shown.
             if newState != .connected {
                 selection = nil
+                showRbacDialog = false
+                shownRbacLevel = nil
             }
+        }
+        .onChange(of: grpc.rbacAccessLevel) { _, newLevel in
+            let needsDialog: Bool
+            switch newLevel {
+            case .dataOnly, .managementOnly, .denied, .checkFailed:
+                // Only show once per level change (avoids re-triggering after dismiss).
+                needsDialog = newLevel != shownRbacLevel
+            default:
+                needsDialog = false
+            }
+            if needsDialog {
+                shownRbacLevel = newLevel
+                showRbacDialog = true
+            }
+        }
+        .sheet(isPresented: $showRbacDialog) {
+            RbacPermissionDialog(
+                accessLevel: grpc.rbacAccessLevel,
+                onDismiss: { showRbacDialog = false },
+                onRetry: {
+                    showRbacDialog = false
+                    shownRbacLevel = nil
+                    grpc.refreshRbacPermissions()
+                },
+                onSwitchToConnectionString: {
+                    showRbacDialog = false
+                    Task {
+                        try? await grpc.disconnect()
+                        grpc.resetAzureLoginState()
+                    }
+                }
+            )
+            .environment(grpc)
+            // Prevent dismissal by clicking outside for the access-denied case.
+            .interactiveDismissDisabled(grpc.rbacAccessLevel == .denied)
         }
     }
 }

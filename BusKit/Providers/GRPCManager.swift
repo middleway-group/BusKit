@@ -37,6 +37,12 @@ final class GRPCManager {
     var selectedAzureNamespaceFQNS: String = ""
     var isLoadingAzureNamespaces: Bool = false
 
+    // MARK: - RBAC State
+
+    var rbacAccessLevel: RbacAccessLevel = .notApplicable
+    /// Namespace FQNS for which the current rbacAccessLevel was computed (session cache key).
+    private var rbacCheckedNamespace: String?
+
     private var grpcClient: GRPCClient<HTTP2ClientTransport.Posix>?
     private var buskit: Buskit_BusKitService.Client<HTTP2ClientTransport.Posix>?
     private var runTask: Task<Void, Never>?
@@ -301,6 +307,63 @@ final class GRPCManager {
         }
     }
 
+    // MARK: - RBAC Permission Check
+
+    /// Looks up the resource group for the currently selected namespace FQNS.
+    var selectedNamespaceInfo: Buskit_ServiceBusNamespaceInfo? {
+        azureNamespaces.first { $0.fullyQualifiedNamespace == selectedAzureNamespaceFQNS }
+    }
+
+    /// Checks role assignments for the connected Azure AD namespace and updates `rbacAccessLevel`.
+    /// Results are cached per namespace for the session lifetime; pass `force: true` to refresh.
+    func checkRbacPermissions(force: Bool = false) async {
+        guard let nsInfo = selectedNamespaceInfo,
+              !selectedAzureSubscriptionId.isEmpty else {
+            rbacAccessLevel = .checkFailed("Namespace or subscription information is unavailable.")
+            return
+        }
+
+        // Return cached result unless a refresh is requested.
+        if !force, rbacCheckedNamespace == selectedAzureNamespaceFQNS,
+           rbacAccessLevel != .checking {
+            return
+        }
+
+        rbacAccessLevel = .checking
+        rbacCheckedNamespace = selectedAzureNamespaceFQNS
+
+        guard let buskit else {
+            rbacAccessLevel = .checkFailed("gRPC client is not ready.")
+            return
+        }
+
+        do {
+            var req = Buskit_CheckRbacPermissionsRequest()
+            req.subscriptionID = selectedAzureSubscriptionId
+            req.resourceGroup  = nsInfo.resourceGroup
+            req.namespaceName  = nsInfo.name
+            let reply: Buskit_CheckRbacPermissionsReply = try await buskit.checkRbacPermissions(req)
+
+            if reply.checkFailed {
+                rbacAccessLevel = .checkFailed(reply.error.isEmpty ? "Permission check failed." : reply.error)
+            } else {
+                switch (reply.hasDataOwnerRole_p, reply.hasContributorRole_p) {
+                case (true,  true):  rbacAccessLevel = .full
+                case (true,  false): rbacAccessLevel = .dataOnly
+                case (false, true):  rbacAccessLevel = .managementOnly
+                case (false, false): rbacAccessLevel = .denied
+                }
+            }
+        } catch {
+            rbacAccessLevel = .checkFailed(error.localizedDescription)
+        }
+    }
+
+    /// Forces a re-check of RBAC permissions (e.g. from a "Refresh Permissions" menu item).
+    func refreshRbacPermissions() {
+        Task { await checkRbacPermissions(force: true) }
+    }
+
     // MARK: - Disconnect
 
     func disconnect() async throws -> Buskit_DisconnectReply {
@@ -309,6 +372,8 @@ final class GRPCManager {
         let reply = try await buskit.disconnect(req)
         connectionState = .disconnected
         namespaceName = nil
+        rbacAccessLevel = .notApplicable
+        rbacCheckedNamespace = nil
         // Do NOT reset Azure login state here — the user stays signed in so
         // they can immediately switch to another namespace. Call
         // resetAzureLoginState() explicitly when the user clicks "Sign out".
@@ -323,6 +388,8 @@ final class GRPCManager {
         selectedAzureSubscriptionId = ""
         selectedAzureNamespaceFQNS = ""
         isLoadingAzureNamespaces = false
+        rbacAccessLevel = .notApplicable
+        rbacCheckedNamespace = nil
     }
 
     private static func extractNamespace(from connectionString: String) -> String? {

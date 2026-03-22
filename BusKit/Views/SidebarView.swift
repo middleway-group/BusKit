@@ -222,26 +222,36 @@ struct SidebarView: View {
 
     @ViewBuilder
     private func queueContextMenu(for queue: QueueItem) -> some View {
+        let hasData = grpc.rbacAccessLevel.hasDataAccess
         Button("Receive Messages") {
             model.contextTarget  = .queue(queue)
             model.receiveIsDLQ   = false
             model.showReceiveSheet = true
         }
+        .disabled(!hasData)
         Button("Receive Deadletter Messages") {
             model.contextTarget  = .queue(queue)
             model.receiveIsDLQ   = true
             model.showReceiveSheet = true
         }
+        .disabled(!hasData)
         Divider()
         Button("Purge Messages", role: .destructive) {
             model.contextTarget = .queue(queue)
             model.purgeIsDLQ    = false
             model.showPurgeAlert = true
         }
+        .disabled(!hasData)
         Button("Purge Deadletter Messages", role: .destructive) {
             model.contextTarget = .queue(queue)
             model.purgeIsDLQ    = true
             model.showPurgeAlert = true
+        }
+        .disabled(!hasData)
+        if !hasData {
+            Divider()
+            Text("Message operations require the Azure Service Bus Data Owner role.")
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -444,26 +454,36 @@ private struct SubscriptionRow: View {
         }
         .tag(SidebarSelection.subscription(sub))
         .contextMenu {
+            let hasData = grpc.rbacAccessLevel.hasDataAccess
             Button("Receive Messages") {
                 model.contextTarget    = .subscription(sub)
                 model.receiveIsDLQ     = false
                 model.showReceiveSheet = true
             }
+            .disabled(!hasData)
             Button("Receive Deadletter Messages") {
                 model.contextTarget    = .subscription(sub)
                 model.receiveIsDLQ     = true
                 model.showReceiveSheet = true
             }
+            .disabled(!hasData)
             Divider()
             Button("Purge Messages", role: .destructive) {
                 model.contextTarget  = .subscription(sub)
                 model.purgeIsDLQ     = false
                 model.showPurgeAlert = true
             }
+            .disabled(!hasData)
             Button("Purge Deadletter Messages", role: .destructive) {
                 model.contextTarget  = .subscription(sub)
                 model.purgeIsDLQ     = true
                 model.showPurgeAlert = true
+            }
+            .disabled(!hasData)
+            if !hasData {
+                Divider()
+                Text("Message operations require the Azure Service Bus Data Owner role.")
+                    .foregroundStyle(.secondary)
             }
         }
         .onChange(of: isExpanded) { _, expanded in

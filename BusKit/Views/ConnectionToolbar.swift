@@ -27,7 +27,15 @@ struct ConnectionToolbar: View {
 
     private var statusLabel: String {
         switch grpc.connectionState {
-        case .connected:    return "Connected"
+        case .connected:
+            switch grpc.rbacAccessLevel {
+            case .checking:          return "Checking permissions…"
+            case .dataOnly:          return "Connected (Limited)"
+            case .managementOnly:    return "Connected (Limited)"
+            case .denied:            return "Connected (No Access)"
+            case .checkFailed:       return "Connected (Unverified)"
+            default:                 return "Connected"
+            }
         case .connecting:   return grpc.isSidecarReady ? "Connecting…" : "Starting…"
         case .disconnected: return "Connect"
         case .error:        return "Connection Error"
@@ -36,7 +44,15 @@ struct ConnectionToolbar: View {
 
     private var stateColor: Color {
         switch grpc.connectionState {
-        case .connected:    return .green
+        case .connected:
+            switch grpc.rbacAccessLevel {
+            case .checking:       return .orange
+            case .dataOnly:       return .yellow
+            case .managementOnly: return .yellow
+            case .denied:         return .red
+            case .checkFailed:    return .orange
+            default:              return .green
+            }
         case .connecting:   return .orange
         case .error:        return .red
         case .disconnected: return .gray
@@ -313,6 +329,15 @@ private struct AzureNamespaceForm: View {
                 .buttonStyle(.plain)
                 .disabled(isConnecting || grpc.azureLoginPhase == .connecting)
 
+                if grpc.connectionState == .connected {
+                    Button("Refresh Permissions") {
+                        grpc.refreshRbacPermissions()
+                    }
+                    .foregroundStyle(.secondary)
+                    .buttonStyle(.plain)
+                    .disabled(grpc.rbacAccessLevel == .checking)
+                }
+
                 Spacer()
 
                 if isConnecting || grpc.azureLoginPhase == .connecting {
@@ -385,6 +410,10 @@ private struct AzureNamespaceForm: View {
         }
         do {
             _ = try await grpc.connectWithAzureAD(fullyQualifiedNamespace: grpc.selectedAzureNamespaceFQNS)
+            // Run RBAC check after a successful Azure AD connection.
+            if grpc.connectionState == .connected {
+                await grpc.checkRbacPermissions()
+            }
         } catch {
             grpc.azureLoginError = error.localizedDescription
         }

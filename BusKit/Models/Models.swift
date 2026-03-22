@@ -29,6 +29,43 @@ enum ConnectionState: Equatable {
     }
 }
 
+// MARK: - RBAC Access Level
+
+/// Describes the level of access a user has on the connected Service Bus namespace
+/// after verifying Azure role assignments.
+enum RbacAccessLevel: Equatable {
+    /// Auth via Connection String — RBAC check is not applicable.
+    case notApplicable
+    /// RBAC check is currently in progress.
+    case checking
+    /// User holds both Data Owner and Contributor (or Owner). Full access.
+    case full
+    /// User has Data Owner only. Message operations work; management-plane changes are restricted.
+    case dataOnly
+    /// User has Contributor only. Properties/management works; message operations are restricted.
+    case managementOnly
+    /// User has neither required role. Access denied.
+    case denied
+    /// The role-assignment API call failed or timed out.
+    case checkFailed(String)
+
+    /// Whether the user can perform data-plane operations (peek, receive, purge, resubmit).
+    var hasDataAccess: Bool {
+        switch self {
+        case .full, .dataOnly, .notApplicable: return true
+        default: return false
+        }
+    }
+
+    /// Whether the user can perform management-plane operations (update TTL, entity properties).
+    var hasManagementAccess: Bool {
+        switch self {
+        case .full, .managementOnly, .notApplicable: return true
+        default: return false
+        }
+    }
+}
+
 // MARK: - Sidebar selection
 
 enum SidebarSelection: Hashable {

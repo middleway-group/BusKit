@@ -160,6 +160,40 @@ public struct Buskit_ServiceBusNamespaceInfo: Sendable {
   public init() {}
 }
 
+public struct Buskit_CheckRbacPermissionsRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var subscriptionID: String = String()
+
+  public var resourceGroup: String = String()
+
+  public var namespaceName: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_CheckRbacPermissionsReply: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var hasDataOwnerRole_p: Bool = false
+
+  public var hasContributorRole_p: Bool = false
+
+  public var error: String = String()
+
+  public var checkFailed: Bool = false
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
 public struct Buskit_ListQueuesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -941,6 +975,91 @@ extension Buskit_ServiceBusNamespaceInfo: SwiftProtobuf.Message, SwiftProtobuf._
     if lhs.name != rhs.name {return false}
     if lhs.fullyQualifiedNamespace != rhs.fullyQualifiedNamespace {return false}
     if lhs.resourceGroup != rhs.resourceGroup {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_CheckRbacPermissionsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".CheckRbacPermissionsRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}subscription_id\0\u{3}resource_group\0\u{3}namespace_name\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.subscriptionID) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.resourceGroup) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.namespaceName) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.subscriptionID.isEmpty {
+      try visitor.visitSingularStringField(value: self.subscriptionID, fieldNumber: 1)
+    }
+    if !self.resourceGroup.isEmpty {
+      try visitor.visitSingularStringField(value: self.resourceGroup, fieldNumber: 2)
+    }
+    if !self.namespaceName.isEmpty {
+      try visitor.visitSingularStringField(value: self.namespaceName, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_CheckRbacPermissionsRequest, rhs: Buskit_CheckRbacPermissionsRequest) -> Bool {
+    if lhs.subscriptionID != rhs.subscriptionID {return false}
+    if lhs.resourceGroup != rhs.resourceGroup {return false}
+    if lhs.namespaceName != rhs.namespaceName {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_CheckRbacPermissionsReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".CheckRbacPermissionsReply"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}has_data_owner_role\0\u{3}has_contributor_role\0\u{1}error\0\u{3}check_failed\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularBoolField(value: &self.hasDataOwnerRole_p) }()
+      case 2: try { try decoder.decodeSingularBoolField(value: &self.hasContributorRole_p) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.error) }()
+      case 4: try { try decoder.decodeSingularBoolField(value: &self.checkFailed) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.hasDataOwnerRole_p != false {
+      try visitor.visitSingularBoolField(value: self.hasDataOwnerRole_p, fieldNumber: 1)
+    }
+    if self.hasContributorRole_p != false {
+      try visitor.visitSingularBoolField(value: self.hasContributorRole_p, fieldNumber: 2)
+    }
+    if !self.error.isEmpty {
+      try visitor.visitSingularStringField(value: self.error, fieldNumber: 3)
+    }
+    if self.checkFailed != false {
+      try visitor.visitSingularBoolField(value: self.checkFailed, fieldNumber: 4)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_CheckRbacPermissionsReply, rhs: Buskit_CheckRbacPermissionsReply) -> Bool {
+    if lhs.hasDataOwnerRole_p != rhs.hasDataOwnerRole_p {return false}
+    if lhs.hasContributorRole_p != rhs.hasContributorRole_p {return false}
+    if lhs.error != rhs.error {return false}
+    if lhs.checkFailed != rhs.checkFailed {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
