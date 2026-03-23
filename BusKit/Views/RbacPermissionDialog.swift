@@ -242,7 +242,9 @@ private struct AccessDeniedSheet: View {
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.return)
 
-                Button("Quit") { NSApp.terminate(nil) }
+                Button("Quit") {
+                    DispatchQueue.main.async { NSApp.terminate(nil) }
+                }
                     .foregroundStyle(.red)
             }
         }
