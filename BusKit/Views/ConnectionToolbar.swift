@@ -23,6 +23,14 @@ struct ConnectionToolbar: View {
             ConnectionPopover(connectionString: $connectionString, isConnecting: $isConnecting)
                 .environment(grpc)
         }
+        .onChange(of: grpc.azureLoginPhase) { _, newPhase in
+            // Auto-open the popover once the browser sign-in completes so the
+            // user can immediately pick a subscription and namespace without
+            // having to click the toolbar button a second time.
+            if newPhase == .ready {
+                showPopover = true
+            }
+        }
     }
 
     private var statusLabel: String {
