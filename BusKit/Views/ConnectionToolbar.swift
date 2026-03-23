@@ -45,7 +45,7 @@ struct ConnectionToolbar: View {
             default:                 return "Connected"
             }
         case .connecting:   return grpc.isSidecarReady ? "Connecting…" : "Starting…"
-        case .disconnected: return "Connect"
+        case .disconnected: return grpc.azureLoginPhase == .signingIn ? "Signing in…" : "Connect"
         case .error:        return "Connection Error"
         }
     }
