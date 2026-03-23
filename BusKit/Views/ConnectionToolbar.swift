@@ -23,11 +23,21 @@ struct ConnectionToolbar: View {
             ConnectionPopover(connectionString: $connectionString, isConnecting: $isConnecting)
                 .environment(grpc)
         }
+        // Re-open the popover when the app comes back to the foreground after
+        // the browser-based Azure sign-in completes. The phase may already be
+        // .ready before we return to foreground, so onChange alone is not
+        // sufficient — the notification fires exactly when the user sees the app.
+        .onReceive(NotificationCenter.default.publisher(
+            for: NSApplication.didBecomeActiveNotification)
+        ) { _ in
+            if grpc.azureLoginPhase == .ready && grpc.connectionState != .connected {
+                showPopover = true
+            }
+        }
+        // Fallback: also catch the transition while the app stays in foreground
+        // (e.g. when using an in-app browser or if macOS keeps the popover open).
         .onChange(of: grpc.azureLoginPhase) { _, newPhase in
-            // Auto-open the popover once the browser sign-in completes so the
-            // user can immediately pick a subscription and namespace without
-            // having to click the toolbar button a second time.
-            if newPhase == .ready {
+            if newPhase == .ready && grpc.connectionState != .connected {
                 showPopover = true
             }
         }
