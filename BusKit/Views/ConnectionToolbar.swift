@@ -5,11 +5,28 @@ struct ConnectionToolbar: View {
     @Environment(GRPCManager.self) var grpc
     @Binding var connectionString: String
     @State private var isConnecting = false
-    @State private var showPopover = false
+    @State private var manualShowPopover = false
+
+    /// The popover is shown whenever the user manually opens it OR whenever
+    /// Azure auth has completed and a namespace hasn't been chosen yet.
+    /// Because azureLoginPhase and connectionState are both read here, SwiftUI
+    /// re-evaluates this binding on every state change — no onChange/notification
+    /// needed. Dismissing the popover writes false to manualShowPopover; the
+    /// auto-open condition continues to hold until the user connects or signs out.
+    private var popoverBinding: Binding<Bool> {
+        Binding(
+            get: {
+                manualShowPopover
+                || (grpc.azureLoginPhase == .ready && grpc.connectionState != .connected)
+                || (grpc.azureLoginPhase == .connecting)
+            },
+            set: { manualShowPopover = $0 }
+        )
+    }
 
     var body: some View {
         Button {
-            showPopover.toggle()
+            manualShowPopover.toggle()
         } label: {
             HStack(spacing: 6) {
                 Circle()
@@ -19,27 +36,9 @@ struct ConnectionToolbar: View {
                     .font(.subheadline)
             }
         }
-        .popover(isPresented: $showPopover, arrowEdge: .bottom) {
+        .popover(isPresented: popoverBinding, arrowEdge: .bottom) {
             ConnectionPopover(connectionString: $connectionString, isConnecting: $isConnecting)
                 .environment(grpc)
-        }
-        // Re-open the popover when the app comes back to the foreground after
-        // the browser-based Azure sign-in completes. The phase may already be
-        // .ready before we return to foreground, so onChange alone is not
-        // sufficient — the notification fires exactly when the user sees the app.
-        .onReceive(NotificationCenter.default.publisher(
-            for: NSApplication.didBecomeActiveNotification)
-        ) { _ in
-            if grpc.azureLoginPhase == .ready && grpc.connectionState != .connected {
-                showPopover = true
-            }
-        }
-        // Fallback: also catch the transition while the app stays in foreground
-        // (e.g. when using an in-app browser or if macOS keeps the popover open).
-        .onChange(of: grpc.azureLoginPhase) { _, newPhase in
-            if newPhase == .ready && grpc.connectionState != .connected {
-                showPopover = true
-            }
         }
     }
 
