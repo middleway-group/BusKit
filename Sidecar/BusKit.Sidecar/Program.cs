@@ -3,6 +3,9 @@ using BusKit.Sidecar.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddGrpc();
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient(nameof(PermissionEvaluationEngine));
+builder.Services.AddSingleton<PermissionEvaluationEngine>();
 builder.Services.AddSingleton<BusKitServiceImpl>();
 
 builder.WebHost.ConfigureKestrel(options =>

@@ -40,6 +40,19 @@ final class GRPCManager {
     // MARK: - RBAC State
 
     var rbacAccessLevel: RbacAccessLevel = .notApplicable
+    /// Granular 5-tier classification; populated alongside rbacAccessLevel.
+    var accessTier: AccessTier = .noAccess
+    /// Per-capability boolean map derived from the server-side tier evaluation.
+    var capabilityMap: CapabilityMap = .none
+    /// Upgrade recommendation for the current tier (nil when fully accessible).
+    var upgradeRecommendation: UpgradeRecommendation? = nil
+    /// Whether the current tier is a partial/non-standard access combination.
+    var isPartialAccess: Bool = false
+    /// When the RBAC evaluation was last performed.
+    var rbacEvaluatedAt: Date? = nil
+    /// When the server-side cache entry expires.
+    var rbacExpiresAt: Date? = nil
+
     /// Namespace FQNS for which the current rbacAccessLevel was computed (session cache key).
     private var rbacCheckedNamespace: String?
 
@@ -314,8 +327,8 @@ final class GRPCManager {
         azureNamespaces.first { $0.fullyQualifiedNamespace == selectedAzureNamespaceFQNS }
     }
 
-    /// Checks role assignments for the connected Azure AD namespace and updates `rbacAccessLevel`.
-    /// Results are cached per namespace for the session lifetime; pass `force: true` to refresh.
+    /// Evaluates effective RBAC permissions for the selected namespace and updates all RBAC state.
+    /// Results are cached server-side; pass `force: true` to bypass the local namespace cache.
     func checkRbacPermissions(force: Bool = false) async {
         guard let nsInfo = selectedNamespaceInfo,
               !selectedAzureSubscriptionId.isEmpty else {
@@ -345,8 +358,27 @@ final class GRPCManager {
             let reply: Buskit_CheckRbacPermissionsReply = try await buskit.checkRbacPermissions(req)
 
             if reply.checkFailed {
-                rbacAccessLevel = .checkFailed(reply.error.isEmpty ? "Permission check failed." : reply.error)
+                let msg = reply.error.isEmpty ? "Permission check failed." : reply.error
+                rbacAccessLevel = .checkFailed(msg)
+                accessTier = .noAccess
+                capabilityMap = .none
+                upgradeRecommendation = nil
+                isPartialAccess = false
             } else {
+                // ── Tier-based state (new) ────────────────────────────
+                accessTier            = AccessTier(from: reply.accessTier)
+                capabilityMap         = CapabilityMap(from: reply)
+                upgradeRecommendation = UpgradeRecommendation(from: reply)
+                isPartialAccess       = reply.isPartialAccess
+
+                if reply.evaluatedAtUnixMs > 0 {
+                    rbacEvaluatedAt = Date(timeIntervalSince1970: Double(reply.evaluatedAtUnixMs) / 1000)
+                }
+                if reply.expiresAtUnixMs > 0 {
+                    rbacExpiresAt = Date(timeIntervalSince1970: Double(reply.expiresAtUnixMs) / 1000)
+                }
+
+                // ── Legacy access level (backward compat with existing dialog) ──
                 switch (reply.hasDataOwnerRole_p, reply.hasContributorRole_p) {
                 case (true,  true):  rbacAccessLevel = .full
                 case (true,  false): rbacAccessLevel = .dataOnly
@@ -356,10 +388,12 @@ final class GRPCManager {
             }
         } catch {
             rbacAccessLevel = .checkFailed(error.localizedDescription)
+            accessTier = .noAccess
+            capabilityMap = .none
         }
     }
 
-    /// Forces a re-check of RBAC permissions (e.g. from a "Refresh Permissions" menu item).
+    /// Forces a re-check of RBAC permissions (e.g. from a "Re-evaluate my access" button).
     func refreshRbacPermissions() {
         Task { await checkRbacPermissions(force: true) }
     }
@@ -373,6 +407,12 @@ final class GRPCManager {
         connectionState = .disconnected
         namespaceName = nil
         rbacAccessLevel = .notApplicable
+        accessTier = .noAccess
+        capabilityMap = .none
+        upgradeRecommendation = nil
+        isPartialAccess = false
+        rbacEvaluatedAt = nil
+        rbacExpiresAt = nil
         rbacCheckedNamespace = nil
         // Do NOT reset Azure login state here — the user stays signed in so
         // they can immediately switch to another namespace. Call
@@ -389,6 +429,12 @@ final class GRPCManager {
         selectedAzureNamespaceFQNS = ""
         isLoadingAzureNamespaces = false
         rbacAccessLevel = .notApplicable
+        accessTier = .noAccess
+        capabilityMap = .none
+        upgradeRecommendation = nil
+        isPartialAccess = false
+        rbacEvaluatedAt = nil
+        rbacExpiresAt = nil
         rbacCheckedNamespace = nil
     }
 

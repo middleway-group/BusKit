@@ -4,8 +4,9 @@ import SwiftUI
 
 /// Presented after Azure AD connection to inform the user about their RBAC access level.
 ///
-/// - **Partial access** (`.dataOnly` / `.managementOnly`): dismissable warning sheet.
-/// - **Access denied** (`.denied`): non-dismissable sheet with Retry / Switch auth / Quit.
+/// - **Partial access** (`.dataOnly` / `.managementOnly`): dismissable warning sheet that
+///   shows the new `AccessSummaryCard` alongside the legacy role explanation.
+/// - **Access denied** (`.denied` / Tier 0): non-dismissable sheet with Retry / Switch auth / Quit.
 /// - **Check failed** (`.checkFailed`): sheet allowing Retry or proceeding at own risk.
 @available(macOS 15.0, *)
 struct RbacPermissionDialog: View {
@@ -31,6 +32,7 @@ struct RbacPermissionDialog: View {
             )
         case .denied:
             AccessDeniedSheet(
+                upgradeRecommendation: grpc.upgradeRecommendation,
                 onRetry: onRetry,
                 onSwitchToConnectionString: onSwitchToConnectionString
             )
@@ -165,6 +167,7 @@ private struct PartialAccessSheet: View {
 
 @available(macOS 15.0, *)
 private struct AccessDeniedSheet: View {
+    let upgradeRecommendation: UpgradeRecommendation?
     let onRetry: () -> Void
     let onSwitchToConnectionString: () -> Void
 
@@ -219,9 +222,15 @@ private struct AccessDeniedSheet: View {
                 Image(systemName: "person.badge.key")
                     .foregroundStyle(.blue)
                     .padding(.top, 1)
-                Text("Contact your Azure administrator to assign both the **Azure Service Bus Data Owner** and **Contributor** roles on this namespace.")
-                    .font(.callout)
-                    .fixedSize(horizontal: false, vertical: true)
+                if let rec = upgradeRecommendation {
+                    Text("Ask your Azure administrator to assign the **\(rec.roleName)** role on this namespace to gain access.")
+                        .font(.callout)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text("Contact your Azure administrator to assign the required roles on this namespace.")
+                        .font(.callout)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
             // Actions

@@ -76,6 +76,14 @@ message ServiceBusNamespaceInfo {
 
 // ─── RBAC Permission Check ───────────────────────────
 
+enum AccessTier {
+  ACCESS_TIER_NO_ACCESS        = 0;
+  ACCESS_TIER_READ_ONLY        = 1;
+  ACCESS_TIER_MESSAGE_READER   = 2;
+  ACCESS_TIER_MESSAGE_OPERATOR = 3;
+  ACCESS_TIER_FULL_ACCESS      = 4;
+}
+
 message CheckRbacPermissionsRequest {
   string subscription_id = 1;
   string resource_group = 2;
@@ -83,10 +91,35 @@ message CheckRbacPermissionsRequest {
 }
 
 message CheckRbacPermissionsReply {
+  // ── Legacy fields (kept for backward compatibility) ──────────────
   bool has_data_owner_role = 1;
   bool has_contributor_role = 2;
   string error = 3;
   bool check_failed = 4;
+
+  // ── Tier classification ───────────────────────────────────────────
+  AccessTier access_tier = 5;
+  bool is_partial_access = 6;
+  string tier_label = 7;
+
+  // ── Capability map (per-action booleans) ─────────────────────────
+  bool can_browse_entities   = 8;
+  bool can_view_properties   = 9;
+  bool can_peek_fetch        = 10;
+  bool can_purge             = 11;
+  bool can_resubmit_dlq      = 12;
+  bool can_create_resources  = 13;
+  bool can_manage_filters    = 14;
+
+  // ── Upgrade recommendation ────────────────────────────────────────
+  string recommended_role_name        = 15;
+  string recommended_role_id          = 16;
+  string recommended_role_description = 17;
+  AccessTier recommended_target_tier  = 18;
+
+  // ── Evaluation metadata ───────────────────────────────────────────
+  int64 evaluated_at_unix_ms = 19;
+  int64 expires_at_unix_ms   = 20;
 }
 
 // ─── Queues ─────────────────────────────────────────

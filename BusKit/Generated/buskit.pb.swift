@@ -20,6 +20,52 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
+public enum Buskit_AccessTier: SwiftProtobuf.Enum, Swift.CaseIterable {
+  public typealias RawValue = Int
+  case noAccess // = 0
+  case readOnly // = 1
+  case messageReader // = 2
+  case messageOperator // = 3
+  case fullAccess // = 4
+  case UNRECOGNIZED(Int)
+
+  public init() {
+    self = .noAccess
+  }
+
+  public init?(rawValue: Int) {
+    switch rawValue {
+    case 0: self = .noAccess
+    case 1: self = .readOnly
+    case 2: self = .messageReader
+    case 3: self = .messageOperator
+    case 4: self = .fullAccess
+    default: self = .UNRECOGNIZED(rawValue)
+    }
+  }
+
+  public var rawValue: Int {
+    switch self {
+    case .noAccess: return 0
+    case .readOnly: return 1
+    case .messageReader: return 2
+    case .messageOperator: return 3
+    case .fullAccess: return 4
+    case .UNRECOGNIZED(let i): return i
+    }
+  }
+
+  // The compiler won't synthesize support with the UNRECOGNIZED case.
+  public static let allCases: [Buskit_AccessTier] = [
+    .noAccess,
+    .readOnly,
+    .messageReader,
+    .messageOperator,
+    .fullAccess,
+  ]
+
+}
+
 public struct Buskit_ConnectRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -176,22 +222,121 @@ public struct Buskit_CheckRbacPermissionsRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_CheckRbacPermissionsReply: Sendable {
+public struct Buskit_CheckRbacPermissionsReply: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var hasDataOwnerRole_p: Bool = false
+  /// ── Legacy fields (kept for backward compatibility) ──────────────
+  public var hasDataOwnerRole_p: Bool {
+    get {_storage._hasDataOwnerRole_p}
+    set {_uniqueStorage()._hasDataOwnerRole_p = newValue}
+  }
 
-  public var hasContributorRole_p: Bool = false
+  public var hasContributorRole_p: Bool {
+    get {_storage._hasContributorRole_p}
+    set {_uniqueStorage()._hasContributorRole_p = newValue}
+  }
 
-  public var error: String = String()
+  public var error: String {
+    get {_storage._error}
+    set {_uniqueStorage()._error = newValue}
+  }
 
-  public var checkFailed: Bool = false
+  public var checkFailed: Bool {
+    get {_storage._checkFailed}
+    set {_uniqueStorage()._checkFailed = newValue}
+  }
+
+  /// ── Tier classification ───────────────────────────────────────────
+  public var accessTier: Buskit_AccessTier {
+    get {_storage._accessTier}
+    set {_uniqueStorage()._accessTier = newValue}
+  }
+
+  public var isPartialAccess: Bool {
+    get {_storage._isPartialAccess}
+    set {_uniqueStorage()._isPartialAccess = newValue}
+  }
+
+  public var tierLabel: String {
+    get {_storage._tierLabel}
+    set {_uniqueStorage()._tierLabel = newValue}
+  }
+
+  /// ── Capability map (per-action booleans) ─────────────────────────
+  public var canBrowseEntities: Bool {
+    get {_storage._canBrowseEntities}
+    set {_uniqueStorage()._canBrowseEntities = newValue}
+  }
+
+  public var canViewProperties: Bool {
+    get {_storage._canViewProperties}
+    set {_uniqueStorage()._canViewProperties = newValue}
+  }
+
+  public var canPeekFetch: Bool {
+    get {_storage._canPeekFetch}
+    set {_uniqueStorage()._canPeekFetch = newValue}
+  }
+
+  public var canPurge: Bool {
+    get {_storage._canPurge}
+    set {_uniqueStorage()._canPurge = newValue}
+  }
+
+  public var canResubmitDlq: Bool {
+    get {_storage._canResubmitDlq}
+    set {_uniqueStorage()._canResubmitDlq = newValue}
+  }
+
+  public var canCreateResources: Bool {
+    get {_storage._canCreateResources}
+    set {_uniqueStorage()._canCreateResources = newValue}
+  }
+
+  public var canManageFilters: Bool {
+    get {_storage._canManageFilters}
+    set {_uniqueStorage()._canManageFilters = newValue}
+  }
+
+  /// ── Upgrade recommendation ────────────────────────────────────────
+  public var recommendedRoleName: String {
+    get {_storage._recommendedRoleName}
+    set {_uniqueStorage()._recommendedRoleName = newValue}
+  }
+
+  public var recommendedRoleID: String {
+    get {_storage._recommendedRoleID}
+    set {_uniqueStorage()._recommendedRoleID = newValue}
+  }
+
+  public var recommendedRoleDescription: String {
+    get {_storage._recommendedRoleDescription}
+    set {_uniqueStorage()._recommendedRoleDescription = newValue}
+  }
+
+  public var recommendedTargetTier: Buskit_AccessTier {
+    get {_storage._recommendedTargetTier}
+    set {_uniqueStorage()._recommendedTargetTier = newValue}
+  }
+
+  /// ── Evaluation metadata ───────────────────────────────────────────
+  public var evaluatedAtUnixMs: Int64 {
+    get {_storage._evaluatedAtUnixMs}
+    set {_uniqueStorage()._evaluatedAtUnixMs = newValue}
+  }
+
+  public var expiresAtUnixMs: Int64 {
+    get {_storage._expiresAtUnixMs}
+    set {_uniqueStorage()._expiresAtUnixMs = newValue}
+  }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
+
+  fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 public struct Buskit_ListQueuesRequest: Sendable {
@@ -642,6 +787,10 @@ public struct Buskit_BusMessage: Sendable {
 
 fileprivate let _protobuf_package = "buskit"
 
+extension Buskit_AccessTier: SwiftProtobuf._ProtoNameProviding {
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0ACCESS_TIER_NO_ACCESS\0\u{1}ACCESS_TIER_READ_ONLY\0\u{1}ACCESS_TIER_MESSAGE_READER\0\u{1}ACCESS_TIER_MESSAGE_OPERATOR\0\u{1}ACCESS_TIER_FULL_ACCESS\0")
+}
+
 extension Buskit_ConnectRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ConnectRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}connection_string\0")
@@ -1022,44 +1171,198 @@ extension Buskit_CheckRbacPermissionsRequest: SwiftProtobuf.Message, SwiftProtob
 
 extension Buskit_CheckRbacPermissionsReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".CheckRbacPermissionsReply"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}has_data_owner_role\0\u{3}has_contributor_role\0\u{1}error\0\u{3}check_failed\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}has_data_owner_role\0\u{3}has_contributor_role\0\u{1}error\0\u{3}check_failed\0\u{3}access_tier\0\u{3}is_partial_access\0\u{3}tier_label\0\u{3}can_browse_entities\0\u{3}can_view_properties\0\u{3}can_peek_fetch\0\u{3}can_purge\0\u{3}can_resubmit_dlq\0\u{3}can_create_resources\0\u{3}can_manage_filters\0\u{3}recommended_role_name\0\u{3}recommended_role_id\0\u{3}recommended_role_description\0\u{3}recommended_target_tier\0\u{3}evaluated_at_unix_ms\0\u{3}expires_at_unix_ms\0")
+
+  fileprivate class _StorageClass {
+    var _hasDataOwnerRole_p: Bool = false
+    var _hasContributorRole_p: Bool = false
+    var _error: String = String()
+    var _checkFailed: Bool = false
+    var _accessTier: Buskit_AccessTier = .noAccess
+    var _isPartialAccess: Bool = false
+    var _tierLabel: String = String()
+    var _canBrowseEntities: Bool = false
+    var _canViewProperties: Bool = false
+    var _canPeekFetch: Bool = false
+    var _canPurge: Bool = false
+    var _canResubmitDlq: Bool = false
+    var _canCreateResources: Bool = false
+    var _canManageFilters: Bool = false
+    var _recommendedRoleName: String = String()
+    var _recommendedRoleID: String = String()
+    var _recommendedRoleDescription: String = String()
+    var _recommendedTargetTier: Buskit_AccessTier = .noAccess
+    var _evaluatedAtUnixMs: Int64 = 0
+    var _expiresAtUnixMs: Int64 = 0
+
+      // This property is used as the initial default value for new instances of the type.
+      // The type itself is protecting the reference to its storage via CoW semantics.
+      // This will force a copy to be made of this reference when the first mutation occurs;
+      // hence, it is safe to mark this as `nonisolated(unsafe)`.
+      static nonisolated(unsafe) let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _hasDataOwnerRole_p = source._hasDataOwnerRole_p
+      _hasContributorRole_p = source._hasContributorRole_p
+      _error = source._error
+      _checkFailed = source._checkFailed
+      _accessTier = source._accessTier
+      _isPartialAccess = source._isPartialAccess
+      _tierLabel = source._tierLabel
+      _canBrowseEntities = source._canBrowseEntities
+      _canViewProperties = source._canViewProperties
+      _canPeekFetch = source._canPeekFetch
+      _canPurge = source._canPurge
+      _canResubmitDlq = source._canResubmitDlq
+      _canCreateResources = source._canCreateResources
+      _canManageFilters = source._canManageFilters
+      _recommendedRoleName = source._recommendedRoleName
+      _recommendedRoleID = source._recommendedRoleID
+      _recommendedRoleDescription = source._recommendedRoleDescription
+      _recommendedTargetTier = source._recommendedTargetTier
+      _evaluatedAtUnixMs = source._evaluatedAtUnixMs
+      _expiresAtUnixMs = source._expiresAtUnixMs
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeSingularBoolField(value: &self.hasDataOwnerRole_p) }()
-      case 2: try { try decoder.decodeSingularBoolField(value: &self.hasContributorRole_p) }()
-      case 3: try { try decoder.decodeSingularStringField(value: &self.error) }()
-      case 4: try { try decoder.decodeSingularBoolField(value: &self.checkFailed) }()
-      default: break
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
+        switch fieldNumber {
+        case 1: try { try decoder.decodeSingularBoolField(value: &_storage._hasDataOwnerRole_p) }()
+        case 2: try { try decoder.decodeSingularBoolField(value: &_storage._hasContributorRole_p) }()
+        case 3: try { try decoder.decodeSingularStringField(value: &_storage._error) }()
+        case 4: try { try decoder.decodeSingularBoolField(value: &_storage._checkFailed) }()
+        case 5: try { try decoder.decodeSingularEnumField(value: &_storage._accessTier) }()
+        case 6: try { try decoder.decodeSingularBoolField(value: &_storage._isPartialAccess) }()
+        case 7: try { try decoder.decodeSingularStringField(value: &_storage._tierLabel) }()
+        case 8: try { try decoder.decodeSingularBoolField(value: &_storage._canBrowseEntities) }()
+        case 9: try { try decoder.decodeSingularBoolField(value: &_storage._canViewProperties) }()
+        case 10: try { try decoder.decodeSingularBoolField(value: &_storage._canPeekFetch) }()
+        case 11: try { try decoder.decodeSingularBoolField(value: &_storage._canPurge) }()
+        case 12: try { try decoder.decodeSingularBoolField(value: &_storage._canResubmitDlq) }()
+        case 13: try { try decoder.decodeSingularBoolField(value: &_storage._canCreateResources) }()
+        case 14: try { try decoder.decodeSingularBoolField(value: &_storage._canManageFilters) }()
+        case 15: try { try decoder.decodeSingularStringField(value: &_storage._recommendedRoleName) }()
+        case 16: try { try decoder.decodeSingularStringField(value: &_storage._recommendedRoleID) }()
+        case 17: try { try decoder.decodeSingularStringField(value: &_storage._recommendedRoleDescription) }()
+        case 18: try { try decoder.decodeSingularEnumField(value: &_storage._recommendedTargetTier) }()
+        case 19: try { try decoder.decodeSingularInt64Field(value: &_storage._evaluatedAtUnixMs) }()
+        case 20: try { try decoder.decodeSingularInt64Field(value: &_storage._expiresAtUnixMs) }()
+        default: break
+        }
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if self.hasDataOwnerRole_p != false {
-      try visitor.visitSingularBoolField(value: self.hasDataOwnerRole_p, fieldNumber: 1)
-    }
-    if self.hasContributorRole_p != false {
-      try visitor.visitSingularBoolField(value: self.hasContributorRole_p, fieldNumber: 2)
-    }
-    if !self.error.isEmpty {
-      try visitor.visitSingularStringField(value: self.error, fieldNumber: 3)
-    }
-    if self.checkFailed != false {
-      try visitor.visitSingularBoolField(value: self.checkFailed, fieldNumber: 4)
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      if _storage._hasDataOwnerRole_p != false {
+        try visitor.visitSingularBoolField(value: _storage._hasDataOwnerRole_p, fieldNumber: 1)
+      }
+      if _storage._hasContributorRole_p != false {
+        try visitor.visitSingularBoolField(value: _storage._hasContributorRole_p, fieldNumber: 2)
+      }
+      if !_storage._error.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._error, fieldNumber: 3)
+      }
+      if _storage._checkFailed != false {
+        try visitor.visitSingularBoolField(value: _storage._checkFailed, fieldNumber: 4)
+      }
+      if _storage._accessTier != .noAccess {
+        try visitor.visitSingularEnumField(value: _storage._accessTier, fieldNumber: 5)
+      }
+      if _storage._isPartialAccess != false {
+        try visitor.visitSingularBoolField(value: _storage._isPartialAccess, fieldNumber: 6)
+      }
+      if !_storage._tierLabel.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._tierLabel, fieldNumber: 7)
+      }
+      if _storage._canBrowseEntities != false {
+        try visitor.visitSingularBoolField(value: _storage._canBrowseEntities, fieldNumber: 8)
+      }
+      if _storage._canViewProperties != false {
+        try visitor.visitSingularBoolField(value: _storage._canViewProperties, fieldNumber: 9)
+      }
+      if _storage._canPeekFetch != false {
+        try visitor.visitSingularBoolField(value: _storage._canPeekFetch, fieldNumber: 10)
+      }
+      if _storage._canPurge != false {
+        try visitor.visitSingularBoolField(value: _storage._canPurge, fieldNumber: 11)
+      }
+      if _storage._canResubmitDlq != false {
+        try visitor.visitSingularBoolField(value: _storage._canResubmitDlq, fieldNumber: 12)
+      }
+      if _storage._canCreateResources != false {
+        try visitor.visitSingularBoolField(value: _storage._canCreateResources, fieldNumber: 13)
+      }
+      if _storage._canManageFilters != false {
+        try visitor.visitSingularBoolField(value: _storage._canManageFilters, fieldNumber: 14)
+      }
+      if !_storage._recommendedRoleName.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._recommendedRoleName, fieldNumber: 15)
+      }
+      if !_storage._recommendedRoleID.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._recommendedRoleID, fieldNumber: 16)
+      }
+      if !_storage._recommendedRoleDescription.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._recommendedRoleDescription, fieldNumber: 17)
+      }
+      if _storage._recommendedTargetTier != .noAccess {
+        try visitor.visitSingularEnumField(value: _storage._recommendedTargetTier, fieldNumber: 18)
+      }
+      if _storage._evaluatedAtUnixMs != 0 {
+        try visitor.visitSingularInt64Field(value: _storage._evaluatedAtUnixMs, fieldNumber: 19)
+      }
+      if _storage._expiresAtUnixMs != 0 {
+        try visitor.visitSingularInt64Field(value: _storage._expiresAtUnixMs, fieldNumber: 20)
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Buskit_CheckRbacPermissionsReply, rhs: Buskit_CheckRbacPermissionsReply) -> Bool {
-    if lhs.hasDataOwnerRole_p != rhs.hasDataOwnerRole_p {return false}
-    if lhs.hasContributorRole_p != rhs.hasContributorRole_p {return false}
-    if lhs.error != rhs.error {return false}
-    if lhs.checkFailed != rhs.checkFailed {return false}
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._hasDataOwnerRole_p != rhs_storage._hasDataOwnerRole_p {return false}
+        if _storage._hasContributorRole_p != rhs_storage._hasContributorRole_p {return false}
+        if _storage._error != rhs_storage._error {return false}
+        if _storage._checkFailed != rhs_storage._checkFailed {return false}
+        if _storage._accessTier != rhs_storage._accessTier {return false}
+        if _storage._isPartialAccess != rhs_storage._isPartialAccess {return false}
+        if _storage._tierLabel != rhs_storage._tierLabel {return false}
+        if _storage._canBrowseEntities != rhs_storage._canBrowseEntities {return false}
+        if _storage._canViewProperties != rhs_storage._canViewProperties {return false}
+        if _storage._canPeekFetch != rhs_storage._canPeekFetch {return false}
+        if _storage._canPurge != rhs_storage._canPurge {return false}
+        if _storage._canResubmitDlq != rhs_storage._canResubmitDlq {return false}
+        if _storage._canCreateResources != rhs_storage._canCreateResources {return false}
+        if _storage._canManageFilters != rhs_storage._canManageFilters {return false}
+        if _storage._recommendedRoleName != rhs_storage._recommendedRoleName {return false}
+        if _storage._recommendedRoleID != rhs_storage._recommendedRoleID {return false}
+        if _storage._recommendedRoleDescription != rhs_storage._recommendedRoleDescription {return false}
+        if _storage._recommendedTargetTier != rhs_storage._recommendedTargetTier {return false}
+        if _storage._evaluatedAtUnixMs != rhs_storage._evaluatedAtUnixMs {return false}
+        if _storage._expiresAtUnixMs != rhs_storage._expiresAtUnixMs {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
