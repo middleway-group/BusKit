@@ -497,8 +497,8 @@ struct TabCapsuleButton: View {
         Button { selected = tag } label: {
             Label(title, systemImage: systemImage)
                 .font(.subheadline)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
                 .background(
                     selected == tag
                         ? Color.secondary.opacity(0.18)
