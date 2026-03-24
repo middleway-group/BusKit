@@ -18,14 +18,25 @@ struct QueueDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Segmented picker lives inside the content area so it never
-            // interferes with the window toolbar where ConnectionToolbar lives.
-            Picker("", selection: $selectedTab) {
-                Label("Description",       systemImage: "info.circle").tag(0)
-                Label("Messages",          systemImage: "list.bullet.rectangle").tag(1)
-                Label("Deadletter",        systemImage: "tray.and.arrow.down").tag(2)
+            // Tab row: picker + contextual refresh button share one line.
+            HStack(spacing: 8) {
+                Picker("", selection: $selectedTab) {
+                    Label("Description", systemImage: "info.circle").tag(0)
+                    Label("Messages",    systemImage: "list.bullet.rectangle").tag(1)
+                    Label("Deadletter",  systemImage: "tray.and.arrow.down").tag(2)
+                }
+                .pickerStyle(.segmented)
+
+                if selectedTab == 1 || selectedTab == 2 {
+                    Button {
+                        if selectedTab == 1 { messagesTrigger = UUID() }
+                        else                { dlqTrigger      = UUID() }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .buttonStyle(.borderless)
+                }
             }
-            .pickerStyle(.segmented)
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
 
@@ -195,25 +206,7 @@ private struct MessagesTab: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Refresh button in the content area — keeps the window toolbar clean.
-            HStack {
-                Spacer()
-                Button {
-                    Task { await loadMessages() }
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .disabled(isLoading)
-                .buttonStyle(.borderless)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 5)
-            }
-            .background(.bar)
-
-            Divider()
-
-            VSplitView {
+        VSplitView {
                 // ── Top: message table ──────────────────────────────
                 Group {
                     if isLoading {
@@ -287,7 +280,6 @@ private struct MessagesTab: View {
                         .frame(minWidth: 220)
                 }
                 .frame(minHeight: 160)
-            }
         }
         .task { await loadMessages() }
         .onChange(of: queue.name) { _, _ in Task { await loadMessages() } }

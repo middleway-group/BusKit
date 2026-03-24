@@ -22,12 +22,24 @@ struct SubscriptionDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Picker("", selection: $selectedTab) {
-                Label("Description",  systemImage: "info.circle").tag(0)
-                Label("Messages",     systemImage: "list.bullet.rectangle").tag(1)
-                Label("Deadletter",   systemImage: "tray.and.arrow.down").tag(2)
+            HStack(spacing: 8) {
+                Picker("", selection: $selectedTab) {
+                    Label("Description", systemImage: "info.circle").tag(0)
+                    Label("Messages",    systemImage: "list.bullet.rectangle").tag(1)
+                    Label("Deadletter",  systemImage: "tray.and.arrow.down").tag(2)
+                }
+                .pickerStyle(.segmented)
+
+                if selectedTab == 1 || selectedTab == 2 {
+                    Button {
+                        if selectedTab == 1 { messagesTrigger = UUID() }
+                        else                { dlqTrigger      = UUID() }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .buttonStyle(.borderless)
+                }
             }
-            .pickerStyle(.segmented)
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
 
@@ -185,24 +197,7 @@ private struct SubMessagesTab: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Spacer()
-                Button {
-                    Task { await loadMessages() }
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .disabled(isLoading)
-                .buttonStyle(.borderless)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 5)
-            }
-            .background(.bar)
-
-            Divider()
-
-            VSplitView {
+        VSplitView {
                 // ── Top: message table ──────────────────────────────
                 Group {
                     if isLoading {
@@ -276,7 +271,6 @@ private struct SubMessagesTab: View {
                         .frame(minWidth: 220)
                 }
                 .frame(minHeight: 160)
-            }
         }
         .task { await loadMessages() }
         .onChange(of: subscription.name) { _, _ in Task { await loadMessages() } }
