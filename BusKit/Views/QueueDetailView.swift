@@ -485,7 +485,9 @@ private struct DataAccessRestrictedView: View {
 
 // MARK: - Tab Capsule Button
 
-/// Individual capsule-shaped tab button that mimics the macOS tab-bar oval style.
+/// Individual capsule-shaped tab button.
+/// Selected state uses the accent colour (blue by default) with white text.
+/// Unselected state uses a faint fill so the entire capsule is always hit-testable.
 @available(macOS 15.0, *)
 struct TabCapsuleButton: View {
     let title: String
@@ -500,14 +502,13 @@ struct TabCapsuleButton: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
                 .background(
-                    selected == tag
-                        ? Color.secondary.opacity(0.18)
-                        : Color.clear,
+                    selected == tag ? Color.accentColor : Color.secondary.opacity(0.08),
                     in: Capsule()
                 )
+                .foregroundStyle(selected == tag ? Color.white : Color.secondary)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(selected == tag ? .primary : .secondary)
+        .contentShape(Rectangle())
         .animation(.easeInOut(duration: 0.15), value: selected)
     }
 }
