@@ -21,30 +21,39 @@ struct SubscriptionDetailView: View {
     }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            SubDescriptionTab(subscription: subscription)
-                .tabItem { Label("Description", systemImage: "info.circle") }
-                .tag(0)
-
-            if grpc.rbacAccessLevel.hasDataAccess {
-                SubMessagesTab(subscription: subscription, isDLQ: false,
-                               trigger: messagesTrigger, requestedCount: messagesCount)
-                    .tabItem { Label("Messages", systemImage: "list.bullet.rectangle") }
-                    .tag(1)
-
-                SubMessagesTab(subscription: subscription, isDLQ: true,
-                               trigger: dlqTrigger, requestedCount: dlqCount)
-                    .tabItem { Label("Deadletter Messages", systemImage: "tray.and.arrow.down") }
-                    .tag(2)
-            } else {
-                DataAccessRestrictedView()
-                    .tabItem { Label("Messages", systemImage: "list.bullet.rectangle") }
-                    .tag(1)
-
-                DataAccessRestrictedView()
-                    .tabItem { Label("Deadletter Messages", systemImage: "tray.and.arrow.down") }
-                    .tag(2)
+        VStack(spacing: 0) {
+            Picker("", selection: $selectedTab) {
+                Label("Description",  systemImage: "info.circle").tag(0)
+                Label("Messages",     systemImage: "list.bullet.rectangle").tag(1)
+                Label("Deadletter",   systemImage: "tray.and.arrow.down").tag(2)
             }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+
+            Divider()
+
+            Group {
+                switch selectedTab {
+                case 1:
+                    if grpc.rbacAccessLevel.hasDataAccess {
+                        SubMessagesTab(subscription: subscription, isDLQ: false,
+                                       trigger: messagesTrigger, requestedCount: messagesCount)
+                    } else {
+                        DataAccessRestrictedView()
+                    }
+                case 2:
+                    if grpc.rbacAccessLevel.hasDataAccess {
+                        SubMessagesTab(subscription: subscription, isDLQ: true,
+                                       trigger: dlqTrigger, requestedCount: dlqCount)
+                    } else {
+                        DataAccessRestrictedView()
+                    }
+                default:
+                    SubDescriptionTab(subscription: subscription)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle("\(subscription.topicName) / \(subscription.name)")
         .onChange(of: actionStore.pendingAction) { _, action in
@@ -176,89 +185,97 @@ private struct SubMessagesTab: View {
     }
 
     var body: some View {
-        VSplitView {
-            // ── Top: message table ──────────────────────────────
-            Group {
-                if isLoading {
-                    ProgressView("Loading messages…")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let error = loadError {
-                    VStack(spacing: 8) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(.largeTitle).foregroundStyle(.red)
-                        Text(error).foregroundStyle(.secondary).font(.caption)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if messages.isEmpty {
-                    Text("No \(isDLQ ? "dead-letter " : "")messages in \(subscription.name)")
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    Table(messages, selection: $selectedMessageID) {
-                        TableColumn("#") { msg in
-                            Text("\(msg.sequenceNumber)")
-                                .monospacedDigit()
-                                .foregroundStyle(.secondary)
-                        }
-                        .width(55)
-
-                        TableColumn("Message ID") { msg in
-                            Text(msg.id.isEmpty ? "—" : msg.id)
-                                .font(.system(.caption, design: .monospaced))
-                                .lineLimit(1)
-                        }
-                        .width(min: 120, ideal: 180)
-
-                        TableColumn("Subject") { msg in
-                            Text(msg.subject.isEmpty ? "—" : msg.subject)
-                                .lineLimit(1)
-                        }
-                        .width(min: 80, ideal: 120)
-
-                        TableColumn("Content Type") { msg in
-                            Text(msg.contentType.isEmpty ? "—" : msg.contentType)
-                                .lineLimit(1)
-                                .foregroundStyle(.secondary)
-                        }
-                        .width(min: 80, ideal: 120)
-
-                        TableColumn("Enqueued") { msg in
-                            Text(msg.enqueuedTime, style: .relative)
-                                .foregroundStyle(.secondary)
-                        }
-                        .width(min: 90, ideal: 110)
-
-                        TableColumn("Deliveries") { msg in
-                            Text("\(msg.deliveryCount)")
-                                .monospacedDigit()
-                                .foregroundStyle(msg.deliveryCount > 1 ? .orange : .secondary)
-                        }
-                        .width(65)
-                    }
-                }
-            }
-            .frame(minHeight: 140)
-
-            // ── Bottom: body + properties side by side ──────────
-            HSplitView {
-                MessageBodyPanel(message: selectedMessage)
-                    .frame(minWidth: 220)
-
-                SubMessagePropertiesPanel(message: selectedMessage)
-                    .frame(minWidth: 220)
-            }
-            .frame(minHeight: 160)
-        }
-        .toolbar {
-            ToolbarItem {
+        VStack(spacing: 0) {
+            HStack {
+                Spacer()
                 Button {
                     Task { await loadMessages() }
                 } label: {
-                    Label("Refresh", systemImage: "arrow.clockwise")
+                    Image(systemName: "arrow.clockwise")
                 }
                 .disabled(isLoading)
+                .buttonStyle(.borderless)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 5)
+            }
+            .background(.bar)
+
+            Divider()
+
+            VSplitView {
+                // ── Top: message table ──────────────────────────────
+                Group {
+                    if isLoading {
+                        ProgressView("Loading messages…")
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if let error = loadError {
+                        VStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.largeTitle).foregroundStyle(.red)
+                            Text(error).foregroundStyle(.secondary).font(.caption)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if messages.isEmpty {
+                        Text("No \(isDLQ ? "dead-letter " : "")messages in \(subscription.name)")
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        Table(messages, selection: $selectedMessageID) {
+                            TableColumn("#") { msg in
+                                Text("\(msg.sequenceNumber)")
+                                    .monospacedDigit()
+                                    .foregroundStyle(.secondary)
+                            }
+                            .width(55)
+
+                            TableColumn("Message ID") { msg in
+                                Text(msg.id.isEmpty ? "—" : msg.id)
+                                    .font(.system(.caption, design: .monospaced))
+                                    .lineLimit(1)
+                            }
+                            .width(min: 120, ideal: 180)
+
+                            TableColumn("Subject") { msg in
+                                Text(msg.subject.isEmpty ? "—" : msg.subject)
+                                    .lineLimit(1)
+                            }
+                            .width(min: 80, ideal: 120)
+
+                            TableColumn("Content Type") { msg in
+                                Text(msg.contentType.isEmpty ? "—" : msg.contentType)
+                                    .lineLimit(1)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .width(min: 80, ideal: 120)
+
+                            TableColumn("Enqueued") { msg in
+                                Text(msg.enqueuedTime, style: .relative)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .width(min: 90, ideal: 110)
+
+                            TableColumn("Deliveries") { msg in
+                                Text("\(msg.deliveryCount)")
+                                    .monospacedDigit()
+                                    .foregroundStyle(msg.deliveryCount > 1 ? .orange : .secondary)
+                            }
+                            .width(65)
+                        }
+                    }
+                }
+                .frame(minHeight: 140)
+
+                // ── Bottom: body + properties side by side ──────────
+                HSplitView {
+                    MessageBodyPanel(message: selectedMessage)
+                        .frame(minWidth: 220)
+
+                    SubMessagePropertiesPanel(message: selectedMessage)
+                        .frame(minWidth: 220)
+                }
+                .frame(minHeight: 160)
             }
         }
         .task { await loadMessages() }
