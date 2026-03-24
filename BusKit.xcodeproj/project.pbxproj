@@ -297,7 +297,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "BusKit by Peter Karda";
+				INFOPLIST_KEY_CFBundleDisplayName = BusKit;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Peter Karda";
 				"INFOPLIST_KEY_NSHumanReadableCopyright[sdk=*]" = "Peter Karda";
@@ -335,7 +335,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "BusKit by Peter Karda";
+				INFOPLIST_KEY_CFBundleDisplayName = BusKit;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Peter Karda";
 				"INFOPLIST_KEY_NSHumanReadableCopyright[sdk=*]" = "Peter Karda";

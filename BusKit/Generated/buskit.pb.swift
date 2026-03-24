@@ -745,6 +745,70 @@ public struct Buskit_PurgeMessagesReply: Sendable {
   public init() {}
 }
 
+public struct Buskit_DeleteMessageRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var queueName: String = String()
+
+  public var topicName: String = String()
+
+  public var subscriptionName: String = String()
+
+  public var deadLetter: Bool = false
+
+  public var sequenceNumber: Int64 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_DeleteMessageReply: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var success: Bool = false
+
+  public var error: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_SendMessageExtendedRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var queueOrTopic: String = String()
+
+  public var body: String = String()
+
+  public var contentType: String = String()
+
+  public var properties: Dictionary<String,String> = [:]
+
+  public var subject: String = String()
+
+  public var correlationID: String = String()
+
+  public var replyTo: String = String()
+
+  public var toAddress: String = String()
+
+  public var sessionID: String = String()
+
+  public var partitionKey: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
 public struct Buskit_BusMessage: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -2329,6 +2393,166 @@ extension Buskit_PurgeMessagesReply: SwiftProtobuf.Message, SwiftProtobuf._Messa
 
   public static func ==(lhs: Buskit_PurgeMessagesReply, rhs: Buskit_PurgeMessagesReply) -> Bool {
     if lhs.purgedCount != rhs.purgedCount {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_DeleteMessageRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DeleteMessageRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}queue_name\0\u{3}topic_name\0\u{3}subscription_name\0\u{3}dead_letter\0\u{3}sequence_number\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.queueName) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.topicName) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.subscriptionName) }()
+      case 4: try { try decoder.decodeSingularBoolField(value: &self.deadLetter) }()
+      case 5: try { try decoder.decodeSingularInt64Field(value: &self.sequenceNumber) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.queueName.isEmpty {
+      try visitor.visitSingularStringField(value: self.queueName, fieldNumber: 1)
+    }
+    if !self.topicName.isEmpty {
+      try visitor.visitSingularStringField(value: self.topicName, fieldNumber: 2)
+    }
+    if !self.subscriptionName.isEmpty {
+      try visitor.visitSingularStringField(value: self.subscriptionName, fieldNumber: 3)
+    }
+    if self.deadLetter != false {
+      try visitor.visitSingularBoolField(value: self.deadLetter, fieldNumber: 4)
+    }
+    if self.sequenceNumber != 0 {
+      try visitor.visitSingularInt64Field(value: self.sequenceNumber, fieldNumber: 5)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_DeleteMessageRequest, rhs: Buskit_DeleteMessageRequest) -> Bool {
+    if lhs.queueName != rhs.queueName {return false}
+    if lhs.topicName != rhs.topicName {return false}
+    if lhs.subscriptionName != rhs.subscriptionName {return false}
+    if lhs.deadLetter != rhs.deadLetter {return false}
+    if lhs.sequenceNumber != rhs.sequenceNumber {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_DeleteMessageReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DeleteMessageReply"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}success\0\u{1}error\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularBoolField(value: &self.success) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.error) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.success != false {
+      try visitor.visitSingularBoolField(value: self.success, fieldNumber: 1)
+    }
+    if !self.error.isEmpty {
+      try visitor.visitSingularStringField(value: self.error, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_DeleteMessageReply, rhs: Buskit_DeleteMessageReply) -> Bool {
+    if lhs.success != rhs.success {return false}
+    if lhs.error != rhs.error {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_SendMessageExtendedRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".SendMessageExtendedRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}queue_or_topic\0\u{1}body\0\u{3}content_type\0\u{1}properties\0\u{1}subject\0\u{3}correlation_id\0\u{3}reply_to\0\u{3}to_address\0\u{3}session_id\0\u{3}partition_key\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.queueOrTopic) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.body) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.contentType) }()
+      case 4: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: &self.properties) }()
+      case 5: try { try decoder.decodeSingularStringField(value: &self.subject) }()
+      case 6: try { try decoder.decodeSingularStringField(value: &self.correlationID) }()
+      case 7: try { try decoder.decodeSingularStringField(value: &self.replyTo) }()
+      case 8: try { try decoder.decodeSingularStringField(value: &self.toAddress) }()
+      case 9: try { try decoder.decodeSingularStringField(value: &self.sessionID) }()
+      case 10: try { try decoder.decodeSingularStringField(value: &self.partitionKey) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.queueOrTopic.isEmpty {
+      try visitor.visitSingularStringField(value: self.queueOrTopic, fieldNumber: 1)
+    }
+    if !self.body.isEmpty {
+      try visitor.visitSingularStringField(value: self.body, fieldNumber: 2)
+    }
+    if !self.contentType.isEmpty {
+      try visitor.visitSingularStringField(value: self.contentType, fieldNumber: 3)
+    }
+    if !self.properties.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: self.properties, fieldNumber: 4)
+    }
+    if !self.subject.isEmpty {
+      try visitor.visitSingularStringField(value: self.subject, fieldNumber: 5)
+    }
+    if !self.correlationID.isEmpty {
+      try visitor.visitSingularStringField(value: self.correlationID, fieldNumber: 6)
+    }
+    if !self.replyTo.isEmpty {
+      try visitor.visitSingularStringField(value: self.replyTo, fieldNumber: 7)
+    }
+    if !self.toAddress.isEmpty {
+      try visitor.visitSingularStringField(value: self.toAddress, fieldNumber: 8)
+    }
+    if !self.sessionID.isEmpty {
+      try visitor.visitSingularStringField(value: self.sessionID, fieldNumber: 9)
+    }
+    if !self.partitionKey.isEmpty {
+      try visitor.visitSingularStringField(value: self.partitionKey, fieldNumber: 10)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_SendMessageExtendedRequest, rhs: Buskit_SendMessageExtendedRequest) -> Bool {
+    if lhs.queueOrTopic != rhs.queueOrTopic {return false}
+    if lhs.body != rhs.body {return false}
+    if lhs.contentType != rhs.contentType {return false}
+    if lhs.properties != rhs.properties {return false}
+    if lhs.subject != rhs.subject {return false}
+    if lhs.correlationID != rhs.correlationID {return false}
+    if lhs.replyTo != rhs.replyTo {return false}
+    if lhs.toAddress != rhs.toAddress {return false}
+    if lhs.sessionID != rhs.sessionID {return false}
+    if lhs.partitionKey != rhs.partitionKey {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

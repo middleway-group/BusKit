@@ -671,6 +671,84 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         await processor.DisposeAsync();
     }
 
+    public override async Task<DeleteMessageReply> DeleteMessage(
+        DeleteMessageRequest request, ServerCallContext context)
+    {
+        if (_client == null)
+            return new DeleteMessageReply { Success = false, Error = "Not connected" };
+
+        var isSubscription = !string.IsNullOrEmpty(request.TopicName)
+                          && !string.IsNullOrEmpty(request.SubscriptionName);
+
+        var options = new ServiceBusReceiverOptions
+        {
+            ReceiveMode = ServiceBusReceiveMode.PeekLock,
+            SubQueue = request.DeadLetter ? SubQueue.DeadLetter : SubQueue.None
+        };
+
+        var receiver = isSubscription
+            ? _client.CreateReceiver(request.TopicName, request.SubscriptionName, options)
+            : _client.CreateReceiver(request.QueueName, options);
+
+        await using (receiver)
+        {
+            for (int attempt = 0; attempt < 20; attempt++)
+            {
+                var batch = await receiver.ReceiveMessagesAsync(
+                    maxMessages: 50, maxWaitTime: TimeSpan.FromSeconds(3), context.CancellationToken);
+                if (batch.Count == 0) break;
+
+                bool found = false;
+                foreach (var msg in batch)
+                {
+                    if (msg.SequenceNumber == request.SequenceNumber)
+                    {
+                        await receiver.CompleteMessageAsync(msg, context.CancellationToken);
+                        found = true;
+                    }
+                    else
+                    {
+                        await receiver.AbandonMessageAsync(msg, cancellationToken: context.CancellationToken);
+                    }
+                }
+                if (found)
+                    return new DeleteMessageReply { Success = true };
+            }
+            return new DeleteMessageReply { Success = false, Error = "Message not found" };
+        }
+    }
+
+    public override async Task<SendMessageReply> SendMessageExtended(
+        SendMessageExtendedRequest request, ServerCallContext context)
+    {
+        if (_client == null)
+            return new SendMessageReply { Success = false };
+
+        var sender = _client.CreateSender(request.QueueOrTopic);
+        try
+        {
+            var message = new ServiceBusMessage(request.Body)
+            {
+                ContentType = string.IsNullOrEmpty(request.ContentType) ? null : request.ContentType,
+                Subject = string.IsNullOrEmpty(request.Subject) ? null : request.Subject,
+                CorrelationId = string.IsNullOrEmpty(request.CorrelationId) ? null : request.CorrelationId,
+                ReplyTo = string.IsNullOrEmpty(request.ReplyTo) ? null : request.ReplyTo,
+                To = string.IsNullOrEmpty(request.ToAddress) ? null : request.ToAddress,
+                SessionId = string.IsNullOrEmpty(request.SessionId) ? null : request.SessionId,
+                PartitionKey = string.IsNullOrEmpty(request.PartitionKey) ? null : request.PartitionKey,
+            };
+            foreach (var prop in request.Properties)
+                message.ApplicationProperties[prop.Key] = prop.Value;
+
+            await sender.SendMessageAsync(message);
+            return new SendMessageReply { Success = true, MessageId = message.MessageId };
+        }
+        finally
+        {
+            await sender.DisposeAsync();
+        }
+    }
+
     // ── MSAL token credential wrapper ────────────────────
     // Wraps an already-authenticated MSAL account so that Azure SDK clients
     // (ArmClient, ServiceBusClient, etc.) can silently refresh tokens via the

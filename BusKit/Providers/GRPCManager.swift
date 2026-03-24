@@ -606,6 +606,51 @@ final class GRPCManager {
         return try await buskit.sendMessage(req)
     }
 
+    // MARK: - Delete Message
+    func deleteMessage(queueName: String? = nil,
+                       topicName: String? = nil,
+                       subscriptionName: String? = nil,
+                       isDLQ: Bool = false,
+                       sequenceNumber: Int64) async throws {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_DeleteMessageRequest()
+        req.queueName = queueName ?? ""
+        req.topicName = topicName ?? ""
+        req.subscriptionName = subscriptionName ?? ""
+        req.deadLetter = isDLQ
+        req.sequenceNumber = sequenceNumber
+        let reply = try await buskit.deleteMessage(req)
+        if !reply.success {
+            throw GRPCManagerError.operationFailed(reply.error)
+        }
+    }
+
+    // MARK: - Send Message Extended (preserves system properties)
+    func sendMessageExtended(queueOrTopic: String,
+                             body: String,
+                             contentType: String = "",
+                             subject: String = "",
+                             correlationID: String = "",
+                             replyTo: String = "",
+                             toAddress: String = "",
+                             sessionID: String = "",
+                             partitionKey: String = "",
+                             properties: [String: String] = [:]) async throws -> Buskit_SendMessageReply {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_SendMessageExtendedRequest()
+        req.queueOrTopic = queueOrTopic
+        req.body = body
+        req.contentType = contentType
+        req.subject = subject
+        req.correlationID = correlationID
+        req.replyTo = replyTo
+        req.toAddress = toAddress
+        req.sessionID = sessionID
+        req.partitionKey = partitionKey
+        req.properties = properties
+        return try await buskit.sendMessageExtended(req)
+    }
+
     // MARK: - Subscribe (server streaming)
 
     func subscribe(topicName: String, subscriptionName: String) async throws -> AsyncStream<Buskit_BusMessage> {
@@ -634,11 +679,13 @@ final class GRPCManager {
 enum GRPCManagerError: LocalizedError {
     case notConnected
     case azureError(String)
+    case operationFailed(String)
 
     var errorDescription: String? {
         switch self {
         case .notConnected: return "gRPC client is not connected. Call startSidecar() first."
         case .azureError(let msg): return msg
+        case .operationFailed(let msg): return msg
         }
     }
 }

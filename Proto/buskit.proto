@@ -22,6 +22,8 @@ service BusKitService {
   rpc PurgeMessages (PurgeMessagesRequest) returns (PurgeMessagesReply);
   rpc PeekMessages (PeekMessagesRequest) returns (PeekMessagesReply);
   rpc SendMessage (SendMessageRequest) returns (SendMessageReply);
+  rpc DeleteMessage (DeleteMessageRequest) returns (DeleteMessageReply);
+  rpc SendMessageExtended (SendMessageExtendedRequest) returns (SendMessageReply);
   rpc SubscribeMessages (SubscribeRequest) returns (stream BusMessage);
 }
 
@@ -276,6 +278,32 @@ message PurgeMessagesRequest {
 
 message PurgeMessagesReply {
   int32 purged_count = 1;
+}
+
+message DeleteMessageRequest {
+  string queue_name = 1;
+  string topic_name = 2;
+  string subscription_name = 3;
+  bool dead_letter = 4;
+  int64 sequence_number = 5;
+}
+
+message DeleteMessageReply {
+  bool success = 1;
+  string error = 2;
+}
+
+message SendMessageExtendedRequest {
+  string queue_or_topic = 1;
+  string body = 2;
+  string content_type = 3;
+  map<string, string> properties = 4;
+  string subject = 5;
+  string correlation_id = 6;
+  string reply_to = 7;
+  string to_address = 8;
+  string session_id = 9;
+  string partition_key = 10;
 }
 
 message BusMessage {

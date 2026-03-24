@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 // MARK: - QueueDetailView
 
@@ -18,31 +19,16 @@ struct QueueDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Tab row: individual capsule buttons + contextual refresh on the right.
-            HStack(spacing: 0) {
-                TabCapsuleButton(title: "Description", systemImage: "info.circle",
-                                 tag: 0, selected: $selectedTab)
-                TabCapsuleButton(title: "Messages", systemImage: "list.bullet.rectangle",
-                                 tag: 1, selected: $selectedTab)
-                TabCapsuleButton(title: "Deadletter", systemImage: "tray.and.arrow.down",
-                                 tag: 2, selected: $selectedTab)
-
-                Spacer()
-
-                if selectedTab == 1 || selectedTab == 2 {
-                    Button {
-                        if selectedTab == 1 { messagesTrigger = UUID() }
-                        else                { dlqTrigger      = UUID() }
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundStyle(.secondary)
-                    .padding(.trailing, 12)
-                }
+            // Segmented picker lives inside the content area so it never
+            // interferes with the window toolbar where ConnectionToolbar lives.
+            Picker("", selection: $selectedTab) {
+                Label("Description",       systemImage: "info.circle").tag(0)
+                Label("Messages",          systemImage: "list.bullet.rectangle").tag(1)
+                Label("Deadletter",        systemImage: "tray.and.arrow.down").tag(2)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
 
             Divider()
 
@@ -204,13 +190,35 @@ private struct MessagesTab: View {
     @State private var isLoading = false
     @State private var loadError: String?
     @State private var selectedMessageID: String?
+    @State private var showRepairSheet = false
+    @State private var showDeleteConfirm = false
+    @State private var isDeleting = false
+    @State private var deleteError: String?
 
     private var selectedMessage: MessageItem? {
         messages.first { $0.id == selectedMessageID }
     }
 
     var body: some View {
-        VSplitView {
+        VStack(spacing: 0) {
+            // Refresh button in the content area — keeps the window toolbar clean.
+            HStack {
+                Spacer()
+                Button {
+                    Task { await loadMessages() }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .disabled(isLoading)
+                .buttonStyle(.borderless)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 5)
+            }
+            .background(.bar)
+
+            Divider()
+
+            VSplitView {
                 // ── Top: message table ──────────────────────────────
                 Group {
                     if isLoading {
@@ -271,9 +279,25 @@ private struct MessagesTab: View {
                             }
                             .width(65)
                         }
+                        .contextMenu(forSelectionType: String.self) { ids in
+                            if let id = ids.first, let msg = messages.first(where: { $0.id == id }) {
+                                Button("Repair or Resubmit Selected Message") {
+                                    selectedMessageID = id
+                                    showRepairSheet = true
+                                }
+                                Divider()
+                                Button("Save Selected Message") {
+                                    saveMessage(msg)
+                                }
+                                Button("Delete Selected Message", role: .destructive) {
+                                    selectedMessageID = id
+                                    showDeleteConfirm = true
+                                }
+                            }
+                        }
                     }
                 }
-                .frame(minHeight: 140)
+                .frame(minHeight: 162)
 
                 // ── Bottom: body + properties side by side ──────────
                 HSplitView {
@@ -284,10 +308,42 @@ private struct MessagesTab: View {
                         .frame(minWidth: 220)
                 }
                 .frame(minHeight: 160)
+            }
         }
         .task { await loadMessages() }
         .onChange(of: queue.name) { _, _ in Task { await loadMessages() } }
         .onChange(of: trigger)    { _, _ in Task { await loadMessages() } }
+        .sheet(isPresented: $showRepairSheet) {
+            if let msg = selectedMessage {
+                RepairResubmitSheet(message: msg, queueOrTopic: queue.name)
+            }
+        }
+        .confirmationDialog(
+            "Delete Message?",
+            isPresented: $showDeleteConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                Task { await deleteSelectedMessage() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            if let msg = selectedMessage {
+                Text("Sequence #\(msg.sequenceNumber) will be permanently removed.")
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if let err = deleteError {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
+                    Text(err).font(.caption).foregroundStyle(.red)
+                    Spacer()
+                    Button("Dismiss") { deleteError = nil }.font(.caption)
+                }
+                .padding(8)
+                .background(.bar)
+            }
+        }
     }
 
     private func loadMessages() async {
@@ -301,6 +357,51 @@ private struct MessagesTab: View {
         } catch {
             messages = []
             loadError = error.localizedDescription
+        }
+    }
+
+    private func saveMessage(_ msg: MessageItem) {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.json]
+        panel.nameFieldStringValue = "message-\(msg.sequenceNumber).json"
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            let data: [String: Any] = [
+                "id": msg.id,
+                "sequenceNumber": msg.sequenceNumber,
+                "body": msg.body,
+                "contentType": msg.contentType,
+                "subject": msg.subject,
+                "correlationId": msg.correlationId,
+                "replyTo": msg.replyTo,
+                "toAddress": msg.toAddress,
+                "sessionId": msg.sessionId,
+                "partitionKey": msg.partitionKey,
+                "deliveryCount": msg.deliveryCount,
+                "enqueuedTime": ISO8601DateFormatter().string(from: msg.enqueuedTime),
+                "properties": msg.properties
+            ]
+            if let json = try? JSONSerialization.data(withJSONObject: data, options: [.prettyPrinted, .sortedKeys]) {
+                try? json.write(to: url)
+            }
+        }
+    }
+
+    private func deleteSelectedMessage() async {
+        guard let msg = selectedMessage else { return }
+        isDeleting = true
+        deleteError = nil
+        defer { isDeleting = false }
+        do {
+            try await grpc.deleteMessage(
+                queueName: queue.name,
+                isDLQ: isDLQ,
+                sequenceNumber: msg.sequenceNumber
+            )
+            messages.removeAll { $0.id == msg.id }
+            selectedMessageID = nil
+        } catch {
+            deleteError = error.localizedDescription
         }
     }
 }
@@ -448,6 +549,7 @@ private struct MessagePropertiesPanel: View {
                     TableColumn("Key") { row in
                         Text(row.key)
                             .font(.system(.caption, design: .monospaced))
+                            .textSelection(.enabled)
                     }
                     .width(min: 80, ideal: 140)
 
@@ -455,6 +557,7 @@ private struct MessagePropertiesPanel: View {
                         Text(row.value)
                             .font(.caption)
                             .lineLimit(1)
+                            .textSelection(.enabled)
                     }
                 }
             }
@@ -480,36 +583,6 @@ private struct DataAccessRestrictedView: View {
                 .frame(maxWidth: 360)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-// MARK: - Tab Capsule Button
-
-/// Individual capsule-shaped tab button.
-/// Selected state uses the accent colour (blue by default) with white text.
-/// Unselected state uses a faint fill so the entire capsule is always hit-testable.
-@available(macOS 15.0, *)
-struct TabCapsuleButton: View {
-    let title: String
-    let systemImage: String
-    let tag: Int
-    @Binding var selected: Int
-
-    var body: some View {
-        Button { selected = tag } label: {
-            Label(title, systemImage: systemImage)
-                .font(.subheadline)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 7)
-                .background(
-                    selected == tag ? Color.accentColor : Color.secondary.opacity(0.08),
-                    in: Capsule()
-                )
-                .foregroundStyle(selected == tag ? Color.white : Color.secondary)
-        }
-        .buttonStyle(.plain)
-        .contentShape(Rectangle())
-        .animation(.easeInOut(duration: 0.15), value: selected)
     }
 }
 
