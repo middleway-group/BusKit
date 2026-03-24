@@ -22,13 +22,15 @@ struct SubscriptionDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 8) {
-                Picker("", selection: $selectedTab) {
-                    Label("Description", systemImage: "info.circle").tag(0)
-                    Label("Messages",    systemImage: "list.bullet.rectangle").tag(1)
-                    Label("Deadletter",  systemImage: "tray.and.arrow.down").tag(2)
-                }
-                .pickerStyle(.segmented)
+            HStack(spacing: 0) {
+                TabCapsuleButton(title: "Description", systemImage: "info.circle",
+                                 tag: 0, selected: $selectedTab)
+                TabCapsuleButton(title: "Messages",    systemImage: "list.bullet.rectangle",
+                                 tag: 1, selected: $selectedTab)
+                TabCapsuleButton(title: "Deadletter",  systemImage: "tray.and.arrow.down",
+                                 tag: 2, selected: $selectedTab)
+
+                Spacer()
 
                 if selectedTab == 1 || selectedTab == 2 {
                     Button {
@@ -38,10 +40,12 @@ struct SubscriptionDetailView: View {
                         Image(systemName: "arrow.clockwise")
                     }
                     .buttonStyle(.borderless)
+                    .foregroundStyle(.secondary)
+                    .padding(.trailing, 12)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
 
             Divider()
 

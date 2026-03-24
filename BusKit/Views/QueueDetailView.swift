@@ -18,14 +18,16 @@ struct QueueDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Tab row: picker + contextual refresh button share one line.
-            HStack(spacing: 8) {
-                Picker("", selection: $selectedTab) {
-                    Label("Description", systemImage: "info.circle").tag(0)
-                    Label("Messages",    systemImage: "list.bullet.rectangle").tag(1)
-                    Label("Deadletter",  systemImage: "tray.and.arrow.down").tag(2)
-                }
-                .pickerStyle(.segmented)
+            // Tab row: individual capsule buttons + contextual refresh on the right.
+            HStack(spacing: 0) {
+                TabCapsuleButton(title: "Description", systemImage: "info.circle",
+                                 tag: 0, selected: $selectedTab)
+                TabCapsuleButton(title: "Messages", systemImage: "list.bullet.rectangle",
+                                 tag: 1, selected: $selectedTab)
+                TabCapsuleButton(title: "Deadletter", systemImage: "tray.and.arrow.down",
+                                 tag: 2, selected: $selectedTab)
+
+                Spacer()
 
                 if selectedTab == 1 || selectedTab == 2 {
                     Button {
@@ -35,10 +37,12 @@ struct QueueDetailView: View {
                         Image(systemName: "arrow.clockwise")
                     }
                     .buttonStyle(.borderless)
+                    .foregroundStyle(.secondary)
+                    .padding(.trailing, 12)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
 
             Divider()
 
@@ -476,6 +480,35 @@ private struct DataAccessRestrictedView: View {
                 .frame(maxWidth: 360)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - Tab Capsule Button
+
+/// Individual capsule-shaped tab button that mimics the macOS tab-bar oval style.
+@available(macOS 15.0, *)
+struct TabCapsuleButton: View {
+    let title: String
+    let systemImage: String
+    let tag: Int
+    @Binding var selected: Int
+
+    var body: some View {
+        Button { selected = tag } label: {
+            Label(title, systemImage: systemImage)
+                .font(.subheadline)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(
+                    selected == tag
+                        ? Color.secondary.opacity(0.18)
+                        : Color.clear,
+                    in: Capsule()
+                )
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(selected == tag ? .primary : .secondary)
+        .animation(.easeInOut(duration: 0.15), value: selected)
     }
 }
 
