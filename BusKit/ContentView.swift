@@ -28,7 +28,7 @@ struct ContentView: View {
         }
         .navigationTitle("BusKit")
         .toolbar {
-            ToolbarItem(placement: .automatic) {
+            ToolbarItem(placement: .primaryAction) {
                 ConnectionToolbar(connectionString: $connectionString)
             }
         }
