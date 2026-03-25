@@ -7,6 +7,14 @@ struct ConnectionToolbar: View {
     @State private var isConnecting = false
     @State private var isPopoverPresented = false
 
+    /// True while the user is signed in but not yet connected, or actively
+    /// connecting. Used as a single open-trigger so the popover auto-opens
+    /// exactly when there is something meaningful to show.
+    private var shouldAutoOpenPopover: Bool {
+        (grpc.azureLoginPhase == .ready && grpc.connectionState != .connected) ||
+        grpc.azureLoginPhase == .connecting
+    }
+
     var body: some View {
         Button {
             isPopoverPresented.toggle()
@@ -23,30 +31,17 @@ struct ConnectionToolbar: View {
             ConnectionPopover(connectionString: $connectionString, isConnecting: $isConnecting)
                 .environment(grpc)
         }
-        .onChange(of: grpc.azureLoginPhase) { _, newPhase in
-            switch newPhase {
-            case .signingIn:
-                // Browser is opening — close the popover so it's out of the way.
-                isPopoverPresented = false
-            case .ready where grpc.connectionState != .connected:
-                // Auth completed — reopen so the user can pick a namespace.
-                isPopoverPresented = true
-            case .ready:
-                // Connection succeeded (state == .connected) — close the popover.
-                isPopoverPresented = false
-            case .connecting:
-                // Keep the popover open so the user can see connection progress.
-                isPopoverPresented = true
-            default:
-                break
-            }
+        // Open trigger: whenever the combined auto-open condition becomes true.
+        .onChange(of: shouldAutoOpenPopover) { _, shouldOpen in
+            if shouldOpen { isPopoverPresented = true }
         }
-        .onChange(of: grpc.connectionState) { _, newState in
-            // Re-open when disconnected (e.g. user clicked Disconnect) while
-            // signed in, so the namespace picker is immediately accessible.
-            if newState != .connected, grpc.azureLoginPhase == .ready {
-                isPopoverPresented = true
-            }
+        // Close trigger: browser is opening — get out of the way.
+        .onChange(of: grpc.azureLoginPhase) { _, phase in
+            if phase == .signingIn { isPopoverPresented = false }
+        }
+        // Close trigger: connection succeeded — close before RBAC sheet can appear.
+        .onChange(of: grpc.connectionState) { _, state in
+            if state == .connected { isPopoverPresented = false }
         }
     }
 
