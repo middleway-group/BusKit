@@ -4,7 +4,6 @@ import SwiftUI
 struct ContentView: View {
     @Environment(GRPCManager.self) var grpc
     @State private var connectionString: String = ""
-    @State private var isConnectionPopoverPresented = false
     @State private var selection: SidebarSelection?
 
     // RBAC dialog: track which access level is currently shown so the sheet
@@ -30,7 +29,7 @@ struct ContentView: View {
         .navigationTitle("BusKit")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                ConnectionToolbar(connectionString: $connectionString, isPopoverPresented: $isConnectionPopoverPresented)
+                ConnectionToolbar(connectionString: $connectionString)
             }
         }
         .onChange(of: grpc.connectionState) { _, newState in

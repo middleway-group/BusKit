@@ -5,11 +5,28 @@ struct ConnectionToolbar: View {
     @Environment(GRPCManager.self) var grpc
     @Binding var connectionString: String
     @State private var isConnecting = false
-    @Binding var isPopoverPresented: Bool
+    @State private var manualShowPopover = false
+
+    /// The popover is shown whenever the user manually opens it OR whenever
+    /// Azure auth has completed and a namespace hasn't been chosen yet.
+    /// Because azureLoginPhase and connectionState are both read here, SwiftUI
+    /// re-evaluates this binding on every state change — no onChange/notification
+    /// needed. Dismissing the popover writes false to manualShowPopover; the
+    /// auto-open condition continues to hold until the user connects or signs out.
+    private var popoverBinding: Binding<Bool> {
+        Binding(
+            get: {
+                manualShowPopover
+                || (grpc.azureLoginPhase == .ready && grpc.connectionState != .connected)
+                || (grpc.azureLoginPhase == .connecting)
+            },
+            set: { manualShowPopover = $0 }
+        )
+    }
 
     var body: some View {
         Button {
-            isPopoverPresented.toggle()
+            manualShowPopover.toggle()
         } label: {
             HStack(spacing: 6) {
                 Circle()
@@ -19,44 +36,9 @@ struct ConnectionToolbar: View {
                     .font(.subheadline)
             }
         }
-        .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
+        .popover(isPresented: popoverBinding, arrowEdge: .bottom) {
             ConnectionPopover(connectionString: $connectionString, isConnecting: $isConnecting)
                 .environment(grpc)
-        }
-        // task(id:) fires on first appearance AND on every azureLoginPhase change.
-        // Unlike onChange, it never misses the current value when the view first
-        // appears or is recreated by NSToolbar.
-        .task(id: grpc.azureLoginPhase) {
-            switch grpc.azureLoginPhase {
-            case .signingIn:
-                // Browser is opening — dismiss the popover.
-                isPopoverPresented = false
-            case .ready where grpc.connectionState != .connected:
-                // Auth done — show the namespace picker.
-                isPopoverPresented = true
-            case .connecting:
-                // User clicked Connect — keep popover open for progress feedback.
-                isPopoverPresented = true
-            default:
-                // .idle or .ready-while-connected: no automatic action.
-                break
-            }
-        }
-        // Separate handler for connection-state changes that happen while
-        // azureLoginPhase stays constant (e.g., connectionState .connected
-        // is set inside connectWithAzureAD before the phase defer fires).
-        .onChange(of: grpc.connectionState) { _, newState in
-            switch newState {
-            case .connected:
-                // Close before the RBAC check runs so no sheet/popover conflict.
-                isPopoverPresented = false
-            default:
-                // Reconnection opportunity: if still signed in and no longer
-                // connected, reopen so the user can switch or retry.
-                if grpc.azureLoginPhase == .ready {
-                    isPopoverPresented = true
-                }
-            }
         }
     }
 
