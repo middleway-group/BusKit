@@ -169,6 +169,7 @@ private struct SubDescriptionTab: View {
 @available(macOS 15.0, *)
 private struct SubMessagesTab: View {
     @Environment(GRPCManager.self) var grpc
+    @Environment(EntityActionStore.self) var actionStore
     let subscription: SubscriptionItem
     let isDLQ: Bool
     let trigger: UUID
@@ -189,8 +190,18 @@ private struct SubMessagesTab: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
+            HStack(spacing: 4) {
+                Button {
+                    showRepairSheet = true
+                } label: {
+                    Label("Repair or Resubmit", systemImage: "wrench.and.screwdriver")
+                }
+                .buttonStyle(.borderless)
+                .disabled(selectedMessage == nil)
+                .help("Repair or resubmit the selected message")
+
                 Spacer()
+
                 Button {
                     Task { await loadMessages() }
                 } label: {
@@ -198,9 +209,10 @@ private struct SubMessagesTab: View {
                 }
                 .disabled(isLoading)
                 .buttonStyle(.borderless)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 5)
+                .padding(.horizontal, 8)
             }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
             .background(.bar)
 
             Divider()
@@ -390,6 +402,7 @@ private struct SubMessagesTab: View {
             )
             messages.removeAll { $0.id == msg.id }
             selectedMessageID = nil
+            actionStore.requestRefresh(.subscription(topic: subscription.topicName, sub: subscription.name))
         } catch {
             deleteError = error.localizedDescription
         }

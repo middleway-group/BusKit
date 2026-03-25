@@ -181,6 +181,7 @@ private struct DescriptionTab: View {
 @available(macOS 15.0, *)
 private struct MessagesTab: View {
     @Environment(GRPCManager.self) var grpc
+    @Environment(EntityActionStore.self) var actionStore
     let queue: QueueItem
     let isDLQ: Bool
     let trigger: UUID          // change this UUID to reload
@@ -201,9 +202,19 @@ private struct MessagesTab: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Refresh button in the content area — keeps the window toolbar clean.
-            HStack {
+            // Action toolbar — keeps the window toolbar clean.
+            HStack(spacing: 4) {
+                Button {
+                    showRepairSheet = true
+                } label: {
+                    Label("Repair or Resubmit", systemImage: "wrench.and.screwdriver")
+                }
+                .buttonStyle(.borderless)
+                .disabled(selectedMessage == nil)
+                .help("Repair or resubmit the selected message")
+
                 Spacer()
+
                 Button {
                     Task { await loadMessages() }
                 } label: {
@@ -211,9 +222,10 @@ private struct MessagesTab: View {
                 }
                 .disabled(isLoading)
                 .buttonStyle(.borderless)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 5)
+                .padding(.horizontal, 8)
             }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
             .background(.bar)
 
             Divider()
@@ -400,6 +412,7 @@ private struct MessagesTab: View {
             )
             messages.removeAll { $0.id == msg.id }
             selectedMessageID = nil
+            actionStore.requestRefresh(.queue(queue.name))
         } catch {
             deleteError = error.localizedDescription
         }
