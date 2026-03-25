@@ -5,11 +5,10 @@ struct ConnectionToolbar: View {
     @Environment(GRPCManager.self) var grpc
     @Binding var connectionString: String
     @State private var isConnecting = false
-    @State private var isPopoverPresented = false
+    @Binding var isPopoverPresented: Bool
 
     /// True while the user is signed in but not yet connected, or actively
-    /// connecting. Used as a single open-trigger so the popover auto-opens
-    /// exactly when there is something meaningful to show.
+    /// connecting. Used as the single open-trigger for the popover.
     private var shouldAutoOpenPopover: Bool {
         (grpc.azureLoginPhase == .ready && grpc.connectionState != .connected) ||
         grpc.azureLoginPhase == .connecting
@@ -30,6 +29,11 @@ struct ConnectionToolbar: View {
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             ConnectionPopover(connectionString: $connectionString, isConnecting: $isConnecting)
                 .environment(grpc)
+        }
+        // Restore correct state if the toolbar view is recreated by NSToolbar.
+        .onAppear {
+            if shouldAutoOpenPopover { isPopoverPresented = true }
+            else if !shouldAutoOpenPopover && grpc.azureLoginPhase == .signingIn { isPopoverPresented = false }
         }
         // Open trigger: whenever the combined auto-open condition becomes true.
         .onChange(of: shouldAutoOpenPopover) { _, shouldOpen in
