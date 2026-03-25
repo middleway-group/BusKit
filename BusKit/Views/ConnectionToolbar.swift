@@ -5,28 +5,11 @@ struct ConnectionToolbar: View {
     @Environment(GRPCManager.self) var grpc
     @Binding var connectionString: String
     @State private var isConnecting = false
-    @State private var manualShowPopover = false
-
-    /// The popover is shown whenever the user manually opens it OR whenever
-    /// Azure auth has completed and a namespace hasn't been chosen yet.
-    /// Because azureLoginPhase and connectionState are both read here, SwiftUI
-    /// re-evaluates this binding on every state change — no onChange/notification
-    /// needed. Dismissing the popover writes false to manualShowPopover; the
-    /// auto-open condition continues to hold until the user connects or signs out.
-    private var popoverBinding: Binding<Bool> {
-        Binding(
-            get: {
-                manualShowPopover
-                || (grpc.azureLoginPhase == .ready && grpc.connectionState != .connected)
-                || (grpc.azureLoginPhase == .connecting)
-            },
-            set: { manualShowPopover = $0 }
-        )
-    }
+    @State private var isPopoverPresented = false
 
     var body: some View {
         Button {
-            manualShowPopover.toggle()
+            isPopoverPresented.toggle()
         } label: {
             HStack(spacing: 6) {
                 Circle()
@@ -36,9 +19,31 @@ struct ConnectionToolbar: View {
                     .font(.subheadline)
             }
         }
-        .popover(isPresented: popoverBinding, arrowEdge: .bottom) {
+        .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             ConnectionPopover(connectionString: $connectionString, isConnecting: $isConnecting)
                 .environment(grpc)
+        }
+        .onChange(of: grpc.azureLoginPhase) { _, newPhase in
+            switch newPhase {
+            case .ready where grpc.connectionState != .connected:
+                // Signed in and namespace not yet chosen — open the picker.
+                isPopoverPresented = true
+            case .ready:
+                // Connection succeeded (state == .connected) — close the popover.
+                isPopoverPresented = false
+            case .connecting:
+                // Keep the popover open so the user can see connection progress.
+                isPopoverPresented = true
+            default:
+                break
+            }
+        }
+        .onChange(of: grpc.connectionState) { _, newState in
+            // Re-open when disconnected (e.g. user clicked Disconnect) while
+            // signed in, so the namespace picker is immediately accessible.
+            if newState != .connected, grpc.azureLoginPhase == .ready {
+                isPopoverPresented = true
+            }
         }
     }
 
