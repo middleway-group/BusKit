@@ -25,8 +25,11 @@ struct ConnectionToolbar: View {
         }
         .onChange(of: grpc.azureLoginPhase) { _, newPhase in
             switch newPhase {
+            case .signingIn:
+                // Browser is opening — close the popover so it's out of the way.
+                isPopoverPresented = false
             case .ready where grpc.connectionState != .connected:
-                // Signed in and namespace not yet chosen — open the picker.
+                // Auth completed — reopen so the user can pick a namespace.
                 isPopoverPresented = true
             case .ready:
                 // Connection succeeded (state == .connected) — close the popover.
