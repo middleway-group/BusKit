@@ -421,6 +421,8 @@ final class GRPCManager {
     }
 
     func resetAzureLoginState() {
+        connectionState = .disconnected
+        namespaceName = nil
         azureLoginPhase = .idle
         azureLoginError = nil
         azureSubscriptions = []
