@@ -216,6 +216,17 @@ struct SidebarView: View {
                 model.rules          = [:]
             }
         }
+        .onChange(of: actionStore.pendingRefresh) { _, req in
+            guard let req else { return }
+            Task {
+                switch req.target {
+                case .queue(let name):
+                    await refreshQueueCounts(name: name)
+                case .subscription(let topic, let sub):
+                    await refreshSubscriptionCounts(topicName: topic, subName: sub)
+                }
+            }
+        }
     }
 
     // MARK: - Context menu builder for queues
