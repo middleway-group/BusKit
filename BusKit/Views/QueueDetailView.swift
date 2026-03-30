@@ -207,11 +207,11 @@ private struct MessagesTab: View {
                 Button {
                     showRepairSheet = true
                 } label: {
-                    Label("Repair or Resubmit", systemImage: "wrench.and.screwdriver")
+                    Label("Repair and Resubmit", systemImage: "wrench.and.screwdriver")
                 }
                 .buttonStyle(.borderless)
                 .disabled(selectedMessage == nil)
-                .help("Repair or resubmit the selected message")
+                .help("Repair and resubmit the selected message")
 
                 Spacer()
 
@@ -293,7 +293,7 @@ private struct MessagesTab: View {
                         }
                         .contextMenu(forSelectionType: String.self) { ids in
                             if let id = ids.first, let msg = messages.first(where: { $0.id == id }) {
-                                Button("Repair or Resubmit Selected Message") {
+                                Button("Repair and Resubmit Selected Message") {
                                     selectedMessageID = id
                                     showRepairSheet = true
                                 }

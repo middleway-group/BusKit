@@ -69,7 +69,7 @@ struct RepairResubmitSheet: View {
     private var headerView: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Repair or Resubmit Message")
+                Text("Repair and Resubmit Message")
                     .font(.headline)
                 Text("Message ID: \(message.id.isEmpty ? "—" : message.id)")
                     .font(.caption)
@@ -346,24 +346,17 @@ struct RepairResubmitSheet: View {
 
     private var footerView: some View {
         HStack(spacing: 8) {
-            // Cancel — left-aligned per macOS HIG
-            Button("Cancel") { dismiss() }
-                .keyboardShortcut(.escape, modifiers: [])
-
             Spacer()
 
             if isSending { ProgressView().controlSize(.small) }
 
-            // Repair — secondary action
-            Button("Repair") { Task { await send() } }
-                .buttonStyle(.bordered)
-                .help("Edit and send the repaired message to the target destination")
-                .disabled(isSubmitDisabled)
+            Button("Cancel") { dismiss() }
+                .keyboardShortcut(.escape, modifiers: [])
 
             // Resubmit — primary action
             Button("Resubmit") { Task { await send() } }
                 .buttonStyle(.borderedProminent)
-                .help("Resubmit this message to the target destination")
+                .help("Repair and resubmit this message to the target destination")
                 .disabled(isSubmitDisabled)
         }
         .padding(.horizontal, 16)
