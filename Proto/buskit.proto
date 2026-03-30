@@ -263,6 +263,7 @@ message SendMessageRequest {
 message SendMessageReply {
   bool success = 1;
   string message_id = 2;
+  string error = 3;
 }
 
 message SubscribeRequest {

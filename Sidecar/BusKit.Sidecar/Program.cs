@@ -2,7 +2,10 @@ using BusKit.Sidecar.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddGrpc();
+builder.Services.AddGrpc(options =>
+{
+    options.EnableDetailedErrors = true;
+});
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient(nameof(PermissionEvaluationEngine));
 builder.Services.AddSingleton<PermissionEvaluationEngine>();

@@ -599,10 +599,10 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         if (_client == null)
             return new SendMessageReply { Success = false };
 
-        var sender = _client.CreateSender(request.QueueName);
-
+        ServiceBusSender? sender = null;
         try
         {
+            sender = _client.CreateSender(request.QueueName);
             var message = new ServiceBusMessage(request.Body)
             {
                 ContentType = request.ContentType
@@ -618,12 +618,17 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
             return new SendMessageReply
             {
                 Success = true,
-                MessageId = message.MessageId
+                MessageId = message.MessageId ?? string.Empty
             };
+        }
+        catch (Exception ex)
+        {
+            return new SendMessageReply { Success = false, Error = ex.Message ?? string.Empty };
         }
         finally
         {
-            await sender.DisposeAsync();
+            if (sender != null)
+                _ = sender.DisposeAsync().AsTask().ContinueWith(static _ => { });
         }
     }
 
@@ -724,28 +729,34 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         if (_client == null)
             return new SendMessageReply { Success = false };
 
-        var sender = _client.CreateSender(request.QueueOrTopic);
+        ServiceBusSender? sender = null;
         try
         {
+            sender = _client.CreateSender(request.QueueOrTopic);
             var message = new ServiceBusMessage(request.Body)
             {
-                ContentType = string.IsNullOrEmpty(request.ContentType) ? null : request.ContentType,
-                Subject = string.IsNullOrEmpty(request.Subject) ? null : request.Subject,
+                ContentType  = string.IsNullOrEmpty(request.ContentType)  ? null : request.ContentType,
+                Subject      = string.IsNullOrEmpty(request.Subject)      ? null : request.Subject,
                 CorrelationId = string.IsNullOrEmpty(request.CorrelationId) ? null : request.CorrelationId,
-                ReplyTo = string.IsNullOrEmpty(request.ReplyTo) ? null : request.ReplyTo,
-                To = string.IsNullOrEmpty(request.ToAddress) ? null : request.ToAddress,
-                SessionId = string.IsNullOrEmpty(request.SessionId) ? null : request.SessionId,
-                PartitionKey = string.IsNullOrEmpty(request.PartitionKey) ? null : request.PartitionKey,
             };
+            if (!string.IsNullOrEmpty(request.ReplyTo))     message.ReplyTo     = request.ReplyTo;
+            if (!string.IsNullOrEmpty(request.ToAddress))   message.To          = request.ToAddress;
+            if (!string.IsNullOrEmpty(request.SessionId))   message.SessionId   = request.SessionId;
+            if (!string.IsNullOrEmpty(request.PartitionKey)) message.PartitionKey = request.PartitionKey;
             foreach (var prop in request.Properties)
                 message.ApplicationProperties[prop.Key] = prop.Value;
 
             await sender.SendMessageAsync(message);
-            return new SendMessageReply { Success = true, MessageId = message.MessageId };
+            return new SendMessageReply { Success = true, MessageId = message.MessageId ?? string.Empty };
+        }
+        catch (Exception ex)
+        {
+            return new SendMessageReply { Success = false, Error = ex.Message ?? string.Empty };
         }
         finally
         {
-            await sender.DisposeAsync();
+            if (sender != null)
+                _ = sender.DisposeAsync().AsTask().ContinueWith(static _ => { });
         }
     }
 

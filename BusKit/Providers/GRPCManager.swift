@@ -650,7 +650,17 @@ final class GRPCManager {
         req.sessionID = sessionID
         req.partitionKey = partitionKey
         req.properties = properties
-        return try await buskit.sendMessageExtended(req)
+        do {
+            let reply = try await buskit.sendMessageExtended(req)
+            if !reply.success {
+                throw GRPCManagerError.operationFailed(reply.error.isEmpty ? "Send failed" : reply.error)
+            }
+            return reply
+        } catch let rpcError as RPCError {
+            throw GRPCManagerError.operationFailed(
+                rpcError.message.isEmpty ? "gRPC error (\(rpcError.code))" : rpcError.message
+            )
+        }
     }
 
     // MARK: - Subscribe (server streaming)

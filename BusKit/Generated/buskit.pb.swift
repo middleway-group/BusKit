@@ -698,6 +698,8 @@ public struct Buskit_SendMessageReply: Sendable {
 
   public var messageID: String = String()
 
+  public var error: String = String()
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -2260,7 +2262,7 @@ extension Buskit_SendMessageRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
 
 extension Buskit_SendMessageReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".SendMessageReply"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}success\0\u{3}message_id\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}success\0\u{3}message_id\0\u{1}error\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -2270,6 +2272,7 @@ extension Buskit_SendMessageReply: SwiftProtobuf.Message, SwiftProtobuf._Message
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularBoolField(value: &self.success) }()
       case 2: try { try decoder.decodeSingularStringField(value: &self.messageID) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.error) }()
       default: break
       }
     }
@@ -2282,12 +2285,16 @@ extension Buskit_SendMessageReply: SwiftProtobuf.Message, SwiftProtobuf._Message
     if !self.messageID.isEmpty {
       try visitor.visitSingularStringField(value: self.messageID, fieldNumber: 2)
     }
+    if !self.error.isEmpty {
+      try visitor.visitSingularStringField(value: self.error, fieldNumber: 3)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Buskit_SendMessageReply, rhs: Buskit_SendMessageReply) -> Bool {
     if lhs.success != rhs.success {return false}
     if lhs.messageID != rhs.messageID {return false}
+    if lhs.error != rhs.error {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

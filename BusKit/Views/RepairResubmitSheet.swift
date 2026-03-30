@@ -16,6 +16,10 @@ struct RepairResubmitSheet: View {
     @State private var contentType: String
     @State private var subject: String
     @State private var correlationID: String
+    @State private var replyTo: String
+    @State private var toAddress: String
+    @State private var sessionID: String
+    @State private var partitionKey: String
     @State private var properties: [(key: String, value: String)]
 
     @State private var availableQueues: [Buskit_QueueInfo] = []
@@ -34,6 +38,10 @@ struct RepairResubmitSheet: View {
         _contentType = State(initialValue: message.contentType)
         _subject = State(initialValue: message.subject)
         _correlationID = State(initialValue: message.correlationId)
+        _replyTo = State(initialValue: message.replyTo)
+        _toAddress = State(initialValue: message.toAddress)
+        _sessionID = State(initialValue: message.sessionId)
+        _partitionKey = State(initialValue: message.partitionKey)
         _properties = State(initialValue: message.properties.sorted(by: { $0.key < $1.key }).map { (key: $0.key, value: $0.value) })
     }
 
@@ -210,6 +218,10 @@ struct RepairResubmitSheet: View {
             VStack(spacing: 8) {
                 PropertyField(label: "Subject", text: $subject)
                 PropertyField(label: "Content Type", text: $contentType)
+                PropertyField(label: "Reply To", text: $replyTo)
+                PropertyField(label: "To", text: $toAddress)
+                PropertyField(label: "Session ID", text: $sessionID)
+                PropertyField(label: "Partition Key", text: $partitionKey)
 
                 // Correlation ID with helper text
                 VStack(alignment: .leading, spacing: 3) {
@@ -408,6 +420,10 @@ struct RepairResubmitSheet: View {
                 contentType: contentType,
                 subject: subject,
                 correlationID: correlationID,
+                replyTo: replyTo,
+                toAddress: toAddress,
+                sessionID: sessionID,
+                partitionKey: partitionKey,
                 properties: propsDict
             )
             didSend = true
