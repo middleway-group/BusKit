@@ -57,6 +57,12 @@ struct RepairResubmitSheet: View {
                 rightPanel
             }
             .frame(maxHeight: .infinity)
+            if sendError != nil || didSend {
+                Divider()
+                statusSection
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+            }
             Divider()
             footerView
         }
@@ -138,7 +144,6 @@ struct RepairResubmitSheet: View {
                     destinationSection
                     systemPropertiesSection
                     customPropertiesSection
-                    statusSection
                     // Bottom padding keeps last item above the gradient fade
                     Color.clear.frame(height: 32)
                 }
