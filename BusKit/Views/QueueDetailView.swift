@@ -28,7 +28,7 @@ struct QueueDetailView: View {
             }
             .pickerStyle(.segmented)
             .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .padding(.vertical, 10)
 
             Divider()
 
@@ -182,6 +182,7 @@ private struct DescriptionTab: View {
 private struct MessagesTab: View {
     @Environment(GRPCManager.self) var grpc
     @Environment(EntityActionStore.self) var actionStore
+    @Environment(AppStatusModel.self) var appStatus
     let queue: QueueItem
     let isDLQ: Bool
     let trigger: UUID          // change this UUID to reload
@@ -200,33 +201,63 @@ private struct MessagesTab: View {
         messages.first { $0.id == selectedMessageID }
     }
 
+    private var actionToolbar: some View {
+        HStack(spacing: 0) {
+            Button {
+                showRepairSheet = true
+            } label: {
+                Label("Repair & Resubmit", systemImage: "wrench.and.screwdriver")
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+            }
+            .buttonStyle(.borderless)
+            .disabled(selectedMessage == nil)
+            .help("Repair and resubmit the selected message")
+
+            toolbarDivider
+
+            Button {
+                if let msg = selectedMessage { saveMessage(msg) }
+            } label: {
+                Label("Save", systemImage: "square.and.arrow.down")
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+            }
+            .buttonStyle(.borderless)
+            .disabled(selectedMessage == nil)
+            .help("Save message to disk as JSON")
+
+            Button {
+                if selectedMessage != nil { showDeleteConfirm = true }
+            } label: {
+                Label("Delete", systemImage: "trash")
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+            }
+            .buttonStyle(.borderless)
+            .disabled(selectedMessage == nil)
+            .help("Permanently delete the selected message")
+
+            Spacer()
+
+            toolbarDivider
+
+            Button {
+                Task { await loadMessages() }
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+            }
+            .disabled(isLoading)
+            .buttonStyle(.borderless)
+            .help("Refresh messages")
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 3)
+        .background(.bar)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            // Action toolbar — keeps the window toolbar clean.
-            HStack(spacing: 4) {
-                Button {
-                    showRepairSheet = true
-                } label: {
-                    Label("Repair and Resubmit", systemImage: "wrench.and.screwdriver")
-                }
-                .buttonStyle(.borderless)
-                .disabled(selectedMessage == nil)
-                .help("Repair and resubmit the selected message")
-
-                Spacer()
-
-                Button {
-                    Task { await loadMessages() }
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .disabled(isLoading)
-                .buttonStyle(.borderless)
-                .padding(.horizontal, 8)
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .background(.bar)
+            // ── Action toolbar ───────────────────────────────────
+            actionToolbar
 
             Divider()
 
@@ -251,13 +282,6 @@ private struct MessagesTab: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
                         Table(messages, selection: $selectedMessageID) {
-                            TableColumn("#") { msg in
-                                Text("\(msg.sequenceNumber)")
-                                    .monospacedDigit()
-                                    .foregroundStyle(.secondary)
-                            }
-                            .width(55)
-
                             TableColumn("Message ID") { msg in
                                 Text(msg.id.isEmpty ? "—" : msg.id)
                                     .font(.system(.caption, design: .monospaced))
@@ -280,14 +304,15 @@ private struct MessagesTab: View {
 
                             TableColumn("Enqueued") { msg in
                                 Text(msg.enqueuedTime, style: .relative)
-                                    .foregroundStyle(.secondary)
+                                    .font(.system(.caption, weight: .light))
+                                    .foregroundStyle(Color(nsColor: .systemGray))
+                                    .help(msg.enqueuedTime.formatted(
+                                        date: .complete, time: .complete))
                             }
                             .width(min: 90, ideal: 110)
 
                             TableColumn("Deliveries") { msg in
-                                Text("\(msg.deliveryCount)")
-                                    .monospacedDigit()
-                                    .foregroundStyle(msg.deliveryCount > 1 ? .orange : .secondary)
+                                DeliveryBadge(count: msg.deliveryCount)
                             }
                             .width(65)
                         }
@@ -366,6 +391,8 @@ private struct MessagesTab: View {
             messages = try await grpc.peekMessages(queueName: queue.name,
                                                    isDLQ: isDLQ,
                                                    maxCount: requestedCount)
+            appStatus.lastRefreshTime   = Date()
+            appStatus.visibleMessageCount = messages.count
         } catch {
             messages = []
             loadError = error.localizedDescription
@@ -419,6 +446,41 @@ private struct MessagesTab: View {
     }
 }
 
+// MARK: - Toolbar divider helper
+
+private var toolbarDivider: some View {
+    Divider()
+        .frame(height: 16)
+        .padding(.horizontal, 2)
+}
+
+// MARK: - Delivery badge
+
+struct DeliveryBadge: View {
+    let count: Int32
+    var body: some View {
+        if count > 5 {
+            Text("\(count)")
+                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.red)
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+        } else if count > 1 {
+            Text("\(count)")
+                .font(.system(size: 11, design: .monospaced))
+                .monospacedDigit()
+                .foregroundStyle(.orange)
+        } else {
+            Text("\(count)")
+                .font(.system(size: 11, design: .monospaced))
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
 // MARK: - JSON Syntax Highlighter
 
 enum JSONHighlighter {
@@ -467,19 +529,41 @@ enum JSONHighlighter {
                                                     options: .allowCommentsAndWhitespace)
         else { return result }
 
+        // Adaptive spec colors — correct for both Light and Dark mode.
+        let keyColor = NSColor(name: nil) { t in
+            t.name == .darkAqua
+                ? NSColor(calibratedRed: 0.42, green: 0.70, blue: 1.00, alpha: 1) // lighter
+                : NSColor(calibratedRed: 0.00, green: 0.44, blue: 0.79, alpha: 1) // #0070C9
+        }
+        let stringColor = NSColor(name: nil) { t in
+            t.name == .darkAqua
+                ? NSColor(calibratedRed: 1.00, green: 0.47, blue: 0.43, alpha: 1) // lighter
+                : NSColor(calibratedRed: 0.77, green: 0.10, blue: 0.09, alpha: 1) // #C41A16
+        }
+        let numberColor = NSColor(name: nil) { t in
+            t.name == .darkAqua
+                ? NSColor(calibratedRed: 0.53, green: 0.60, blue: 1.00, alpha: 1) // lighter
+                : NSColor(calibratedRed: 0.11, green: 0.00, blue: 0.81, alpha: 1) // #1C00CF
+        }
+        let boolColor = NSColor(name: nil) { t in
+            t.name == .darkAqua
+                ? NSColor(calibratedRed: 0.78, green: 0.52, blue: 1.00, alpha: 1) // lighter
+                : NSColor(calibratedRed: 0.61, green: 0.14, blue: 0.58, alpha: 1) // #9B2393
+        }
+
         let nsLen = (json as NSString).length
         for match in regex.matches(in: json, range: NSRange(location: 0, length: nsLen)) {
             if match.range(at: 1).location != NSNotFound {
-                result.addAttribute(.foregroundColor, value: NSColor.systemBlue,
+                result.addAttribute(.foregroundColor, value: keyColor,
                                     range: match.range(at: 1))
             } else if match.range(at: 2).location != NSNotFound {
-                result.addAttribute(.foregroundColor, value: NSColor.systemGreen,
+                result.addAttribute(.foregroundColor, value: stringColor,
                                     range: match.range(at: 2))
             } else if match.range(at: 3).location != NSNotFound {
-                result.addAttribute(.foregroundColor, value: NSColor.systemOrange,
+                result.addAttribute(.foregroundColor, value: numberColor,
                                     range: match.range(at: 3))
             } else {
-                result.addAttribute(.foregroundColor, value: NSColor.systemTeal,
+                result.addAttribute(.foregroundColor, value: boolColor,
                                     range: match.range)
             }
         }
@@ -491,25 +575,26 @@ enum JSONHighlighter {
 // MARK: - Message Properties Panel
 
 @available(macOS 15.0, *)
-private struct MessagePropertiesPanel: View {
+struct MessagePropertiesPanel: View {
     let message: MessageItem?
 
-    private struct PropRow: Identifiable {
+    struct PropRow: Identifiable {
         let id = UUID()
-        let kind: String
+        let isSystem: Bool
         let key: String
         let value: String
     }
 
-    private var rows: [PropRow] {
+    var rows: [PropRow] {
         guard let m = message else { return [] }
         var result: [PropRow] = []
 
         func sys(_ key: String, _ value: String) {
             guard !value.isEmpty else { return }
-            result.append(PropRow(kind: "System", key: key, value: value))
+            result.append(PropRow(isSystem: true, key: key, value: value))
         }
 
+        sys("messageId",      m.id)
         sys("sequenceNumber", "\(m.sequenceNumber)")
         sys("deliveryCount",  "\(m.deliveryCount)")
         sys("contentType",    m.contentType)
@@ -522,23 +607,24 @@ private struct MessagePropertiesPanel: View {
         if m.expiresAt.timeIntervalSince1970 > 0 {
             sys("expiresAt", m.expiresAt.formatted(date: .abbreviated, time: .shortened))
         }
-
         for (k, v) in m.properties.sorted(by: { $0.key < $1.key }) {
-            result.append(PropRow(kind: "Custom", key: k, value: v))
+            result.append(PropRow(isSystem: false, key: k, value: v))
         }
-
         return result
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Properties")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.bar)
+            // ── Header ──────────────────────────────────────────
+            HStack {
+                Text("Properties")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(.bar)
 
             Divider()
 
@@ -551,26 +637,15 @@ private struct MessagePropertiesPanel: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(12)
             } else {
-                Table(rows) {
-                    TableColumn("Kind") { row in
-                        Text(row.kind)
-                            .font(.caption)
-                            .foregroundStyle(row.kind == "System" ? .blue : .purple)
-                    }
-                    .width(45)
-
-                    TableColumn("Key") { row in
-                        Text(row.key)
-                            .font(.system(.caption, design: .monospaced))
-                            .textSelection(.enabled)
-                    }
-                    .width(min: 80, ideal: 140)
-
-                    TableColumn("Value") { row in
-                        Text(row.value)
-                            .font(.caption)
-                            .lineLimit(1)
-                            .textSelection(.enabled)
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(Array(rows.enumerated()), id: \.element.id) { idx, row in
+                            PropRowView(row: row, isEven: idx % 2 == 0)
+                            if idx < rows.count - 1 {
+                                Divider()
+                                    .padding(.leading, 3)
+                            }
+                        }
                     }
                 }
             }
@@ -578,10 +653,77 @@ private struct MessagePropertiesPanel: View {
     }
 }
 
+// MARK: - PropRowView
+
+@available(macOS 15.0, *)
+private struct PropRowView: View {
+    let row: MessagePropertiesPanel.PropRow
+    let isEven: Bool
+
+    @State private var isHovered  = false
+    @State private var isExpanded = false
+    @State private var copied     = false
+
+    var body: some View {
+        HStack(spacing: 0) {
+            // Color-coded left border: blue = System, purple = Custom
+            Rectangle()
+                .fill(row.isSystem ? Color.blue : Color.purple)
+                .frame(width: 3)
+
+            HStack(alignment: .top, spacing: 8) {
+                Text(row.key)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .frame(minWidth: 80, alignment: .leading)
+
+                Text(row.value)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.primary)
+                    .lineLimit(isExpanded ? nil : 1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .onTapGesture { isExpanded.toggle() }
+
+                // Hover-reveal copy button
+                if isHovered {
+                    Button {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(row.value, forType: .string)
+                        withAnimation { copied = true }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                            withAnimation { copied = false }
+                        }
+                    } label: {
+                        Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                            .font(.system(size: 10))
+                            .foregroundStyle(copied ? .green : .secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Copy value")
+                    .frame(width: 20)
+                    .transition(.opacity)
+                } else {
+                    // Reserve space so the row width stays stable
+                    Color.clear.frame(width: 20)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+        }
+        .frame(minHeight: 28)
+        .background(isEven
+                    ? Color.clear
+                    : Color(nsColor: .controlBackgroundColor).opacity(0.5))
+        .onHover { isHovered = $0 }
+        .animation(.easeInOut(duration: 0.1), value: isHovered)
+    }
+}
+
 // MARK: - Data Access Restricted View
 
 @available(macOS 15.0, *)
-private struct DataAccessRestrictedView: View {
+struct DataAccessRestrictedView: View {
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: "lock.shield")

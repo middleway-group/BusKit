@@ -5,6 +5,7 @@ struct ContentView: View {
     @Environment(GRPCManager.self) var grpc
     @State private var connectionString: String = ""
     @State private var selection: SidebarSelection?
+    @State private var appStatus = AppStatusModel()
 
     // RBAC dialog: track which access level is currently shown so the sheet
     // is not re-triggered if the user has already dismissed it for this session.
@@ -26,6 +27,12 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
             }
         }
+        // Propagate the shared status model to all child views.
+        .environment(appStatus)
+        // Native bottom status bar — sits below the split view content.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            StatusBarView()
+        }
         .navigationTitle("BusKit")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -37,6 +44,8 @@ struct ContentView: View {
                 selection = nil
                 showRbacDialog = false
                 shownRbacLevel = nil
+                appStatus.lastRefreshTime = nil
+                appStatus.visibleMessageCount = 0
             }
         }
         .onChange(of: grpc.rbacAccessLevel) { _, newLevel in

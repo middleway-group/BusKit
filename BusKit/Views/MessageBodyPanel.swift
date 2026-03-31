@@ -214,6 +214,13 @@ private struct BodyTextView: NSViewRepresentable {
         scroll.hasHorizontalScroller = false
         scroll.autohidesScrollers    = true
         scroll.drawsBackground       = false
+
+        // Attach line-number ruler
+        let ruler = LineNumberRulerView(textView: textView, scrollView: scroll)
+        scroll.verticalRulerView = ruler
+        scroll.hasVerticalRuler  = true
+        scroll.rulersVisible     = true
+
         return scroll
     }
 
@@ -222,8 +229,101 @@ private struct BodyTextView: NSViewRepresentable {
         // Preserve scroll position when only highlights change
         let savedOffset = scrollView.documentVisibleRect.origin
         textView.textStorage?.setAttributedString(attributed)
+        scrollView.verticalRulerView?.needsDisplay = true
         DispatchQueue.main.async {
             scrollView.documentView?.scroll(savedOffset)
+            scrollView.verticalRulerView?.needsDisplay = true
+        }
+    }
+}
+
+// MARK: - Line Number Ruler View
+
+private final class LineNumberRulerView: NSRulerView {
+    private weak var textView: NSTextView?
+
+    static let rulerWidth: CGFloat = 40
+
+    init(textView: NSTextView, scrollView: NSScrollView) {
+        self.textView = textView
+        super.init(scrollView: scrollView, orientation: .verticalRuler)
+        clientView   = textView
+        ruleThickness = Self.rulerWidth
+    }
+
+    required init(coder: NSCoder) { fatalError("init(coder:) not implemented") }
+
+    // Ruler coordinate system matches the (flipped) text view.
+    override var isFlipped: Bool { true }
+
+    override func drawHashMarksAndLabels(in rect: NSRect) {
+        guard
+            let textView      = textView,
+            let layoutManager = textView.layoutManager,
+            let _             = textView.textContainer,
+            let scrollView    = scrollView
+        else { return }
+
+        // ── Background ──────────────────────────────────────────
+        let isDark = effectiveAppearance.name == .darkAqua
+                  || effectiveAppearance.name == .vibrantDark
+        let bgColor = isDark
+            ? NSColor(calibratedWhite: 0.13, alpha: 1)
+            : NSColor(calibratedWhite: 0.96, alpha: 1)
+        bgColor.setFill()
+        rect.fill()
+
+        // ── Right-side separator ─────────────────────────────────
+        NSColor.separatorColor.setStroke()
+        let sep = NSBezierPath()
+        sep.move(to: NSPoint(x: bounds.maxX - 0.5, y: rect.minY))
+        sep.line(to: NSPoint(x: bounds.maxX - 0.5, y: rect.maxY))
+        sep.lineWidth = 1
+        sep.stroke()
+
+        // ── Typography ───────────────────────────────────────────
+        let font  = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
+        let color = NSColor.tertiaryLabelColor
+        let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color]
+
+        let nsString    = textView.string as NSString
+        let inset       = textView.textContainerOrigin
+        let visibleRect = scrollView.documentVisibleRect
+
+        var charIdx = 0
+        var lineNum = 1
+        let length  = nsString.length
+
+        while charIdx <= length {
+            let charRange = nsString.lineRange(for: NSRange(location: charIdx, length: 0))
+
+            // Convert character range to glyph range, get bounding rect
+            let glyphRange = layoutManager.glyphRange(
+                forCharacterRange: charRange, actualCharacterRange: nil)
+
+            if glyphRange.length > 0 {
+                var effectiveRange = NSRange()
+                let fragRect = layoutManager.lineFragmentRect(
+                    forGlyphAt: glyphRange.location, effectiveRange: &effectiveRange)
+
+                let yInView  = fragRect.minY + inset.y
+                let yInRuler = yInView - visibleRect.minY
+
+                if yInRuler > rect.maxY { break }
+
+                if yInRuler + fragRect.height >= rect.minY {
+                    let label = "\(lineNum)" as NSString
+                    let size  = label.size(withAttributes: attrs)
+                    let x     = Self.rulerWidth - size.width - 8
+                    let y     = yInRuler + (fragRect.height - size.height) / 2
+                    label.draw(at: NSPoint(x: x, y: y), withAttributes: attrs)
+                }
+            }
+
+            let next = NSMaxRange(charRange)
+            if next == charIdx || next > length { break }
+            charIdx = next
+            lineNum += 1
         }
     }
 }

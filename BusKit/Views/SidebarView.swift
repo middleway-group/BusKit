@@ -15,16 +15,25 @@ private struct MessageCountBadge: View {
     let deadLetter: Int64
 
     var body: some View {
-        (
-            Text("(")
-            + Text("\(active)").foregroundStyle(.blue)
-            + Text(",")
-            + Text("\(deadLetter)").foregroundStyle(deadLetter > 0 ? .red : Color.secondary)
-            + Text(")")
-        )
-        .font(.caption)
-        .foregroundStyle(.secondary)
-        .monospacedDigit()
+        HStack(spacing: 4) {
+            if active > 0 {
+                pill(label: "\(active)", fg: .blue, bg: Color.blue.opacity(0.1))
+            }
+            if deadLetter > 0 {
+                pill(label: "\(deadLetter)", fg: .red, bg: Color.red.opacity(0.1))
+            }
+        }
+    }
+
+    private func pill(label: String, fg: Color, bg: Color) -> some View {
+        Text(label)
+            .font(.system(size: 10, weight: .medium))
+            .monospacedDigit()
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1.5)
+            .background(bg)
+            .foregroundStyle(fg)
+            .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 }
 
@@ -107,6 +116,16 @@ struct SidebarView: View {
     @State private var queuesExpanded    = true
     @State private var topicsExpanded    = true
 
+    // Queues sorted: active (any messages) first, then zero-count — each group alpha-sorted.
+    private var sortedQueues: [QueueItem] {
+        model.queues.sorted { a, b in
+            let aHas = a.messageCount > 0 || a.deadLetterCount > 0
+            let bHas = b.messageCount > 0 || b.deadLetterCount > 0
+            if aHas != bHas { return aHas }
+            return a.name < b.name
+        }
+    }
+
     var body: some View {
         List(selection: $selection) {
             if model.isLoading && model.queues.isEmpty && model.topics.isEmpty {
@@ -125,7 +144,8 @@ struct SidebarView: View {
                             Text("No queues found.")
                                 .foregroundStyle(.secondary).font(.caption)
                         } else {
-                            ForEach(model.queues) { queue in
+                            ForEach(sortedQueues) { queue in
+                                let isInactive = queue.messageCount == 0 && queue.deadLetterCount == 0
                                 HStack {
                                     Label(queue.name, systemImage: "tray")
                                     Spacer()
@@ -133,6 +153,7 @@ struct SidebarView: View {
                                         active: queue.messageCount,
                                         deadLetter: queue.deadLetterCount)
                                 }
+                                .opacity(isInactive ? 0.4 : 1.0)
                                 .tag(SidebarSelection.queue(queue))
                                 .contextMenu {
                                     queueContextMenu(for: queue)
@@ -463,6 +484,7 @@ private struct SubscriptionRow: View {
             }
             .contentShape(Rectangle())
         }
+        .opacity(sub.activeMessageCount == 0 && sub.deadLetterCount == 0 ? 0.4 : 1.0)
         .tag(SidebarSelection.subscription(sub))
         .contextMenu {
             let hasData = grpc.rbacAccessLevel.hasDataAccess

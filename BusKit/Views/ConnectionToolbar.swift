@@ -28,51 +28,31 @@ struct ConnectionToolbar: View {
         Button {
             manualShowPopover.toggle()
         } label: {
-            HStack(spacing: 6) {
-                Circle()
-                    .fill(stateColor)
-                    .frame(width: 8, height: 8)
-                Text(statusLabel)
-                    .font(.subheadline)
-            }
+            Label(toolbarLabel, systemImage: toolbarSystemImage)
+                .font(.subheadline)
         }
+        .help("Azure Service Bus connection settings")
         .popover(isPresented: popoverBinding, arrowEdge: .bottom) {
             ConnectionPopover(connectionString: $connectionString, isConnecting: $isConnecting)
                 .environment(grpc)
         }
     }
 
-    private var statusLabel: String {
+    private var toolbarLabel: String {
         switch grpc.connectionState {
-        case .connected:
-            switch grpc.rbacAccessLevel {
-            case .checking:          return "Checking permissions…"
-            case .dataOnly:          return "Connected (Limited)"
-            case .managementOnly:    return "Connected (Limited)"
-            case .denied:            return "Connected (No Access)"
-            case .checkFailed:       return "Connected (Unverified)"
-            default:                 return "Connected"
-            }
+        case .connected:    return grpc.namespaceName ?? "Connected"
         case .connecting:   return grpc.isSidecarReady ? "Connecting…" : "Starting…"
         case .disconnected: return grpc.azureLoginPhase == .signingIn ? "Signing in…" : "Connect"
-        case .error:        return "Connection Error"
+        case .error:        return "Error"
         }
     }
 
-    private var stateColor: Color {
+    private var toolbarSystemImage: String {
         switch grpc.connectionState {
-        case .connected:
-            switch grpc.rbacAccessLevel {
-            case .checking:       return .orange
-            case .dataOnly:       return .yellow
-            case .managementOnly: return .yellow
-            case .denied:         return .red
-            case .checkFailed:    return .orange
-            default:              return .green
-            }
-        case .connecting:   return .orange
-        case .error:        return .red
-        case .disconnected: return .gray
+        case .connected:    return "server.rack"
+        case .connecting:   return "arrow.triangle.2.circlepath"
+        case .disconnected: return "server.rack"
+        case .error:        return "exclamationmark.triangle"
         }
     }
 }
