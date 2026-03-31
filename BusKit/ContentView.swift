@@ -27,12 +27,12 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        // Propagate the shared status model to all child views.
-        .environment(appStatus)
-        // Native bottom status bar — sits below the split view content.
+        // Propagate the shared status model to all child views, including
+        // the safeAreaInset StatusBarView (must wrap the inset, not precede it).
         .safeAreaInset(edge: .bottom, spacing: 0) {
             StatusBarView()
         }
+        .environment(appStatus)
         .navigationTitle("BusKit")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
