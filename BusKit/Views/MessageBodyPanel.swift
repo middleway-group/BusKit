@@ -197,12 +197,14 @@ private struct BodyTextView: NSViewRepresentable {
     let attributed: NSAttributedString
 
     func makeNSView(context: Context) -> NSScrollView {
-        let textView                              = NSTextView()
+        let textView = LineNumberTextView()
         textView.isEditable                       = false
         textView.isSelectable                     = true
         textView.backgroundColor                  = .clear
         textView.drawsBackground                  = false
-        textView.textContainerInset               = NSSize(width: 12, height: 10)
+        // Extra left inset reserves space for the line-number gutter.
+        textView.textContainerInset               = NSSize(
+            width: LineNumberTextView.gutterWidth + 12, height: 10)
         textView.autoresizingMask                 = [.width]
         textView.isVerticallyResizable            = true
         textView.isHorizontallyResizable          = false
@@ -214,55 +216,36 @@ private struct BodyTextView: NSViewRepresentable {
         scroll.hasHorizontalScroller = false
         scroll.autohidesScrollers    = true
         scroll.drawsBackground       = false
-
-        // Attach line-number ruler
-        let ruler = LineNumberRulerView(textView: textView, scrollView: scroll)
-        scroll.verticalRulerView = ruler
-        scroll.hasVerticalRuler  = true
-        scroll.rulersVisible     = true
-
         return scroll
     }
 
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
         guard let textView = scrollView.documentView as? NSTextView else { return }
-        // Preserve scroll position when only highlights change
         let savedOffset = scrollView.documentVisibleRect.origin
         textView.textStorage?.setAttributedString(attributed)
-        scrollView.verticalRulerView?.needsDisplay = true
+        textView.needsDisplay = true
         DispatchQueue.main.async {
             scrollView.documentView?.scroll(savedOffset)
-            scrollView.verticalRulerView?.needsDisplay = true
         }
     }
 }
 
-// MARK: - Line Number Ruler View
+// MARK: - LineNumberTextView
+//
+// Draws the line-number gutter directly inside draw(_:) so that it scrolls
+// naturally with the text and requires no ruler-view layout machinery.
 
-private final class LineNumberRulerView: NSRulerView {
-    private weak var textView: NSTextView?
+private final class LineNumberTextView: NSTextView {
+    static let gutterWidth: CGFloat = 44
+    private let gutterFont = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
 
-    static let rulerWidth: CGFloat = 40
-
-    init(textView: NSTextView, scrollView: NSScrollView) {
-        self.textView = textView
-        super.init(scrollView: scrollView, orientation: .verticalRuler)
-        clientView   = textView
-        ruleThickness = Self.rulerWidth
+    override func draw(_ dirtyRect: NSRect) {
+        drawGutter(in: dirtyRect)
+        super.draw(dirtyRect)
     }
 
-    required init(coder: NSCoder) { fatalError("init(coder:) not implemented") }
-
-    // Ruler coordinate system matches the (flipped) text view.
-    override var isFlipped: Bool { true }
-
-    override func drawHashMarksAndLabels(in rect: NSRect) {
-        guard
-            let textView      = textView,
-            let layoutManager = textView.layoutManager,
-            let _             = textView.textContainer,
-            let scrollView    = scrollView
-        else { return }
+    private func drawGutter(in rect: NSRect) {
+        guard let layoutManager else { return }
 
         // ── Background ──────────────────────────────────────────
         let isDark = effectiveAppearance.name == .darkAqua
@@ -271,33 +254,28 @@ private final class LineNumberRulerView: NSRulerView {
             ? NSColor(calibratedWhite: 0.13, alpha: 1)
             : NSColor(calibratedWhite: 0.96, alpha: 1)
         bgColor.setFill()
-        rect.fill()
+        NSRect(x: 0, y: rect.minY, width: Self.gutterWidth, height: rect.height).fill()
 
-        // ── Right-side separator ─────────────────────────────────
+        // ── Right-edge separator ─────────────────────────────────
         NSColor.separatorColor.setStroke()
         let sep = NSBezierPath()
-        sep.move(to: NSPoint(x: bounds.maxX - 0.5, y: rect.minY))
-        sep.line(to: NSPoint(x: bounds.maxX - 0.5, y: rect.maxY))
+        sep.move(to: NSPoint(x: Self.gutterWidth - 0.5, y: rect.minY))
+        sep.line(to: NSPoint(x: Self.gutterWidth - 0.5, y: rect.maxY))
         sep.lineWidth = 1
         sep.stroke()
 
-        // ── Typography ───────────────────────────────────────────
-        let font  = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
-        let color = NSColor.tertiaryLabelColor
-        let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color]
+        // ── Line number labels ───────────────────────────────────
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: gutterFont,
+            .foregroundColor: NSColor.tertiaryLabelColor
+        ]
+        let insetY   = textContainerInset.height
+        let nsString = string as NSString
+        var charIdx  = 0
+        var lineNum  = 1
 
-        let nsString    = textView.string as NSString
-        let inset       = textView.textContainerOrigin
-        let visibleRect = scrollView.documentVisibleRect
-
-        var charIdx = 0
-        var lineNum = 1
-        let length  = nsString.length
-
-        while charIdx <= length {
-            let charRange = nsString.lineRange(for: NSRange(location: charIdx, length: 0))
-
-            // Convert character range to glyph range, get bounding rect
+        while charIdx <= nsString.length {
+            let charRange  = nsString.lineRange(for: NSRange(location: charIdx, length: 0))
             let glyphRange = layoutManager.glyphRange(
                 forCharacterRange: charRange, actualCharacterRange: nil)
 
@@ -306,22 +284,19 @@ private final class LineNumberRulerView: NSRulerView {
                 let fragRect = layoutManager.lineFragmentRect(
                     forGlyphAt: glyphRange.location, effectiveRange: &effectiveRange)
 
-                let yInView  = fragRect.minY + inset.y
-                let yInRuler = yInView - visibleRect.minY
-
-                if yInRuler > rect.maxY { break }
-
-                if yInRuler + fragRect.height >= rect.minY {
+                let y = fragRect.minY + insetY
+                if y > rect.maxY { break }
+                if y + fragRect.height >= rect.minY {
                     let label = "\(lineNum)" as NSString
                     let size  = label.size(withAttributes: attrs)
-                    let x     = Self.rulerWidth - size.width - 8
-                    let y     = yInRuler + (fragRect.height - size.height) / 2
-                    label.draw(at: NSPoint(x: x, y: y), withAttributes: attrs)
+                    let lx    = Self.gutterWidth - size.width - 8
+                    let ly    = y + (fragRect.height - size.height) / 2
+                    label.draw(at: NSPoint(x: lx, y: ly), withAttributes: attrs)
                 }
             }
 
             let next = NSMaxRange(charRange)
-            if next == charIdx || next > length { break }
+            if next == charIdx || next > nsString.length { break }
             charIdx = next
             lineNum += 1
         }
