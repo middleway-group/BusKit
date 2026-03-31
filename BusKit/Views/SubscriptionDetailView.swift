@@ -28,7 +28,7 @@ struct SubscriptionDetailView: View {
             }
             .pickerStyle(.segmented)
             .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .padding(.vertical, 10)
 
             Divider()
 
@@ -170,6 +170,7 @@ private struct SubDescriptionTab: View {
 private struct SubMessagesTab: View {
     @Environment(GRPCManager.self) var grpc
     @Environment(EntityActionStore.self) var actionStore
+    @Environment(AppStatusModel.self) var appStatus
     let subscription: SubscriptionItem
     let isDLQ: Bool
     let trigger: UUID
@@ -188,32 +189,63 @@ private struct SubMessagesTab: View {
         messages.first { $0.id == selectedMessageID }
     }
 
+    private var actionToolbar: some View {
+        HStack(spacing: 0) {
+            Button {
+                showRepairSheet = true
+            } label: {
+                Label("Repair & Resubmit", systemImage: "wrench.and.screwdriver")
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+            }
+            .buttonStyle(.borderless)
+            .disabled(selectedMessage == nil)
+            .help("Repair and resubmit the selected message")
+
+            subToolbarDivider
+
+            Button {
+                if let msg = selectedMessage { saveMessage(msg) }
+            } label: {
+                Label("Save", systemImage: "square.and.arrow.down")
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+            }
+            .buttonStyle(.borderless)
+            .disabled(selectedMessage == nil)
+            .help("Save message to disk as JSON")
+
+            Button {
+                if selectedMessage != nil { showDeleteConfirm = true }
+            } label: {
+                Label("Delete", systemImage: "trash")
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+            }
+            .buttonStyle(.borderless)
+            .disabled(selectedMessage == nil)
+            .help("Permanently delete the selected message")
+
+            Spacer()
+
+            subToolbarDivider
+
+            Button {
+                Task { await loadMessages() }
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+            }
+            .disabled(isLoading)
+            .buttonStyle(.borderless)
+            .help("Refresh messages")
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 3)
+        .background(.bar)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 4) {
-                Button {
-                    showRepairSheet = true
-                } label: {
-                    Label("Repair and Resubmit", systemImage: "wrench.and.screwdriver")
-                }
-                .buttonStyle(.borderless)
-                .disabled(selectedMessage == nil)
-                .help("Repair and resubmit the selected message")
-
-                Spacer()
-
-                Button {
-                    Task { await loadMessages() }
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .disabled(isLoading)
-                .buttonStyle(.borderless)
-                .padding(.horizontal, 8)
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .background(.bar)
+            // ── Action toolbar ───────────────────────────────────
+            actionToolbar
 
             Divider()
 
@@ -238,13 +270,6 @@ private struct SubMessagesTab: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
                         Table(messages, selection: $selectedMessageID) {
-                            TableColumn("#") { msg in
-                                Text("\(msg.sequenceNumber)")
-                                    .monospacedDigit()
-                                    .foregroundStyle(.secondary)
-                            }
-                            .width(55)
-
                             TableColumn("Message ID") { msg in
                                 Text(msg.id.isEmpty ? "—" : msg.id)
                                     .font(.system(.caption, design: .monospaced))
@@ -267,14 +292,15 @@ private struct SubMessagesTab: View {
 
                             TableColumn("Enqueued") { msg in
                                 Text(msg.enqueuedTime, style: .relative)
-                                    .foregroundStyle(.secondary)
+                                    .font(.system(.caption, weight: .light))
+                                    .foregroundStyle(Color(nsColor: .systemGray))
+                                    .help(msg.enqueuedTime.formatted(
+                                        date: .complete, time: .complete))
                             }
                             .width(min: 90, ideal: 110)
 
                             TableColumn("Deliveries") { msg in
-                                Text("\(msg.deliveryCount)")
-                                    .monospacedDigit()
-                                    .foregroundStyle(msg.deliveryCount > 1 ? .orange : .secondary)
+                                DeliveryBadge(count: msg.deliveryCount)
                             }
                             .width(65)
                         }
@@ -303,7 +329,7 @@ private struct SubMessagesTab: View {
                     MessageBodyPanel(message: selectedMessage)
                         .frame(minWidth: 220)
 
-                    SubMessagePropertiesPanel(message: selectedMessage)
+                    MessagePropertiesPanel(message: selectedMessage)
                         .frame(minWidth: 220)
                 }
                 .frame(minHeight: 160)
@@ -355,6 +381,8 @@ private struct SubMessagesTab: View {
                 subscriptionName: subscription.name,
                 isDLQ: isDLQ,
                 maxCount: requestedCount)
+            appStatus.lastRefreshTime    = Date()
+            appStatus.visibleMessageCount = messages.count
         } catch {
             messages = []
             loadError = error.localizedDescription
@@ -409,100 +437,12 @@ private struct SubMessagesTab: View {
     }
 }
 
-// MARK: - Properties Panel
+// MARK: - Toolbar divider helper (local to this file)
 
-@available(macOS 15.0, *)
-private struct SubMessagePropertiesPanel: View {
-    let message: MessageItem?
-
-    private struct PropRow: Identifiable {
-        let id = UUID()
-        let kind: String
-        let key: String
-        let value: String
-    }
-
-    private var rows: [PropRow] {
-        guard let m = message else { return [] }
-        var result: [PropRow] = []
-        func sys(_ key: String, _ value: String) {
-            guard !value.isEmpty else { return }
-            result.append(PropRow(kind: "System", key: key, value: value))
-        }
-        sys("sequenceNumber", "\(m.sequenceNumber)")
-        sys("deliveryCount",  "\(m.deliveryCount)")
-        sys("contentType",    m.contentType)
-        sys("subject",        m.subject)
-        sys("correlationId",  m.correlationId)
-        sys("replyTo",        m.replyTo)
-        sys("to",             m.toAddress)
-        sys("sessionId",      m.sessionId)
-        sys("partitionKey",   m.partitionKey)
-        if m.expiresAt.timeIntervalSince1970 > 0 {
-            sys("expiresAt", m.expiresAt.formatted(date: .abbreviated, time: .shortened))
-        }
-        for (k, v) in m.properties.sorted(by: { $0.key < $1.key }) {
-            result.append(PropRow(kind: "Custom", key: k, value: v))
-        }
-        return result
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("Properties")
-                .font(.caption).foregroundStyle(.secondary)
-                .padding(.horizontal, 12).padding(.vertical, 6)
-                .frame(maxWidth: .infinity, alignment: .leading).background(.bar)
-
-            Divider()
-
-            if rows.isEmpty {
-                Text(message == nil ? "Select a message to view its properties." : "No properties.")
-                    .foregroundStyle(.secondary).font(.caption)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity).padding(12)
-            } else {
-                Table(rows) {
-                    TableColumn("Kind") { row in
-                        Text(row.kind).font(.caption)
-                            .foregroundStyle(row.kind == "System" ? .blue : .purple)
-                    }
-                    .width(45)
-
-                    TableColumn("Key") { row in
-                        Text(row.key).font(.system(.caption, design: .monospaced))
-                            .textSelection(.enabled)
-                    }
-                    .width(min: 80, ideal: 140)
-
-                    TableColumn("Value") { row in
-                        Text(row.value).font(.caption).lineLimit(1)
-                            .textSelection(.enabled)
-                    }
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Data Access Restricted View
-
-@available(macOS 15.0, *)
-private struct DataAccessRestrictedView: View {
-    var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "lock.shield")
-                .font(.largeTitle)
-                .foregroundStyle(.secondary)
-            Text("Message Operations Restricted")
-                .font(.headline)
-            Text("The **Azure Service Bus Data Owner** role is required to peek, receive, or manage messages.\n\nContact your Azure administrator to assign this role.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 360)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
+private var subToolbarDivider: some View {
+    Divider()
+        .frame(height: 16)
+        .padding(.horizontal, 2)
 }
 
 // MARK: - Preview

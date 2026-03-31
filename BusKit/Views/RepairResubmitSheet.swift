@@ -472,7 +472,7 @@ struct JSONCodeEditor: NSViewRepresentable {
         scrollView.autohidesScrollers = true
 
         // Seed the initial content
-        let attributed = JSONSyntaxHighlighter.highlight(text)
+        let attributed = JSONHighlighter.nsAttributed(text)
         textView.textStorage?.setAttributedString(attributed)
 
         return scrollView
@@ -487,7 +487,7 @@ struct JSONCodeEditor: NSViewRepresentable {
         // Bypass our delegate while we push the external change in.
         let savedDelegate = textView.textStorage?.delegate
         textView.textStorage?.delegate = nil
-        textView.textStorage?.setAttributedString(JSONSyntaxHighlighter.highlight(text))
+        textView.textStorage?.setAttributedString(JSONHighlighter.nsAttributed(text))
         textView.textStorage?.delegate = savedDelegate
         textView.selectedRanges = selectedRanges
     }
@@ -516,54 +516,9 @@ struct JSONCodeEditor: NSViewRepresentable {
         ) {
             guard !isHighlighting, editedMask.contains(.editedCharacters) else { return }
             isHighlighting = true
-            let highlighted = JSONSyntaxHighlighter.highlight(textStorage.string)
+            let highlighted = JSONHighlighter.nsAttributed(textStorage.string)
             textStorage.setAttributedString(highlighted)
             isHighlighting = false
-        }
-    }
-}
-
-// MARK: - JSON Syntax Highlighter
-
-enum JSONSyntaxHighlighter {
-    private static let monoFont    = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
-    private static let keyColor    = NSColor(red: 0.020, green: 0.314, blue: 0.682, alpha: 1) // #0550AE
-    private static let stringColor = NSColor(red: 0.639, green: 0.082, blue: 0.082, alpha: 1) // #A31515
-    private static let numberColor = NSColor(red: 0.035, green: 0.525, blue: 0.345, alpha: 1) // #098658
-    private static let punctColor  = NSColor(red: 0.400, green: 0.400, blue: 0.400, alpha: 1) // #666666
-
-    static func highlight(_ source: String) -> NSAttributedString {
-        let ms   = NSMutableAttributedString(string: source)
-        let full = NSRange(location: 0, length: ms.length)
-
-        let para = NSMutableParagraphStyle()
-        para.lineBreakMode = .byWordWrapping
-
-        ms.addAttributes([
-            .font: monoFont,
-            .foregroundColor: NSColor.textColor,
-            .paragraphStyle: para
-        ], range: full)
-
-        // Apply layers in order; keys are re-applied last to win over strings.
-        color(ms, pattern: #"[{}\[\],:]"#,                                                  with: punctColor)
-        color(ms, pattern: #""(?:[^"\\]|\\.)*"(?!\s*:)"#,                                   with: stringColor)
-        color(ms, pattern: #""(?:[^"\\]|\\.)*"(?=\s*:)"#,                                   with: keyColor)
-        color(ms, pattern: #"\b(?:true|false|null)\b"#,                                     with: numberColor)
-        color(ms, pattern: #"(?<!["\w])-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?(?!["\w\.])"#,      with: numberColor)
-
-        return ms
-    }
-
-    private static func color(
-        _ ms: NSMutableAttributedString,
-        pattern: String,
-        with color: NSColor
-    ) {
-        guard let re = try? NSRegularExpression(pattern: pattern) else { return }
-        let range = NSRange(location: 0, length: ms.length)
-        for m in re.matches(in: ms.string, range: range) {
-            ms.addAttribute(.foregroundColor, value: color, range: m.range)
         }
     }
 }
