@@ -60,8 +60,8 @@ struct ConnectionToolbar: View {
 // MARK: - Connection mode
 
 private enum ConnectionMode: String, CaseIterable {
-    case connectionString = "Connection String"
     case azureAD          = "Azure Login"
+    case connectionString = "Connection String"
 }
 
 // MARK: - Main popover
@@ -72,7 +72,7 @@ private struct ConnectionPopover: View {
     @Binding var connectionString: String
     @Binding var isConnecting: Bool
 
-    @State private var mode: ConnectionMode = .connectionString
+    @State private var mode: ConnectionMode = .azureAD
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {

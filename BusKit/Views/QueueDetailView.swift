@@ -183,6 +183,7 @@ private struct MessagesTab: View {
     @Environment(GRPCManager.self) var grpc
     @Environment(EntityActionStore.self) var actionStore
     @Environment(AppStatusModel.self) var appStatus
+    @Environment(ActivityLogStore.self) var activityLog
     let queue: QueueItem
     let isDLQ: Bool
     let trigger: UUID          // change this UUID to reload
@@ -195,7 +196,6 @@ private struct MessagesTab: View {
     @State private var showRepairSheet = false
     @State private var showDeleteConfirm = false
     @State private var isDeleting = false
-    @State private var deleteError: String?
 
     private var selectedMessage: MessageItem? {
         messages.first { $0.id == selectedMessageID }
@@ -366,19 +366,7 @@ private struct MessagesTab: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             if let msg = selectedMessage {
-                Text("Sequence #\(msg.sequenceNumber) will be permanently removed.")
-            }
-        }
-        .overlay(alignment: .bottom) {
-            if let err = deleteError {
-                HStack(spacing: 6) {
-                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
-                    Text(err).font(.caption).foregroundStyle(.red)
-                    Spacer()
-                    Button("Dismiss") { deleteError = nil }.font(.caption)
-                }
-                .padding(8)
-                .background(.bar)
+                Text("Message \(msg.id) will be permanently removed.")
             }
         }
     }
@@ -402,7 +390,7 @@ private struct MessagesTab: View {
     private func saveMessage(_ msg: MessageItem) {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.json]
-        panel.nameFieldStringValue = "message-\(msg.sequenceNumber).json"
+        panel.nameFieldStringValue = "message-\(msg.id).json"
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
             let data: [String: Any] = [
@@ -420,8 +408,19 @@ private struct MessagesTab: View {
                 "enqueuedTime": ISO8601DateFormatter().string(from: msg.enqueuedTime),
                 "properties": msg.properties
             ]
-            if let json = try? JSONSerialization.data(withJSONObject: data, options: [.prettyPrinted, .sortedKeys]) {
-                try? json.write(to: url)
+            do {
+                let json = try JSONSerialization.data(withJSONObject: data, options: [.prettyPrinted, .sortedKeys])
+                try json.write(to: url)
+                Task { @MainActor in
+                    activityLog.log(action: .save, messageId: msg.id,
+                                    result: .success("Saved to \(url.lastPathComponent)"))
+                }
+            } catch {
+                Task { @MainActor in
+                    activityLog.log(action: .save, messageId: msg.id,
+                                    result: .failure("Save failed: \(error.localizedDescription)"),
+                                    hint: "Check write permissions for the chosen location.")
+                }
             }
         }
     }
@@ -429,7 +428,6 @@ private struct MessagesTab: View {
     private func deleteSelectedMessage() async {
         guard let msg = selectedMessage else { return }
         isDeleting = true
-        deleteError = nil
         defer { isDeleting = false }
         do {
             try await grpc.deleteMessage(
@@ -440,8 +438,12 @@ private struct MessagesTab: View {
             messages.removeAll { $0.id == msg.id }
             selectedMessageID = nil
             actionStore.requestRefresh(.queue(queue.name))
+            activityLog.log(action: .delete, messageId: msg.id,
+                            result: .success("Deleted successfully"))
         } catch {
-            deleteError = error.localizedDescription
+            activityLog.log(action: .delete, messageId: msg.id,
+                            result: .failure(error.localizedDescription),
+                            hint: "The message may have already been consumed or the queue lock expired.")
         }
     }
 }
@@ -478,6 +480,102 @@ struct DeliveryBadge: View {
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
         }
+    }
+}
+
+// MARK: - Banner View
+
+/// Inline error/warning/info/success banner that sits above the status bar
+/// and pushes content up rather than overlapping it.
+@available(macOS 15.0, *)
+struct BannerView: View {
+
+    enum Severity {
+        case error, warning, info, success
+
+        var borderColor: Color {
+            switch self {
+            case .error:   return Color(red: 1.00, green: 0.231, blue: 0.188) // #FF3B30
+            case .warning: return Color(red: 1.00, green: 0.584, blue: 0.000) // #FF9500
+            case .info:    return Color(red: 0.00, green: 0.439, blue: 0.788) // #0070C9
+            case .success: return Color(red: 0.204, green: 0.780, blue: 0.349) // #34C759
+            }
+        }
+
+        var lightBackground: Color {
+            switch self {
+            case .error:   return Color(red: 1.000, green: 0.949, blue: 0.949) // #FFF2F2
+            case .warning: return Color(red: 1.000, green: 0.984, blue: 0.941) // #FFFBF0
+            case .info:    return Color(red: 0.941, green: 0.969, blue: 1.000) // #F0F7FF
+            case .success: return Color(red: 0.949, green: 1.000, blue: 0.961) // #F2FFF5
+            }
+        }
+
+        var darkBackground: Color {
+            switch self {
+            case .error:   return Color(red: 0.227, green: 0.000, blue: 0.000) // #3A0000
+            case .warning: return Color(red: 0.200, green: 0.130, blue: 0.000) // #332100
+            case .info:    return Color(red: 0.000, green: 0.110, blue: 0.220) // #001C38
+            case .success: return Color(red: 0.000, green: 0.180, blue: 0.050) // #002E0D
+            }
+        }
+
+        var iconName: String {
+            switch self {
+            case .error, .warning: return "exclamationmark.triangle.fill"
+            case .info:            return "info.circle.fill"
+            case .success:         return "checkmark.circle.fill"
+            }
+        }
+
+        var textColor: Color {
+            switch self {
+            case .error:   return Color(red: 0.80, green: 0.00, blue: 0.00) // #CC0000
+            case .warning: return Color(red: 0.55, green: 0.30, blue: 0.00) // #8C4D00
+            case .info:    return Color(red: 0.00, green: 0.28, blue: 0.56) // #004790
+            case .success: return Color(red: 0.08, green: 0.44, blue: 0.18) // #14712E
+            }
+        }
+    }
+
+    let message: String
+    let severity: Severity
+    let onDismiss: () -> Void
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        HStack(spacing: 0) {
+            // Left accent border
+            Rectangle()
+                .fill(severity.borderColor)
+                .frame(width: 4)
+
+            HStack(spacing: 8) {
+                Image(systemName: severity.iconName)
+                    .font(.system(size: 13))
+                    .foregroundStyle(severity.borderColor)
+
+                Text(message)
+                    .font(.system(size: 13))
+                    .foregroundStyle(severity.textColor)
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Dismiss")
+            }
+            .padding(.horizontal, 12)
+        }
+        .frame(minHeight: 36)
+        .background(colorScheme == .dark ? severity.darkBackground : severity.lightBackground)
+        .shadow(color: .black.opacity(0.10), radius: 4, x: 0, y: -2)
+        .overlay(alignment: .top) { Divider() }
     }
 }
 
@@ -613,20 +711,36 @@ struct MessagePropertiesPanel: View {
         return result
     }
 
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var panelBackground: Color {
+        colorScheme == .dark
+            ? Color(red: 0x1E/255, green: 0x21/255, blue: 0x28/255)  // #1E2128
+            : Color.clear
+    }
+
+    private var separatorColor: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.08)
+            : Color(red: 229/255, green: 229/255, blue: 234/255)      // #E5E5EA
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // ── Header ──────────────────────────────────────────
             HStack {
                 Text("Properties")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(colorScheme == .dark ? Color.white : Color.secondary)
                 Spacer()
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(.bar)
 
-            Divider()
+            Rectangle()
+                .fill(separatorColor)
+                .frame(height: 1)
 
             if rows.isEmpty {
                 Text(message == nil
@@ -640,16 +754,18 @@ struct MessagePropertiesPanel: View {
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         ForEach(Array(rows.enumerated()), id: \.element.id) { idx, row in
-                            PropRowView(row: row, isEven: idx % 2 == 0)
+                            PropRowView(row: row)
                             if idx < rows.count - 1 {
-                                Divider()
-                                    .padding(.leading, 3)
+                                Rectangle()
+                                    .fill(separatorColor)
+                                    .frame(height: 1)
                             }
                         }
                     }
                 }
             }
         }
+        .background(panelBackground)
     }
 }
 
@@ -658,65 +774,115 @@ struct MessagePropertiesPanel: View {
 @available(macOS 15.0, *)
 private struct PropRowView: View {
     let row: MessagePropertiesPanel.PropRow
-    let isEven: Bool
 
+    @Environment(\.colorScheme) private var colorScheme
     @State private var isHovered  = false
     @State private var isExpanded = false
     @State private var copied     = false
 
+    // Key column is 188pt total: 12pt leading padding + 176pt text content
+    private static let keyColumnWidth:  CGFloat = 176
+    private static let keyLeadingPad:   CGFloat = 12
+    private static let copyButtonSize:  CGFloat = 16
+    private static let copyLeadingGap:  CGFloat = 8   // gap between key column edge and copy button
+    private static let valueLeadingGap: CGFloat = 8   // gap between copy button and value
+    private static let valueTrailingPad: CGFloat = 16
+
+    private var borderColor: Color {
+        row.isSystem
+            ? Color(red: 0/255,   green: 112/255, blue: 201/255)  // #0070C9
+            : Color(red: 155/255, green:  35/255, blue: 147/255)  // #9B2393
+    }
+
+    private var displayValue: String { row.value.isEmpty ? "—" : row.value }
+
+    private var valueColor: Color {
+        if row.value.isEmpty {
+            return colorScheme == .dark
+                ? Color.white.opacity(0.3)
+                : Color(red: 199/255, green: 199/255, blue: 204/255)  // #C7C7CC
+        }
+        return colorScheme == .dark
+            ? Color(red: 0xE8/255, green: 0xEA/255, blue: 0xF0/255)  // #E8EAF0
+            : Color(red: 0,        green: 0,         blue: 0)          // #000000
+    }
+
+    private var keyColor: Color {
+        colorScheme == .dark
+            ? Color(red: 0x8B/255, green: 0x9B/255, blue: 0xB4/255)  // #8B9BB4
+            : Color(red: 60/255,   green: 60/255,    blue: 67/255)    // #3C3C43
+    }
+
+    private var hoverBackground: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.06)
+            : Color(red: 242/255, green: 242/255, blue: 247/255)      // #F2F2F7
+    }
+
     var body: some View {
-        HStack(spacing: 0) {
-            // Color-coded left border: blue = System, purple = Custom
+        HStack(alignment: .center, spacing: 0) {
+            // ── 4pt color-coded left border ───────────────────────
             Rectangle()
-                .fill(row.isSystem ? Color.blue : Color.purple)
-                .frame(width: 3)
+                .fill(borderColor)
+                .frame(width: 4)
 
-            HStack(alignment: .top, spacing: 8) {
-                Text(row.key)
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .frame(minWidth: 80, alignment: .leading)
+            // ── Key column: 160pt fixed (12pt pad + 148pt text) ───
+            Text(row.key)
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundStyle(keyColor)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .help(row.key)
+                .frame(width: Self.keyColumnWidth, alignment: .leading)
+                .padding(.leading, Self.keyLeadingPad)
 
-                Text(row.value)
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(.primary)
-                    .lineLimit(isExpanded ? nil : 1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .onTapGesture { isExpanded.toggle() }
-
-                // Hover-reveal copy button
-                if isHovered {
-                    Button {
-                        NSPasteboard.general.clearContents()
-                        NSPasteboard.general.setString(row.value, forType: .string)
-                        withAnimation { copied = true }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                            withAnimation { copied = false }
-                        }
-                    } label: {
-                        Image(systemName: copied ? "checkmark" : "doc.on.doc")
-                            .font(.system(size: 10))
-                            .foregroundStyle(copied ? .green : .secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .help("Copy value")
-                    .frame(width: 20)
-                    .transition(.opacity)
-                } else {
-                    // Reserve space so the row width stays stable
-                    Color.clear.frame(width: 20)
+            // ── Copy button: 16×16pt, anchored after key column ───
+            Button {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(row.value, forType: .string)
+                withAnimation(.easeInOut(duration: 0.15)) { copied = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    withAnimation(.easeInOut(duration: 0.15)) { copied = false }
                 }
+            } label: {
+                Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                    .font(.system(size: 11))
+                    .foregroundStyle(
+                        copied
+                            ? Color.green
+                            : Color(red: 142/255, green: 142/255, blue: 147/255)  // #8E8E93
+                    )
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
+            .buttonStyle(.plain)
+            .help("Copy value")
+            .frame(width: Self.copyButtonSize, height: Self.copyButtonSize)
+            .padding(.leading, Self.copyLeadingGap)
+            .opacity(isHovered ? 1 : 0)
+
+            // ── Value column: flexible, truncates with ellipsis ───
+            Text(displayValue)
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundStyle(valueColor)
+                .lineLimit(isExpanded ? nil : 1)
+                .truncationMode(.tail)
+                .help(row.value)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, Self.valueLeadingGap)
+                .padding(.trailing, Self.valueTrailingPad)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.15)) { isExpanded.toggle() }
+                }
         }
         .frame(minHeight: 28)
-        .background(isEven
-                    ? Color.clear
-                    : Color(nsColor: .controlBackgroundColor).opacity(0.5))
+        .background(
+            isHovered
+                ? hoverBackground
+                : Color.clear
+        )
         .onHover { isHovered = $0 }
-        .animation(.easeInOut(duration: 0.1), value: isHovered)
+        .animation(.easeInOut(duration: 0.1),  value: isHovered)
+        .animation(.easeInOut(duration: 0.15), value: copied)
     }
 }
 

@@ -8,6 +8,7 @@ struct RepairResubmitSheet: View {
     @Environment(GRPCManager.self) var grpc
     @Environment(\.dismiss) var dismiss
     @Environment(EntityActionStore.self) var actionStore
+    @Environment(ActivityLogStore.self) var activityLog
 
     let message: MessageItem
 
@@ -426,11 +427,16 @@ struct RepairResubmitSheet: View {
             )
             didSend = true
             let dest = targetDestination.trimmingCharacters(in: .whitespacesAndNewlines)
+            activityLog.log(action: .resubmit, messageId: message.id,
+                            result: .success("Resubmitted to \(dest)"))
             if availableQueues.contains(where: { $0.name == dest }) {
                 actionStore.requestRefresh(.queue(dest))
             }
         } catch {
             sendError = error.localizedDescription
+            activityLog.log(action: .resubmit, messageId: message.id,
+                            result: .failure(error.localizedDescription),
+                            hint: "Verify the target destination exists and you have sender permissions.")
         }
     }
 }

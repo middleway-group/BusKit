@@ -5,7 +5,8 @@ struct ContentView: View {
     @Environment(GRPCManager.self) var grpc
     @State private var connectionString: String = ""
     @State private var selection: SidebarSelection?
-    @State private var appStatus = AppStatusModel()
+    @State private var appStatus   = AppStatusModel()
+    @State private var activityLog = ActivityLogStore()
 
     // RBAC dialog: track which access level is currently shown so the sheet
     // is not re-triggered if the user has already dismissed it for this session.
@@ -17,22 +18,42 @@ struct ContentView: View {
             SidebarView(selection: $selection)
                 .navigationSplitViewColumnWidth(min: 220, ideal: 300)
         } detail: {
-            switch selection {
-            case .queue(let queue):
-                QueueDetailView(queue: queue)
-            case .subscription(let sub):
-                SubscriptionDetailView(subscription: sub)
-            case nil:
-                Text("Select a queue or subscription")
-                    .foregroundStyle(.secondary)
+            // ZStack lets the toast overlay float in the top-right corner of
+            // the detail area without affecting layout of the content beneath.
+            ZStack(alignment: .topTrailing) {
+                Group {
+                    switch selection {
+                    case .queue(let queue):
+                        QueueDetailView(queue: queue)
+                    case .subscription(let sub):
+                        SubscriptionDetailView(subscription: sub)
+                    case nil:
+                        Text("Select a queue or subscription")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                // ── Toast notification overlay ───────────────────
+                ToastOverlay()
             }
         }
-        // Propagate the shared status model to all child views, including
+        // Propagate the shared models to all child views, including
         // the safeAreaInset StatusBarView (must wrap the inset, not precede it).
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            StatusBarView()
+            VStack(spacing: 0) {
+                // ── Collapsible Activity Log (slides up above the status bar)
+                if activityLog.isLogVisible {
+                    ActivityLogPanel()
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+                // ── Status bar (always visible) ──────────────────
+                StatusBarView()
+            }
+            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: activityLog.isLogVisible)
         }
         .environment(appStatus)
+        .environment(activityLog)
         .navigationTitle("BusKit")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {

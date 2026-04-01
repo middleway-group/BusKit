@@ -171,6 +171,7 @@ private struct SubMessagesTab: View {
     @Environment(GRPCManager.self) var grpc
     @Environment(EntityActionStore.self) var actionStore
     @Environment(AppStatusModel.self) var appStatus
+    @Environment(ActivityLogStore.self) var activityLog
     let subscription: SubscriptionItem
     let isDLQ: Bool
     let trigger: UUID
@@ -183,7 +184,6 @@ private struct SubMessagesTab: View {
     @State private var showRepairSheet = false
     @State private var showDeleteConfirm = false
     @State private var isDeleting = false
-    @State private var deleteError: String?
 
     private var selectedMessage: MessageItem? {
         messages.first { $0.id == selectedMessageID }
@@ -354,19 +354,7 @@ private struct SubMessagesTab: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             if let msg = selectedMessage {
-                Text("Sequence #\(msg.sequenceNumber) will be permanently removed.")
-            }
-        }
-        .overlay(alignment: .bottom) {
-            if let err = deleteError {
-                HStack(spacing: 6) {
-                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
-                    Text(err).font(.caption).foregroundStyle(.red)
-                    Spacer()
-                    Button("Dismiss") { deleteError = nil }.font(.caption)
-                }
-                .padding(8)
-                .background(.bar)
+                Text("Message \(msg.id) will be permanently removed.")
             }
         }
     }
@@ -392,7 +380,7 @@ private struct SubMessagesTab: View {
     private func saveMessage(_ msg: MessageItem) {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.json]
-        panel.nameFieldStringValue = "message-\(msg.sequenceNumber).json"
+        panel.nameFieldStringValue = "message-\(msg.id).json"
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
             let data: [String: Any] = [
@@ -410,8 +398,19 @@ private struct SubMessagesTab: View {
                 "enqueuedTime": ISO8601DateFormatter().string(from: msg.enqueuedTime),
                 "properties": msg.properties
             ]
-            if let json = try? JSONSerialization.data(withJSONObject: data, options: [.prettyPrinted, .sortedKeys]) {
-                try? json.write(to: url)
+            do {
+                let json = try JSONSerialization.data(withJSONObject: data, options: [.prettyPrinted, .sortedKeys])
+                try json.write(to: url)
+                Task { @MainActor in
+                    activityLog.log(action: .save, messageId: msg.id,
+                                    result: .success("Saved to \(url.lastPathComponent)"))
+                }
+            } catch {
+                Task { @MainActor in
+                    activityLog.log(action: .save, messageId: msg.id,
+                                    result: .failure("Save failed: \(error.localizedDescription)"),
+                                    hint: "Check write permissions for the chosen location.")
+                }
             }
         }
     }
@@ -419,7 +418,6 @@ private struct SubMessagesTab: View {
     private func deleteSelectedMessage() async {
         guard let msg = selectedMessage else { return }
         isDeleting = true
-        deleteError = nil
         defer { isDeleting = false }
         do {
             try await grpc.deleteMessage(
@@ -431,8 +429,12 @@ private struct SubMessagesTab: View {
             messages.removeAll { $0.id == msg.id }
             selectedMessageID = nil
             actionStore.requestRefresh(.subscription(topic: subscription.topicName, sub: subscription.name))
+            activityLog.log(action: .delete, messageId: msg.id,
+                            result: .success("Deleted successfully"))
         } catch {
-            deleteError = error.localizedDescription
+            activityLog.log(action: .delete, messageId: msg.id,
+                            result: .failure(error.localizedDescription),
+                            hint: "The message may have already been consumed or the subscription lock expired.")
         }
     }
 }

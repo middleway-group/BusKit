@@ -8,6 +8,7 @@ import SwiftUI
 struct StatusBarView: View {
     @Environment(GRPCManager.self) var grpc
     @Environment(AppStatusModel.self) var appStatus
+    @Environment(ActivityLogStore.self) var activityLog
 
     var body: some View {
         HStack(spacing: 0) {
@@ -53,6 +54,51 @@ struct StatusBarView: View {
             }
 
             Spacer()
+
+            // ── Error / warning badge (conditional) ─────────────
+            if activityLog.errorCount > 0 || activityLog.warningCount > 0 {
+                Button {
+                    activityLog.toggleLog()
+                } label: {
+                    HStack(spacing: 6) {
+                        if activityLog.errorCount > 0 {
+                            HStack(spacing: 3) {
+                                Circle()
+                                    .fill(.red)
+                                    .frame(width: 6, height: 6)
+                                Text("\(activityLog.errorCount) error\(activityLog.errorCount == 1 ? "" : "s")")
+                                    .foregroundStyle(.red)
+                            }
+                        }
+                        if activityLog.warningCount > 0 {
+                            HStack(spacing: 3) {
+                                Circle()
+                                    .fill(.orange)
+                                    .frame(width: 6, height: 6)
+                                Text("\(activityLog.warningCount) warning\(activityLog.warningCount == 1 ? "" : "s")")
+                                    .foregroundStyle(.orange)
+                            }
+                        }
+                    }
+                    .font(.system(size: 11))
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 12)
+
+                statusDivider
+            }
+
+            // ── Activity Log toggle (always visible) ─────────────
+            Button {
+                activityLog.toggleLog()
+            } label: {
+                Image(systemName: activityLog.isLogVisible ? "list.bullet.clipboard.fill" : "list.bullet.clipboard")
+                    .font(.system(size: 11))
+                    .foregroundStyle(activityLog.isLogVisible ? Color.accentColor : .secondary)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 12)
+            .help(activityLog.isLogVisible ? "Hide Activity Log" : "Show Activity Log")
         }
         .frame(height: 22)
         .background(.bar)
