@@ -22,7 +22,7 @@ struct QueueDetailView: View {
             // Segmented picker lives inside the content area so it never
             // interferes with the window toolbar where ConnectionToolbar lives.
             Picker("", selection: $selectedTab) {
-                Label("Description",       systemImage: "info.circle").tag(0)
+                Label("Overview",       systemImage: "info.circle").tag(0)
                 Label("Messages",          systemImage: "list.bullet.rectangle").tag(1)
                 Label("Deadletter",        systemImage: "tray.and.arrow.down").tag(2)
             }

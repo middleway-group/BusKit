@@ -22,7 +22,7 @@ struct SubscriptionDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             Picker("", selection: $selectedTab) {
-                Label("Description",  systemImage: "info.circle").tag(0)
+                Label("Overview",  systemImage: "info.circle").tag(0)
                 Label("Messages",     systemImage: "list.bullet.rectangle").tag(1)
                 Label("Deadletter",   systemImage: "tray.and.arrow.down").tag(2)
             }
