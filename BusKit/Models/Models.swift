@@ -310,7 +310,8 @@ struct RuleItem: Identifiable, Hashable {
 }
 
 struct MessageItem: Identifiable {
-    let id: String          // messageId
+    let id = UUID()
+    let messageId: String
     let body: String
     let contentType: String
     let enqueuedTime: Date

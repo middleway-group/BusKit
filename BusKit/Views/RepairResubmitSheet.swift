@@ -78,7 +78,7 @@ struct RepairResubmitSheet: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Repair and Resubmit Message")
                     .font(.headline)
-                Text("Message ID: \(message.id.isEmpty ? "—" : message.id)")
+                Text("Message ID: \(message.messageId.isEmpty ? "—" : message.messageId)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -427,14 +427,14 @@ struct RepairResubmitSheet: View {
             )
             didSend = true
             let dest = targetDestination.trimmingCharacters(in: .whitespacesAndNewlines)
-            activityLog.log(action: .resubmit, messageId: message.id,
+            activityLog.log(action: .resubmit, messageId: message.messageId,
                             result: .success("Resubmitted to \(dest)"))
             if availableQueues.contains(where: { $0.name == dest }) {
                 actionStore.requestRefresh(.queue(dest))
             }
         } catch {
             sendError = error.localizedDescription
-            activityLog.log(action: .resubmit, messageId: message.id,
+            activityLog.log(action: .resubmit, messageId: message.messageId,
                             result: .failure(error.localizedDescription),
                             hint: "Verify the target destination exists and you have sender permissions.")
         }

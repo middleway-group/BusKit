@@ -140,6 +140,18 @@ internal enum Buskit_BusKitService: Sendable {
                 method: "ListRules"
             )
         }
+        /// Namespace for "UpdateRule" metadata.
+        internal enum UpdateRule: Sendable {
+            /// Request type for "UpdateRule".
+            internal typealias Input = Buskit_UpdateRuleRequest
+            /// Response type for "UpdateRule".
+            internal typealias Output = Buskit_UpdateRuleReply
+            /// Descriptor for "UpdateRule".
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "UpdateRule"
+            )
+        }
         /// Namespace for "GetQueueProperties" metadata.
         internal enum GetQueueProperties: Sendable {
             /// Request type for "GetQueueProperties".
@@ -176,30 +188,6 @@ internal enum Buskit_BusKitService: Sendable {
                 method: "PurgeMessages"
             )
         }
-        /// Namespace for "DeleteMessage" metadata.
-        internal enum DeleteMessage: Sendable {
-            /// Request type for "DeleteMessage".
-            internal typealias Input = Buskit_DeleteMessageRequest
-            /// Response type for "DeleteMessage".
-            internal typealias Output = Buskit_DeleteMessageReply
-            /// Descriptor for "DeleteMessage".
-            internal static let descriptor = GRPCCore.MethodDescriptor(
-                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
-                method: "DeleteMessage"
-            )
-        }
-        /// Namespace for "SendMessageExtended" metadata.
-        internal enum SendMessageExtended: Sendable {
-            /// Request type for "SendMessageExtended".
-            internal typealias Input = Buskit_SendMessageExtendedRequest
-            /// Response type for "SendMessageExtended".
-            internal typealias Output = Buskit_SendMessageReply
-            /// Descriptor for "SendMessageExtended".
-            internal static let descriptor = GRPCCore.MethodDescriptor(
-                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
-                method: "SendMessageExtended"
-            )
-        }
         /// Namespace for "PeekMessages" metadata.
         internal enum PeekMessages: Sendable {
             /// Request type for "PeekMessages".
@@ -222,6 +210,30 @@ internal enum Buskit_BusKitService: Sendable {
             internal static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
                 method: "SendMessage"
+            )
+        }
+        /// Namespace for "DeleteMessage" metadata.
+        internal enum DeleteMessage: Sendable {
+            /// Request type for "DeleteMessage".
+            internal typealias Input = Buskit_DeleteMessageRequest
+            /// Response type for "DeleteMessage".
+            internal typealias Output = Buskit_DeleteMessageReply
+            /// Descriptor for "DeleteMessage".
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "DeleteMessage"
+            )
+        }
+        /// Namespace for "SendMessageExtended" metadata.
+        internal enum SendMessageExtended: Sendable {
+            /// Request type for "SendMessageExtended".
+            internal typealias Input = Buskit_SendMessageExtendedRequest
+            /// Response type for "SendMessageExtended".
+            internal typealias Output = Buskit_SendMessageReply
+            /// Descriptor for "SendMessageExtended".
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "SendMessageExtended"
             )
         }
         /// Namespace for "SubscribeMessages" metadata.
@@ -248,12 +260,13 @@ internal enum Buskit_BusKitService: Sendable {
             ListTopics.descriptor,
             ListSubscriptions.descriptor,
             ListRules.descriptor,
+            UpdateRule.descriptor,
             GetQueueProperties.descriptor,
             GetSubscriptionProperties.descriptor,
             PurgeMessages.descriptor,
-            DeleteMessage.descriptor,
             PeekMessages.descriptor,
             SendMessage.descriptor,
+            DeleteMessage.descriptor,
             SendMessageExtended.descriptor,
             SubscribeMessages.descriptor
         ]
@@ -465,6 +478,25 @@ extension Buskit_BusKitService {
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_ListRulesReply>) async throws -> Result
         ) async throws -> Result where Result: Sendable
 
+        /// Call the "UpdateRule" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_UpdateRuleRequest` message.
+        ///   - serializer: A serializer for `Buskit_UpdateRuleRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_UpdateRuleReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func updateRule<Result>(
+            request: GRPCCore.ClientRequest<Buskit_UpdateRuleRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_UpdateRuleRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_UpdateRuleReply>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_UpdateRuleReply>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
         /// Call the "GetQueueProperties" method.
         ///
         /// - Parameters:
@@ -522,25 +554,6 @@ extension Buskit_BusKitService {
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_PurgeMessagesReply>) async throws -> Result
         ) async throws -> Result where Result: Sendable
 
-        /// Call the "DeleteMessage" method.
-        ///
-        /// - Parameters:
-        ///   - request: A request containing a single `Buskit_DeleteMessageRequest` message.
-        ///   - serializer: A serializer for `Buskit_DeleteMessageRequest` messages.
-        ///   - deserializer: A deserializer for `Buskit_DeleteMessageReply` messages.
-        ///   - options: Options to apply to this RPC.
-        ///   - handleResponse: A closure which handles the response, the result of which is
-        ///       returned to the caller. Returning from the closure will cancel the RPC if it
-        ///       hasn't already finished.
-        /// - Returns: The result of `handleResponse`.
-        func deleteMessage<Result>(
-            request: GRPCCore.ClientRequest<Buskit_DeleteMessageRequest>,
-            serializer: some GRPCCore.MessageSerializer<Buskit_DeleteMessageRequest>,
-            deserializer: some GRPCCore.MessageDeserializer<Buskit_DeleteMessageReply>,
-            options: GRPCCore.CallOptions,
-            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteMessageReply>) async throws -> Result
-        ) async throws -> Result where Result: Sendable
-
         /// Call the "PeekMessages" method.
         ///
         /// - Parameters:
@@ -577,6 +590,25 @@ extension Buskit_BusKitService {
             deserializer: some GRPCCore.MessageDeserializer<Buskit_SendMessageReply>,
             options: GRPCCore.CallOptions,
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_SendMessageReply>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "DeleteMessage" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_DeleteMessageRequest` message.
+        ///   - serializer: A serializer for `Buskit_DeleteMessageRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_DeleteMessageReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func deleteMessage<Result>(
+            request: GRPCCore.ClientRequest<Buskit_DeleteMessageRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_DeleteMessageRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_DeleteMessageReply>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteMessageReply>) async throws -> Result
         ) async throws -> Result where Result: Sendable
 
         /// Call the "SendMessageExtended" method.
@@ -934,6 +966,36 @@ extension Buskit_BusKitService {
             )
         }
 
+        /// Call the "UpdateRule" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_UpdateRuleRequest` message.
+        ///   - serializer: A serializer for `Buskit_UpdateRuleRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_UpdateRuleReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        internal func updateRule<Result>(
+            request: GRPCCore.ClientRequest<Buskit_UpdateRuleRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_UpdateRuleRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_UpdateRuleReply>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_UpdateRuleReply>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Buskit_BusKitService.Method.UpdateRule.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
         /// Call the "GetQueueProperties" method.
         ///
         /// - Parameters:
@@ -1024,36 +1086,6 @@ extension Buskit_BusKitService {
             )
         }
 
-        /// Call the "DeleteMessage" method.
-        ///
-        /// - Parameters:
-        ///   - request: A request containing a single `Buskit_DeleteMessageRequest` message.
-        ///   - serializer: A serializer for `Buskit_DeleteMessageRequest` messages.
-        ///   - deserializer: A deserializer for `Buskit_DeleteMessageReply` messages.
-        ///   - options: Options to apply to this RPC.
-        ///   - handleResponse: A closure which handles the response, the result of which is
-        ///       returned to the caller. Returning from the closure will cancel the RPC if it
-        ///       hasn't already finished.
-        /// - Returns: The result of `handleResponse`.
-        internal func deleteMessage<Result>(
-            request: GRPCCore.ClientRequest<Buskit_DeleteMessageRequest>,
-            serializer: some GRPCCore.MessageSerializer<Buskit_DeleteMessageRequest>,
-            deserializer: some GRPCCore.MessageDeserializer<Buskit_DeleteMessageReply>,
-            options: GRPCCore.CallOptions = .defaults,
-            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteMessageReply>) async throws -> Result = { response in
-                try response.message
-            }
-        ) async throws -> Result where Result: Sendable {
-            try await self.client.unary(
-                request: request,
-                descriptor: Buskit_BusKitService.Method.DeleteMessage.descriptor,
-                serializer: serializer,
-                deserializer: deserializer,
-                options: options,
-                onResponse: handleResponse
-            )
-        }
-
         /// Call the "PeekMessages" method.
         ///
         /// - Parameters:
@@ -1107,6 +1139,36 @@ extension Buskit_BusKitService {
             try await self.client.unary(
                 request: request,
                 descriptor: Buskit_BusKitService.Method.SendMessage.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "DeleteMessage" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_DeleteMessageRequest` message.
+        ///   - serializer: A serializer for `Buskit_DeleteMessageRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_DeleteMessageReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        internal func deleteMessage<Result>(
+            request: GRPCCore.ClientRequest<Buskit_DeleteMessageRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_DeleteMessageRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_DeleteMessageReply>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteMessageReply>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Buskit_BusKitService.Method.DeleteMessage.descriptor,
                 serializer: serializer,
                 deserializer: deserializer,
                 options: options,
@@ -1427,6 +1489,31 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
+    /// Call the "UpdateRule" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_UpdateRuleRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func updateRule<Result>(
+        request: GRPCCore.ClientRequest<Buskit_UpdateRuleRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_UpdateRuleReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.updateRule(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_UpdateRuleRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_UpdateRuleReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
     /// Call the "GetQueueProperties" method.
     ///
     /// - Parameters:
@@ -1502,31 +1589,6 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
-    /// Call the "DeleteMessage" method.
-    ///
-    /// - Parameters:
-    ///   - request: A request containing a single `Buskit_DeleteMessageRequest` message.
-    ///   - options: Options to apply to this RPC.
-    ///   - handleResponse: A closure which handles the response, the result of which is
-    ///       returned to the caller. Returning from the closure will cancel the RPC if it
-    ///       hasn't already finished.
-    /// - Returns: The result of `handleResponse`.
-    internal func deleteMessage<Result>(
-        request: GRPCCore.ClientRequest<Buskit_DeleteMessageRequest>,
-        options: GRPCCore.CallOptions = .defaults,
-        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteMessageReply>) async throws -> Result = { response in
-            try response.message
-        }
-    ) async throws -> Result where Result: Sendable {
-        try await self.deleteMessage(
-            request: request,
-            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_DeleteMessageRequest>(),
-            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_DeleteMessageReply>(),
-            options: options,
-            onResponse: handleResponse
-        )
-    }
-
     /// Call the "PeekMessages" method.
     ///
     /// - Parameters:
@@ -1572,6 +1634,31 @@ extension Buskit_BusKitService.ClientProtocol {
             request: request,
             serializer: GRPCProtobuf.ProtobufSerializer<Buskit_SendMessageRequest>(),
             deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_SendMessageReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DeleteMessage" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_DeleteMessageRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func deleteMessage<Result>(
+        request: GRPCCore.ClientRequest<Buskit_DeleteMessageRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteMessageReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.deleteMessage(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_DeleteMessageRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_DeleteMessageReply>(),
             options: options,
             onResponse: handleResponse
         )
@@ -1919,6 +2006,35 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
+    /// Call the "UpdateRule" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func updateRule<Result>(
+        _ message: Buskit_UpdateRuleRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_UpdateRuleReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Buskit_UpdateRuleRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.updateRule(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
     /// Call the "GetQueueProperties" method.
     ///
     /// - Parameters:
@@ -2006,35 +2122,6 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
-    /// Call the "DeleteMessage" method.
-    ///
-    /// - Parameters:
-    ///   - message: request message to send.
-    ///   - metadata: Additional metadata to send, defaults to empty.
-    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
-    ///   - handleResponse: A closure which handles the response, the result of which is
-    ///       returned to the caller. Returning from the closure will cancel the RPC if it
-    ///       hasn't already finished.
-    /// - Returns: The result of `handleResponse`.
-    internal func deleteMessage<Result>(
-        _ message: Buskit_DeleteMessageRequest,
-        metadata: GRPCCore.Metadata = [:],
-        options: GRPCCore.CallOptions = .defaults,
-        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteMessageReply>) async throws -> Result = { response in
-            try response.message
-        }
-    ) async throws -> Result where Result: Sendable {
-        let request = GRPCCore.ClientRequest<Buskit_DeleteMessageRequest>(
-            message: message,
-            metadata: metadata
-        )
-        return try await self.deleteMessage(
-            request: request,
-            options: options,
-            onResponse: handleResponse
-        )
-    }
-
     /// Call the "PeekMessages" method.
     ///
     /// - Parameters:
@@ -2087,6 +2174,35 @@ extension Buskit_BusKitService.ClientProtocol {
             metadata: metadata
         )
         return try await self.sendMessage(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DeleteMessage" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func deleteMessage<Result>(
+        _ message: Buskit_DeleteMessageRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteMessageReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Buskit_DeleteMessageRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.deleteMessage(
             request: request,
             options: options,
             onResponse: handleResponse

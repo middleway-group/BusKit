@@ -420,6 +420,35 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         return reply;
     }
 
+    // ── Update Rule ──────────────────────────────────────
+
+    public override async Task<UpdateRuleReply> UpdateRule(
+        UpdateRuleRequest request, ServerCallContext context)
+    {
+        var reply = new UpdateRuleReply();
+
+        if (_adminClient == null)
+        {
+            reply.Error = "Not connected";
+            return reply;
+        }
+
+        try
+        {
+            var ruleResponse = await _adminClient.GetRuleAsync(
+                request.TopicName, request.SubscriptionName, request.RuleName);
+            var ruleProperties = ruleResponse.Value;
+            ruleProperties.Filter = new SqlRuleFilter(request.SqlFilter);
+            await _adminClient.UpdateRuleAsync(request.TopicName, request.SubscriptionName, ruleProperties);
+        }
+        catch (Exception ex)
+        {
+            reply.Error = ex.Message;
+        }
+
+        return reply;
+    }
+
     // ── Get Queue Properties ─────────────────────────────
 
     public override async Task<GetQueuePropertiesReply> GetQueueProperties(
@@ -697,29 +726,45 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
 
         await using (receiver)
         {
-            for (int attempt = 0; attempt < 20; attempt++)
+            // Accumulate all received messages while keeping their locks held.
+            // Abandoning inside the loop would immediately return messages to the queue,
+            // causing the next receive to re-fetch the same messages and spin indefinitely.
+            var held = new List<ServiceBusReceivedMessage>();
+            try
             {
-                var batch = await receiver.ReceiveMessagesAsync(
-                    maxMessages: 50, maxWaitTime: TimeSpan.FromSeconds(3), context.CancellationToken);
-                if (batch.Count == 0) break;
-
-                bool found = false;
-                foreach (var msg in batch)
+                while (true)
                 {
-                    if (msg.SequenceNumber == request.SequenceNumber)
-                    {
-                        await receiver.CompleteMessageAsync(msg, context.CancellationToken);
-                        found = true;
-                    }
-                    else
-                    {
-                        await receiver.AbandonMessageAsync(msg, cancellationToken: context.CancellationToken);
-                    }
+                    var batch = await receiver.ReceiveMessagesAsync(
+                        maxMessages: 50, maxWaitTime: TimeSpan.FromSeconds(3), context.CancellationToken);
+                    if (batch.Count == 0) break;
+                    held.AddRange(batch);
+                    if (held.Any(m => m.SequenceNumber == request.SequenceNumber))
+                        break;
                 }
-                if (found)
+
+                var target = held.FirstOrDefault(m => m.SequenceNumber == request.SequenceNumber);
+
+                await Task.WhenAll(held
+                    .Where(m => m.SequenceNumber != request.SequenceNumber)
+                    .Select(m => receiver.AbandonMessageAsync(m, cancellationToken: context.CancellationToken)));
+
+                if (target != null)
+                {
+                    await receiver.CompleteMessageAsync(target, context.CancellationToken);
                     return new DeleteMessageReply { Success = true };
+                }
+
+                return new DeleteMessageReply { Success = false, Error = "Message not found" };
             }
-            return new DeleteMessageReply { Success = false, Error = "Message not found" };
+            catch
+            {
+                foreach (var msg in held)
+                {
+                    try { await receiver.AbandonMessageAsync(msg, cancellationToken: context.CancellationToken); }
+                    catch { /* best-effort release */ }
+                }
+                throw;
+            }
         }
     }
 

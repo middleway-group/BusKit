@@ -564,7 +564,7 @@ final class GRPCManager {
         let reply: Buskit_PeekMessagesReply = try await buskit.peekMessages(req)
         return reply.messages.map { m in
             MessageItem(
-                id: m.messageID,
+                messageId: m.messageID,
                 body: m.body,
                 contentType: m.contentType,
                 enqueuedTime: Date(timeIntervalSince1970: TimeInterval(m.enqueuedTimeUnix)),

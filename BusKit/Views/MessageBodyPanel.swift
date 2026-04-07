@@ -184,7 +184,7 @@ struct MessageBodyPanel: View {
             .opacity(0)
         }
         // Reset find state when a different message is selected
-        .onChange(of: message?.id) { _, _ in
+        .onChange(of: message?.messageId) { _, _ in
             searchText  = ""
             showFindBar = false
         }

@@ -192,7 +192,7 @@ private struct MessagesTab: View {
     @State private var messages: [MessageItem] = []
     @State private var isLoading = false
     @State private var loadError: String?
-    @State private var selectedMessageID: String?
+    @State private var selectedMessageID: UUID?
     @State private var showRepairSheet = false
     @State private var showDeleteConfirm = false
     @State private var isDeleting = false
@@ -225,15 +225,17 @@ private struct MessagesTab: View {
             .disabled(selectedMessage == nil)
             .help("Save message to disk as JSON")
 
-            Button {
-                if selectedMessage != nil { showDeleteConfirm = true }
-            } label: {
-                Label("Delete", systemImage: "trash")
-                    .padding(.horizontal, 8).padding(.vertical, 4)
+            if isDLQ {
+                Button {
+                    if selectedMessage != nil { showDeleteConfirm = true }
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                }
+                .buttonStyle(.borderless)
+                .disabled(selectedMessage == nil)
+                .help("Permanently delete the selected message")
             }
-            .buttonStyle(.borderless)
-            .disabled(selectedMessage == nil)
-            .help("Permanently delete the selected message")
 
             Spacer()
 
@@ -283,7 +285,7 @@ private struct MessagesTab: View {
                     } else {
                         Table(messages, selection: $selectedMessageID) {
                             TableColumn("Message ID") { msg in
-                                Text(msg.id.isEmpty ? "—" : msg.id)
+                                Text(msg.messageId.isEmpty ? "—" : msg.messageId)
                                     .font(.system(.caption, design: .monospaced))
                                     .lineLimit(1)
                             }
@@ -316,7 +318,7 @@ private struct MessagesTab: View {
                             }
                             .width(65)
                         }
-                        .contextMenu(forSelectionType: String.self) { ids in
+                        .contextMenu(forSelectionType: UUID.self) { ids in
                             if let id = ids.first, let msg = messages.first(where: { $0.id == id }) {
                                 Button("Repair and Resubmit Selected Message") {
                                     selectedMessageID = id
@@ -326,9 +328,11 @@ private struct MessagesTab: View {
                                 Button("Save Selected Message") {
                                     saveMessage(msg)
                                 }
-                                Button("Delete Selected Message", role: .destructive) {
-                                    selectedMessageID = id
-                                    showDeleteConfirm = true
+                                if isDLQ {
+                                    Button("Delete Selected Message", role: .destructive) {
+                                        selectedMessageID = id
+                                        showDeleteConfirm = true
+                                    }
                                 }
                             }
                         }
@@ -366,7 +370,7 @@ private struct MessagesTab: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             if let msg = selectedMessage {
-                Text("Message \(msg.id) will be permanently removed.")
+                Text("Message \(msg.messageId) will be permanently removed.")
             }
         }
     }
@@ -390,11 +394,11 @@ private struct MessagesTab: View {
     private func saveMessage(_ msg: MessageItem) {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.json]
-        panel.nameFieldStringValue = "message-\(msg.id).json"
+        panel.nameFieldStringValue = "message-\(msg.messageId).json"
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
             let data: [String: Any] = [
-                "id": msg.id,
+                "id": msg.messageId,
                 "sequenceNumber": msg.sequenceNumber,
                 "body": msg.body,
                 "contentType": msg.contentType,
@@ -412,12 +416,12 @@ private struct MessagesTab: View {
                 let json = try JSONSerialization.data(withJSONObject: data, options: [.prettyPrinted, .sortedKeys])
                 try json.write(to: url)
                 Task { @MainActor in
-                    activityLog.log(action: .save, messageId: msg.id,
+                    activityLog.log(action: .save, messageId: msg.messageId,
                                     result: .success("Saved to \(url.lastPathComponent)"))
                 }
             } catch {
                 Task { @MainActor in
-                    activityLog.log(action: .save, messageId: msg.id,
+                    activityLog.log(action: .save, messageId: msg.messageId,
                                     result: .failure("Save failed: \(error.localizedDescription)"),
                                     hint: "Check write permissions for the chosen location.")
                 }
@@ -435,13 +439,13 @@ private struct MessagesTab: View {
                 isDLQ: isDLQ,
                 sequenceNumber: msg.sequenceNumber
             )
-            messages.removeAll { $0.id == msg.id }
+            messages.removeAll { $0.sequenceNumber == msg.sequenceNumber }
             selectedMessageID = nil
             actionStore.requestRefresh(.queue(queue.name))
-            activityLog.log(action: .delete, messageId: msg.id,
+            activityLog.log(action: .delete, messageId: msg.messageId,
                             result: .success("Deleted successfully"))
         } catch {
-            activityLog.log(action: .delete, messageId: msg.id,
+            activityLog.log(action: .delete, messageId: msg.messageId,
                             result: .failure(error.localizedDescription),
                             hint: "The message may have already been consumed or the queue lock expired.")
         }
@@ -692,7 +696,7 @@ struct MessagePropertiesPanel: View {
             result.append(PropRow(isSystem: true, key: key, value: value))
         }
 
-        sys("messageId",      m.id)
+        sys("messageId",      m.messageId)
         sys("sequenceNumber", "\(m.sequenceNumber)")
         sys("deliveryCount",  "\(m.deliveryCount)")
         sys("contentType",    m.contentType)
