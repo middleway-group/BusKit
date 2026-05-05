@@ -1,5 +1,6 @@
 // BusKit/GRPCManager.swift
 
+@preconcurrency import Dispatch
 import Foundation
 import Network
 import GRPCCore
