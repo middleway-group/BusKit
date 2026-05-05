@@ -241,6 +241,8 @@ enum RbacAccessLevel: Equatable {
 enum SidebarSelection: Hashable {
     case queue(QueueItem)
     case subscription(SubscriptionItem)
+    case rulesGroup(SubscriptionItem)
+    case rule(RuleItem, SubscriptionItem)
 }
 
 // MARK: - Queue models

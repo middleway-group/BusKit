@@ -4,17 +4,23 @@ import SwiftUI
 // MARK: - ActionKind
 
 enum ActionKind: String, CaseIterable {
-    case delete   = "Delete"
-    case save     = "Save"
-    case resubmit = "Resubmit"
-    case repair   = "Repair"
+    case delete      = "Delete"
+    case save        = "Save"
+    case resubmit    = "Resubmit"
+    case repair      = "Repair"
+    case editRule    = "Edit Rule"
+    case deleteRule  = "Delete Rule"
+    case updateTtl   = "Update TTL"
 
     var systemImage: String {
         switch self {
-        case .delete:   return "trash"
-        case .save:     return "square.and.arrow.down"
-        case .resubmit: return "arrow.uturn.right"
-        case .repair:   return "wrench.and.screwdriver"
+        case .delete:     return "trash"
+        case .save:       return "square.and.arrow.down"
+        case .resubmit:   return "arrow.uturn.right"
+        case .repair:     return "wrench.and.screwdriver"
+        case .editRule:   return "pencil"
+        case .deleteRule: return "line.3.horizontal.decrease.circle.fill"
+        case .updateTtl:  return "clock.arrow.2.circlepath"
         }
     }
 }

@@ -449,6 +449,57 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         return reply;
     }
 
+    // ── Add Rule ─────────────────────────────────────────
+
+    public override async Task<AddRuleReply> AddRule(
+        AddRuleRequest request, ServerCallContext context)
+    {
+        var reply = new AddRuleReply();
+
+        if (_adminClient == null)
+        {
+            reply.Error = "Not connected";
+            return reply;
+        }
+
+        try
+        {
+            var options = new CreateRuleOptions(request.RuleName, new SqlRuleFilter(request.SqlFilter));
+            await _adminClient.CreateRuleAsync(request.TopicName, request.SubscriptionName, options);
+        }
+        catch (Exception ex)
+        {
+            reply.Error = ex.Message;
+        }
+
+        return reply;
+    }
+
+    // ── Delete Rule ───────────────────────────────────────
+
+    public override async Task<DeleteRuleReply> DeleteRule(
+        DeleteRuleRequest request, ServerCallContext context)
+    {
+        var reply = new DeleteRuleReply();
+
+        if (_adminClient == null)
+        {
+            reply.Error = "Not connected";
+            return reply;
+        }
+
+        try
+        {
+            await _adminClient.DeleteRuleAsync(request.TopicName, request.SubscriptionName, request.RuleName);
+        }
+        catch (Exception ex)
+        {
+            reply.Error = ex.Message;
+        }
+
+        return reply;
+    }
+
     // ── Get Queue Properties ─────────────────────────────
 
     public override async Task<GetQueuePropertiesReply> GetQueueProperties(
@@ -523,6 +574,32 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         };
     }
 
+    // ── Update Subscription TTL ──────────────────────────
+
+    public override async Task<UpdateSubscriptionTtlReply> UpdateSubscriptionTtl(
+        UpdateSubscriptionTtlRequest request, ServerCallContext context)
+    {
+        var reply = new UpdateSubscriptionTtlReply();
+        try
+        {
+            if (_adminClient == null)
+            {
+                reply.Error = "Not connected.";
+                return reply;
+            }
+
+            var props = await _adminClient.GetSubscriptionAsync(request.TopicName, request.SubscriptionName);
+            var s = props.Value;
+            s.DefaultMessageTimeToLive = TimeSpan.FromSeconds(request.DefaultMessageTtlSeconds);
+            await _adminClient.UpdateSubscriptionAsync(s);
+        }
+        catch (Exception ex)
+        {
+            reply.Error = ex.Message;
+        }
+        return reply;
+    }
+
     // ── Peek Messages ────────────────────────────────────
 
     public override async Task<PeekMessagesReply> PeekMessages(
@@ -545,36 +622,58 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
             ? _client.CreateReceiver(request.TopicName, request.SubscriptionName, receiverOptions)
             : _client.CreateReceiver(request.QueueName, receiverOptions);
 
+        // Azure Service Bus caps a single PeekMessagesAsync call at 250 messages.
+        // Paginate using fromSequenceNumber to honour any requested count above that.
+        const int azurePageSize = 250;
+        int remaining = request.MaxMessages > 0 ? request.MaxMessages : 20;
+        long fromSequenceNumber = 0;
+
         try
         {
-            var messages = await receiver.PeekMessagesAsync(
-                maxMessages: request.MaxMessages > 0 ? request.MaxMessages : 20);
-
-            foreach (var msg in messages)
+            while (remaining > 0)
             {
-                var busMsg = new BusMessage
-                {
-                    MessageId = msg.MessageId ?? "",
-                    Body = msg.Body.ToString(),
-                    ContentType = msg.ContentType ?? "",
-                    EnqueuedTimeUnix = msg.EnqueuedTime.ToUnixTimeSeconds(),
-                    SequenceNumber = msg.SequenceNumber,
-                    DeliveryCount = msg.DeliveryCount,
-                    ExpiresAtUnix = msg.ExpiresAt.ToUnixTimeSeconds(),
-                    Subject = msg.Subject ?? "",
-                    CorrelationId = msg.CorrelationId ?? "",
-                    ReplyTo = msg.ReplyTo ?? "",
-                    ToAddress = msg.To ?? "",
-                    SessionId = msg.SessionId ?? "",
-                    PartitionKey = msg.PartitionKey ?? "",
-                };
+                int batchSize = Math.Min(remaining, azurePageSize);
+                var page = await receiver.PeekMessagesAsync(
+                    maxMessages: batchSize,
+                    fromSequenceNumber: fromSequenceNumber > 0 ? fromSequenceNumber : null);
 
-                foreach (var prop in msg.ApplicationProperties)
+                if (page.Count == 0)
+                    break;
+
+                foreach (var msg in page)
                 {
-                    busMsg.Properties[prop.Key] = prop.Value?.ToString() ?? "";
+                    var busMsg = new BusMessage
+                    {
+                        MessageId = msg.MessageId ?? "",
+                        Body = msg.Body.ToString(),
+                        ContentType = msg.ContentType ?? "",
+                        EnqueuedTimeUnix = msg.EnqueuedTime.ToUnixTimeSeconds(),
+                        SequenceNumber = msg.SequenceNumber,
+                        DeliveryCount = msg.DeliveryCount,
+                        ExpiresAtUnix = msg.ExpiresAt.ToUnixTimeSeconds(),
+                        Subject = msg.Subject ?? "",
+                        CorrelationId = msg.CorrelationId ?? "",
+                        ReplyTo = msg.ReplyTo ?? "",
+                        ToAddress = msg.To ?? "",
+                        SessionId = msg.SessionId ?? "",
+                        PartitionKey = msg.PartitionKey ?? "",
+                    };
+
+                    foreach (var prop in msg.ApplicationProperties)
+                    {
+                        busMsg.Properties[prop.Key] = prop.Value?.ToString() ?? "";
+                    }
+
+                    reply.Messages.Add(busMsg);
                 }
 
-                reply.Messages.Add(busMsg);
+                remaining -= page.Count;
+                // Next page starts after the highest sequence number we received
+                fromSequenceNumber = page.Max(m => m.SequenceNumber) + 1;
+
+                // If the batch returned fewer than requested, there are no more messages
+                if (page.Count < batchSize)
+                    break;
             }
         }
         finally

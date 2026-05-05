@@ -22,9 +22,10 @@ struct SubscriptionDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             Picker("", selection: $selectedTab) {
-                Label("Overview",  systemImage: "info.circle").tag(0)
-                Label("Messages",     systemImage: "list.bullet.rectangle").tag(1)
-                Label("Deadletter",   systemImage: "tray.and.arrow.down").tag(2)
+                Label("Overview",   systemImage: "info.circle").tag(0)
+                Label("Rules",      systemImage: "line.3.horizontal.decrease.circle").tag(1)
+                Label("Messages",   systemImage: "list.bullet.rectangle").tag(2)
+                Label("Deadletter", systemImage: "tray.and.arrow.down").tag(3)
             }
             .pickerStyle(.segmented)
             .padding(.horizontal, 16)
@@ -35,13 +36,15 @@ struct SubscriptionDetailView: View {
             Group {
                 switch selectedTab {
                 case 1:
+                    SubRulesTab(subscription: subscription)
+                case 2:
                     if grpc.rbacAccessLevel.hasDataAccess {
                         SubMessagesTab(subscription: subscription, isDLQ: false,
                                        trigger: messagesTrigger, requestedCount: messagesCount)
                     } else {
                         DataAccessRestrictedView()
                     }
-                case 2:
+                case 3:
                     if grpc.rbacAccessLevel.hasDataAccess {
                         SubMessagesTab(subscription: subscription, isDLQ: true,
                                        trigger: dlqTrigger, requestedCount: dlqCount)
@@ -61,15 +64,423 @@ struct SubscriptionDetailView: View {
                 if action.isDLQ {
                     dlqCount    = action.count
                     dlqTrigger  = UUID()
-                    selectedTab = 2
+                    selectedTab = 3
                 } else {
                     messagesCount   = action.count
                     messagesTrigger = UUID()
-                    selectedTab     = 1
+                    selectedTab     = 2
                 }
             }
         }
+        .onChange(of: actionStore.pendingFocusRules) { _, action in
+            guard let action, action.entityKey == entityKey else { return }
+            selectedTab = 1
+        }
     }
+}
+
+// MARK: - Rules Tab
+
+@available(macOS 15.0, *)
+private struct SubRulesTab: View {
+    @Environment(GRPCManager.self) var grpc
+    @Environment(EntityActionStore.self) var actionStore
+    @Environment(ActivityLogStore.self) var activityLog
+    let subscription: SubscriptionItem
+
+    @State private var rules: [RuleItem] = []
+    @State private var isLoading = true
+    @State private var errorMessage: String?
+    @State private var selectedRuleID: UUID?
+
+    // Add-rule sheet state
+    @State private var showAddSheet    = false
+    @State private var newRuleName     = ""
+    @State private var newSQLFilter    = ""
+    @State private var addError: String?
+    @State private var isAdding        = false
+
+    // Edit state (inline in a sheet)
+    @State private var editingRule: RuleItem?
+    @State private var editFilter      = ""
+    @State private var editError: String?
+    @State private var isSavingEdit    = false
+
+    // Delete confirm
+    @State private var showDeleteConfirm = false
+    @State private var isDeleting        = false
+
+    private var canManage: Bool { grpc.capabilityMap.manageFilters }
+    private var selectedRule: RuleItem? { rules.first { $0.id == selectedRuleID } }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // ── Toolbar ────────────────────────────────────────────
+            HStack(spacing: 0) {
+                Button {
+                    newRuleName = ""
+                    newSQLFilter = ""
+                    addError = nil
+                    showAddSheet = true
+                } label: {
+                    Label("Add Rule", systemImage: "plus")
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                }
+                .buttonStyle(.borderless)
+                .disabled(!canManage)
+                .help(canManage ? "Add a new filter rule" : "Requires Contributor role to manage filters")
+
+                rulesToolbarDivider
+
+                Button {
+                    guard let rule = selectedRule else { return }
+                    editFilter = rule.filter.hasPrefix("SQL: ")
+                        ? String(rule.filter.dropFirst(5))
+                        : rule.filter
+                    editError = nil
+                    editingRule = rule
+                } label: {
+                    Label("Edit Filter", systemImage: "pencil")
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                }
+                .buttonStyle(.borderless)
+                .disabled(selectedRule == nil || !canManage)
+                .help("Edit the SQL filter expression")
+
+                rulesToolbarDivider
+
+                Button {
+                    showDeleteConfirm = true
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                }
+                .buttonStyle(.borderless)
+                .disabled(selectedRule == nil || !canManage)
+                .help("Delete the selected rule")
+
+                Spacer()
+
+                rulesToolbarDivider
+
+                Button { Task { await loadRules() } } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                }
+                .buttonStyle(.borderless)
+                .disabled(isLoading)
+                .help("Refresh rules")
+            }
+            .padding(.horizontal, 4)
+            .padding(.vertical, 3)
+            .background(.bar)
+
+            Divider()
+
+            // ── Rule list ──────────────────────────────────────────
+            Group {
+                if isLoading {
+                    ProgressView("Loading rules…")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let error = errorMessage {
+                    VStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.largeTitle).foregroundStyle(.red)
+                        Text(error).foregroundStyle(.secondary).font(.caption)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if rules.isEmpty {
+                    Text("No rules for \(subscription.name)")
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    Table(rules, selection: $selectedRuleID) {
+                        TableColumn("Rule Name") { rule in
+                            Label(rule.name, systemImage: "line.3.horizontal.decrease.circle")
+                                .lineLimit(1)
+                        }
+                        .width(min: 120, ideal: 180)
+
+                        TableColumn("Filter") { rule in
+                            Text(rule.filter.isEmpty ? "—" : rule.filter)
+                                .font(.system(.body, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                        }
+                    }
+                    .contextMenu(forSelectionType: UUID.self) { ids in
+                        if let id = ids.first, let rule = rules.first(where: { $0.id == id }) {
+                            Button("Edit Filter") {
+                                selectedRuleID = id
+                                editFilter = rule.filter.hasPrefix("SQL: ")
+                                    ? String(rule.filter.dropFirst(5))
+                                    : rule.filter
+                                editError = nil
+                                editingRule = rule
+                            }
+                            .disabled(!canManage)
+                            Divider()
+                            Button("Delete Rule", role: .destructive) {
+                                selectedRuleID = id
+                                showDeleteConfirm = true
+                            }
+                            .disabled(!canManage)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .task { await loadRules() }
+        .onChange(of: subscription.name) { _, _ in Task { await loadRules() } }
+        // ── Add Rule sheet ─────────────────────────────────────────
+        .sheet(isPresented: $showAddSheet) {
+            AddRuleSheet(
+                topicName: subscription.topicName,
+                subscriptionName: subscription.name,
+                ruleName: $newRuleName,
+                sqlFilter: $newSQLFilter,
+                errorMessage: $addError,
+                isAdding: $isAdding
+            ) {
+                Task { await addRule() }
+            }
+        }
+        // ── Edit Rule sheet ────────────────────────────────────────
+        .sheet(item: $editingRule) { rule in
+            EditRuleSheet(
+                ruleName: rule.name,
+                sqlFilter: $editFilter,
+                errorMessage: $editError,
+                isSaving: $isSavingEdit
+            ) {
+                Task { await updateRule(rule: rule) }
+            }
+        }
+        // ── Delete confirm ─────────────────────────────────────────
+        .confirmationDialog("Delete Rule?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                Task { await deleteRule() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            if let rule = selectedRule {
+                Text("Rule \"\(rule.name)\" will be permanently deleted.")
+            }
+        }
+    }
+
+    private func loadRules() async {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        do {
+            let infos = try await grpc.listRules(
+                topicName: subscription.topicName,
+                subscriptionName: subscription.name)
+            rules = infos.map { RuleItem(name: $0.name, filter: $0.filter) }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func addRule() async {
+        isAdding = true
+        addError = nil
+        do {
+            try await grpc.addRule(
+                topicName: subscription.topicName,
+                subscriptionName: subscription.name,
+                ruleName: newRuleName,
+                sqlFilter: newSQLFilter)
+            showAddSheet = false
+            await loadRules()
+            actionStore.requestRulesRefresh(topicName: subscription.topicName,
+                                            subscriptionName: subscription.name)
+            activityLog.log(action: .editRule, messageId: newRuleName,
+                            result: .success("Rule added to \(subscription.topicName)/\(subscription.name)"))
+        } catch {
+            addError = error.localizedDescription
+            activityLog.log(action: .editRule, messageId: newRuleName,
+                            result: .failure(error.localizedDescription),
+                            hint: "Check rule name uniqueness and SQL filter syntax.")
+        }
+        isAdding = false
+    }
+
+    private func updateRule(rule: RuleItem) async {
+        isSavingEdit = true
+        editError = nil
+        do {
+            try await grpc.updateRule(
+                topicName: subscription.topicName,
+                subscriptionName: subscription.name,
+                ruleName: rule.name,
+                sqlFilter: editFilter)
+            editingRule = nil
+            await loadRules()
+            actionStore.requestRulesRefresh(topicName: subscription.topicName,
+                                            subscriptionName: subscription.name)
+            activityLog.log(action: .editRule, messageId: rule.name,
+                            result: .success("Filter updated on \(subscription.topicName)/\(subscription.name)"))
+        } catch {
+            editError = error.localizedDescription
+            activityLog.log(action: .editRule, messageId: rule.name,
+                            result: .failure(error.localizedDescription),
+                            hint: "Check your SQL filter syntax and permissions.")
+        }
+        isSavingEdit = false
+    }
+
+    private func deleteRule() async {
+        guard let rule = selectedRule else { return }
+        isDeleting = true
+        defer { isDeleting = false }
+        do {
+            try await grpc.deleteRule(
+                topicName: subscription.topicName,
+                subscriptionName: subscription.name,
+                ruleName: rule.name)
+            rules.removeAll { $0.id == rule.id }
+            selectedRuleID = nil
+            actionStore.requestRulesRefresh(topicName: subscription.topicName,
+                                            subscriptionName: subscription.name)
+            activityLog.log(action: .deleteRule, messageId: rule.name,
+                            result: .success("Deleted from \(subscription.topicName)/\(subscription.name)"))
+        } catch {
+            errorMessage = error.localizedDescription
+            activityLog.log(action: .deleteRule, messageId: rule.name,
+                            result: .failure(error.localizedDescription),
+                            hint: "The rule may already have been deleted.")
+        }
+    }
+}
+
+// MARK: - Add Rule Sheet
+
+@available(macOS 15.0, *)
+private struct AddRuleSheet: View {
+    let topicName: String
+    let subscriptionName: String
+    @Binding var ruleName: String
+    @Binding var sqlFilter: String
+    @Binding var errorMessage: String?
+    @Binding var isAdding: Bool
+    let onAdd: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    private var isValid: Bool {
+        !ruleName.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !sqlFilter.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Add Rule")
+                .font(.headline)
+
+            Divider()
+
+            Form {
+                LabeledContent("Topic") { Text(topicName) }
+                LabeledContent("Subscription") { Text(subscriptionName) }
+
+                LabeledContent("Rule Name") {
+                    TextField("e.g. HighPriority", text: $ruleName)
+                        .textFieldStyle(.roundedBorder)
+                }
+
+                LabeledContent("SQL Filter") {
+                    TextField("e.g. Priority = 'High'", text: $sqlFilter)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(.body, design: .monospaced))
+                }
+            }
+            .formStyle(.grouped)
+
+            if let error = errorMessage {
+                Label(error, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.red)
+                    .font(.caption)
+            }
+
+            Divider()
+
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.escape)
+                Button("Add Rule") { onAdd() }
+                    .buttonStyle(.borderedProminent)
+                    .keyboardShortcut(.return)
+                    .disabled(!isValid || isAdding)
+            }
+        }
+        .padding()
+        .frame(width: 420)
+    }
+}
+
+// MARK: - Edit Rule Sheet
+
+@available(macOS 15.0, *)
+private struct EditRuleSheet: View {
+    let ruleName: String
+    @Binding var sqlFilter: String
+    @Binding var errorMessage: String?
+    @Binding var isSaving: Bool
+    let onSave: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    private var isValid: Bool {
+        !sqlFilter.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Edit Rule: \(ruleName)")
+                .font(.headline)
+
+            Divider()
+
+            Form {
+                LabeledContent("SQL Filter") {
+                    TextField("e.g. Priority = 'High'", text: $sqlFilter)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(.body, design: .monospaced))
+                }
+            }
+            .formStyle(.grouped)
+
+            if let error = errorMessage {
+                Label(error, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.red)
+                    .font(.caption)
+            }
+
+            Divider()
+
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.escape)
+                Button("Save") { onSave() }
+                    .buttonStyle(.borderedProminent)
+                    .keyboardShortcut(.return)
+                    .disabled(!isValid || isSaving)
+            }
+        }
+        .padding()
+        .frame(width: 380)
+    }
+}
+
+// MARK: - Toolbar divider (Rules tab)
+
+private var rulesToolbarDivider: some View {
+    Divider()
+        .frame(height: 16)
+        .padding(.horizontal, 2)
 }
 
 // MARK: - Description Tab
@@ -77,11 +488,22 @@ struct SubscriptionDetailView: View {
 @available(macOS 15.0, *)
 private struct SubDescriptionTab: View {
     @Environment(GRPCManager.self) var grpc
+    @Environment(ActivityLogStore.self) var activityLog
     let subscription: SubscriptionItem
 
     @State private var details: SubscriptionDetailsItem?
     @State private var isLoading = true
     @State private var errorMessage: String?
+
+    // TTL editing
+    @State private var isEditingTTL = false
+    @State private var editDays    = 0
+    @State private var editHours   = 0
+    @State private var editMinutes = 0
+    @State private var editSeconds = 0
+    @State private var isSavingTTL = false
+
+    private var canUpdateProperties: Bool { grpc.capabilityMap.createResources }
 
     var body: some View {
         Group {
@@ -105,7 +527,40 @@ private struct SubDescriptionTab: View {
                         }
 
                         Section("Configuration") {
-                            LabeledContent("Default TTL",        value: formatDuration(d.defaultMessageTtlSeconds))
+                            LabeledContent("Default TTL") {
+                                if isEditingTTL {
+                                    HStack(spacing: 4) {
+                                        TTLField("d", value: $editDays)
+                                        TTLField("h", value: $editHours)
+                                        TTLField("m", value: $editMinutes)
+                                        TTLField("s", value: $editSeconds)
+                                        Button("Cancel") {
+                                            isEditingTTL = false
+                                        }
+                                        .buttonStyle(.borderless)
+                                        .foregroundStyle(.secondary)
+                                        Button("Update") {
+                                            Task { await saveTTL() }
+                                        }
+                                        .buttonStyle(.borderedProminent)
+                                        .disabled(isSavingTTL || editTtlSeconds <= 0)
+                                    }
+                                } else {
+                                    HStack(spacing: 6) {
+                                        Text(formatDuration(d.defaultMessageTtlSeconds))
+                                        if canUpdateProperties {
+                                            Button {
+                                                beginEditing(d.defaultMessageTtlSeconds)
+                                            } label: {
+                                                Image(systemName: "pencil")
+                                                    .imageScale(.small)
+                                            }
+                                            .buttonStyle(.borderless)
+                                            .help("Edit default message TTL")
+                                        }
+                                    }
+                                }
+                            }
                             LabeledContent("Lock Duration",       value: formatDuration(d.lockDurationSeconds))
                             LabeledContent("Max Delivery Count",  value: "\(d.maxDeliveryCount)")
                             LabeledContent("Auto Delete on Idle", value: formatDuration(d.autoDeleteOnIdleSeconds))
@@ -137,6 +592,39 @@ private struct SubDescriptionTab: View {
         .onChange(of: subscription.name) { _, _ in Task { await loadDetails() } }
     }
 
+    private var editTtlSeconds: Int64 {
+        Int64(editDays) * 86_400 + Int64(editHours) * 3_600 + Int64(editMinutes) * 60 + Int64(editSeconds)
+    }
+
+    private func beginEditing(_ seconds: Int64) {
+        editDays    = Int(seconds / 86_400)
+        editHours   = Int((seconds % 86_400) / 3_600)
+        editMinutes = Int((seconds % 3_600) / 60)
+        editSeconds = Int(seconds % 60)
+        isEditingTTL = true
+    }
+
+    private func saveTTL() async {
+        isSavingTTL = true
+        defer { isSavingTTL = false }
+        let target = "\(subscription.topicName)/\(subscription.name)"
+        do {
+            try await grpc.updateSubscriptionTtl(
+                topicName: subscription.topicName,
+                subscriptionName: subscription.name,
+                ttlSeconds: editTtlSeconds
+            )
+            isEditingTTL = false
+            await activityLog.log(action: .updateTtl, messageId: target,
+                                  result: .success("TTL updated to \(formatDuration(editTtlSeconds))"))
+            await loadDetails()
+        } catch {
+            await activityLog.log(action: .updateTtl, messageId: target,
+                                  result: .failure("TTL update failed"),
+                                  hint: error.localizedDescription)
+        }
+    }
+
     private func loadDetails() async {
         isLoading = true
         errorMessage = nil
@@ -161,6 +649,31 @@ private struct SubDescriptionTab: View {
         if minutes > 0 { parts.append("\(minutes)m") }
         if secs    > 0 { parts.append("\(secs)s") }
         return parts.joined(separator: " ")
+    }
+}
+
+// MARK: - TTL Component Field
+
+@available(macOS 15.0, *)
+private struct TTLField: View {
+    let suffix: String
+    @Binding var value: Int
+
+    init(_ suffix: String, value: Binding<Int>) {
+        self.suffix = suffix
+        self._value = value
+    }
+
+    var body: some View {
+        HStack(spacing: 1) {
+            TextField("0", value: $value, format: .number)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 42)
+                .multilineTextAlignment(.trailing)
+            Text(suffix)
+                .foregroundStyle(.secondary)
+                .font(.callout)
+        }
     }
 }
 

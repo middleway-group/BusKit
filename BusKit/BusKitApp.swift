@@ -4,6 +4,8 @@ import AppKit
 // MARK: - AppDelegate
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var aboutWindow: NSWindow?
+
     func applicationWillFinishLaunching(_ notification: Notification) {
         guard let bundleID = Bundle.main.bundleIdentifier else { return }
 
@@ -24,6 +26,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.runModal()
 
         NSApp.terminate(nil)
+    }
+
+    @objc func showAboutWindow() {
+        if aboutWindow == nil {
+            let controller = NSHostingController(rootView: AboutView())
+            let window = NSWindow(contentViewController: controller)
+            window.title = "About BusKit"
+            window.styleMask = [.titled, .closable]
+            window.isReleasedWhenClosed = false
+            aboutWindow = window
+        }
+        aboutWindow?.center()
+        aboutWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 }
 
@@ -50,5 +66,12 @@ struct BusKitApp: App {
                 }
         }
         .windowStyle(.titleBar)
+        .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("About BusKit") {
+                    NSApp.sendAction(#selector(AppDelegate.showAboutWindow), to: nil, from: nil)
+                }
+            }
+        }
     }
 }

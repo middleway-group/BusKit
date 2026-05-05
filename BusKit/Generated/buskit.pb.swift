@@ -521,6 +521,64 @@ public struct Buskit_UpdateRuleReply: Sendable {
   public init() {}
 }
 
+public struct Buskit_AddRuleRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var topicName: String = String()
+
+  public var subscriptionName: String = String()
+
+  public var ruleName: String = String()
+
+  public var sqlFilter: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_AddRuleReply: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var error: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_DeleteRuleRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var topicName: String = String()
+
+  public var subscriptionName: String = String()
+
+  public var ruleName: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_DeleteRuleReply: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var error: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
 public struct Buskit_GetQueuePropertiesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -663,6 +721,34 @@ public struct Buskit_SubscriptionDetails: Sendable {
   public var forwardTo: String = String()
 
   public var autoDeleteOnIdleSeconds: Int64 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_UpdateSubscriptionTtlRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var topicName: String = String()
+
+  public var subscriptionName: String = String()
+
+  public var defaultMessageTtlSeconds: Int64 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_UpdateSubscriptionTtlReply: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var error: String = String()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -1907,6 +1993,151 @@ extension Buskit_UpdateRuleReply: SwiftProtobuf.Message, SwiftProtobuf._MessageI
   }
 }
 
+extension Buskit_AddRuleRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".AddRuleRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0\u{3}subscription_name\0\u{3}rule_name\0\u{3}sql_filter\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.topicName) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.subscriptionName) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.ruleName) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.sqlFilter) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.topicName.isEmpty {
+      try visitor.visitSingularStringField(value: self.topicName, fieldNumber: 1)
+    }
+    if !self.subscriptionName.isEmpty {
+      try visitor.visitSingularStringField(value: self.subscriptionName, fieldNumber: 2)
+    }
+    if !self.ruleName.isEmpty {
+      try visitor.visitSingularStringField(value: self.ruleName, fieldNumber: 3)
+    }
+    if !self.sqlFilter.isEmpty {
+      try visitor.visitSingularStringField(value: self.sqlFilter, fieldNumber: 4)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_AddRuleRequest, rhs: Buskit_AddRuleRequest) -> Bool {
+    if lhs.topicName != rhs.topicName {return false}
+    if lhs.subscriptionName != rhs.subscriptionName {return false}
+    if lhs.ruleName != rhs.ruleName {return false}
+    if lhs.sqlFilter != rhs.sqlFilter {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_AddRuleReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".AddRuleReply"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.error) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.error.isEmpty {
+      try visitor.visitSingularStringField(value: self.error, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_AddRuleReply, rhs: Buskit_AddRuleReply) -> Bool {
+    if lhs.error != rhs.error {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_DeleteRuleRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DeleteRuleRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0\u{3}subscription_name\0\u{3}rule_name\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.topicName) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.subscriptionName) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.ruleName) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.topicName.isEmpty {
+      try visitor.visitSingularStringField(value: self.topicName, fieldNumber: 1)
+    }
+    if !self.subscriptionName.isEmpty {
+      try visitor.visitSingularStringField(value: self.subscriptionName, fieldNumber: 2)
+    }
+    if !self.ruleName.isEmpty {
+      try visitor.visitSingularStringField(value: self.ruleName, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_DeleteRuleRequest, rhs: Buskit_DeleteRuleRequest) -> Bool {
+    if lhs.topicName != rhs.topicName {return false}
+    if lhs.subscriptionName != rhs.subscriptionName {return false}
+    if lhs.ruleName != rhs.ruleName {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_DeleteRuleReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DeleteRuleReply"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.error) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.error.isEmpty {
+      try visitor.visitSingularStringField(value: self.error, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_DeleteRuleReply, rhs: Buskit_DeleteRuleReply) -> Bool {
+    if lhs.error != rhs.error {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
 extension Buskit_GetQueuePropertiesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".GetQueuePropertiesRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0")
@@ -2235,6 +2466,76 @@ extension Buskit_SubscriptionDetails: SwiftProtobuf.Message, SwiftProtobuf._Mess
     if lhs.deadLetterCount != rhs.deadLetterCount {return false}
     if lhs.forwardTo != rhs.forwardTo {return false}
     if lhs.autoDeleteOnIdleSeconds != rhs.autoDeleteOnIdleSeconds {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_UpdateSubscriptionTtlRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".UpdateSubscriptionTtlRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0\u{3}subscription_name\0\u{3}default_message_ttl_seconds\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.topicName) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.subscriptionName) }()
+      case 3: try { try decoder.decodeSingularInt64Field(value: &self.defaultMessageTtlSeconds) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.topicName.isEmpty {
+      try visitor.visitSingularStringField(value: self.topicName, fieldNumber: 1)
+    }
+    if !self.subscriptionName.isEmpty {
+      try visitor.visitSingularStringField(value: self.subscriptionName, fieldNumber: 2)
+    }
+    if self.defaultMessageTtlSeconds != 0 {
+      try visitor.visitSingularInt64Field(value: self.defaultMessageTtlSeconds, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_UpdateSubscriptionTtlRequest, rhs: Buskit_UpdateSubscriptionTtlRequest) -> Bool {
+    if lhs.topicName != rhs.topicName {return false}
+    if lhs.subscriptionName != rhs.subscriptionName {return false}
+    if lhs.defaultMessageTtlSeconds != rhs.defaultMessageTtlSeconds {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_UpdateSubscriptionTtlReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".UpdateSubscriptionTtlReply"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.error) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.error.isEmpty {
+      try visitor.visitSingularStringField(value: self.error, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_UpdateSubscriptionTtlReply, rhs: Buskit_UpdateSubscriptionTtlReply) -> Bool {
+    if lhs.error != rhs.error {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

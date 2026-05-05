@@ -3,6 +3,7 @@ import SwiftUI
 @available(macOS 15.0, *)
 struct ContentView: View {
     @Environment(GRPCManager.self) var grpc
+    @Environment(EntityActionStore.self) var actionStore
     @State private var connectionString: String = ""
     @State private var selection: SidebarSelection?
     @State private var appStatus   = AppStatusModel()
@@ -27,6 +28,10 @@ struct ContentView: View {
                         QueueDetailView(queue: queue)
                     case .subscription(let sub):
                         SubscriptionDetailView(subscription: sub)
+                            .id(sub.id)
+                    case .rulesGroup(let sub), .rule(_, let sub):
+                        SubscriptionDetailView(subscription: sub)
+                            .id(sub.id)
                     case nil:
                         Text("Select a queue or subscription")
                             .foregroundStyle(.secondary)
@@ -58,6 +63,19 @@ struct ContentView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 ConnectionToolbar(connectionString: $connectionString)
+            }
+        }
+        .onChange(of: selection) { _, newSelection in
+            // When a rules group or a specific rule is selected, focus the Rules tab.
+            let sub: SubscriptionItem?
+            switch newSelection {
+            case .rulesGroup(let s): sub = s
+            case .rule(_, let s):   sub = s
+            default:                sub = nil
+            }
+            if let sub {
+                let key = EntityActionStore.subscriptionKey(topic: sub.topicName, sub: sub.name)
+                actionStore.focusRules(entityKey: key)
             }
         }
         .onChange(of: grpc.connectionState) { _, newState in

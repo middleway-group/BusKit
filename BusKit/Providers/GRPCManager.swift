@@ -508,6 +508,18 @@ final class GRPCManager {
         )
     }
 
+    // MARK: - Update Subscription TTL
+
+    func updateSubscriptionTtl(topicName: String, subscriptionName: String, ttlSeconds: Int64) async throws {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_UpdateSubscriptionTtlRequest()
+        req.topicName = topicName
+        req.subscriptionName = subscriptionName
+        req.defaultMessageTtlSeconds = ttlSeconds
+        let reply: Buskit_UpdateSubscriptionTtlReply = try await buskit.updateSubscriptionTtl(req)
+        if !reply.error.isEmpty { throw GRPCManagerError.operationFailed(reply.error) }
+    }
+
     // MARK: - List Queues
 
     func listQueues() async throws -> [Buskit_QueueInfo] {
@@ -545,6 +557,44 @@ final class GRPCManager {
         req.subscriptionName = subscriptionName
         let reply: Buskit_ListRulesReply = try await buskit.listRules(req)
         return Array(reply.rules)
+    }
+
+    // MARK: - Add Rule
+
+    func addRule(topicName: String, subscriptionName: String, ruleName: String, sqlFilter: String) async throws {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_AddRuleRequest()
+        req.topicName = topicName
+        req.subscriptionName = subscriptionName
+        req.ruleName = ruleName
+        req.sqlFilter = sqlFilter
+        let reply: Buskit_AddRuleReply = try await buskit.addRule(req)
+        if !reply.error.isEmpty { throw GRPCManagerError.operationFailed(reply.error) }
+    }
+
+    // MARK: - Update Rule
+
+    func updateRule(topicName: String, subscriptionName: String, ruleName: String, sqlFilter: String) async throws {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_UpdateRuleRequest()
+        req.topicName = topicName
+        req.subscriptionName = subscriptionName
+        req.ruleName = ruleName
+        req.sqlFilter = sqlFilter
+        let reply: Buskit_UpdateRuleReply = try await buskit.updateRule(req)
+        if !reply.error.isEmpty { throw GRPCManagerError.operationFailed(reply.error) }
+    }
+
+    // MARK: - Delete Rule
+
+    func deleteRule(topicName: String, subscriptionName: String, ruleName: String) async throws {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_DeleteRuleRequest()
+        req.topicName = topicName
+        req.subscriptionName = subscriptionName
+        req.ruleName = ruleName
+        let reply: Buskit_DeleteRuleReply = try await buskit.deleteRule(req)
+        if !reply.error.isEmpty { throw GRPCManagerError.operationFailed(reply.error) }
     }
 
     // MARK: - Peek Messages

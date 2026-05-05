@@ -17,9 +17,12 @@ service BusKitService {
   rpc ListTopics (ListTopicsRequest) returns (ListTopicsReply);
   rpc ListSubscriptions (ListSubscriptionsRequest) returns (ListSubscriptionsReply);
   rpc ListRules (ListRulesRequest) returns (ListRulesReply);
+  rpc AddRule (AddRuleRequest) returns (AddRuleReply);
   rpc UpdateRule (UpdateRuleRequest) returns (UpdateRuleReply);
+  rpc DeleteRule (DeleteRuleRequest) returns (DeleteRuleReply);
   rpc GetQueueProperties (GetQueuePropertiesRequest) returns (GetQueuePropertiesReply);
   rpc GetSubscriptionProperties (GetSubscriptionPropertiesRequest) returns (GetSubscriptionPropertiesReply);
+  rpc UpdateSubscriptionTtl (UpdateSubscriptionTtlRequest) returns (UpdateSubscriptionTtlReply);
   rpc PurgeMessages (PurgeMessagesRequest) returns (PurgeMessagesReply);
   rpc PeekMessages (PeekMessagesRequest) returns (PeekMessagesReply);
   rpc SendMessage (SendMessageRequest) returns (SendMessageReply);
@@ -194,6 +197,27 @@ message UpdateRuleReply {
   string error = 1;
 }
 
+message AddRuleRequest {
+  string topic_name = 1;
+  string subscription_name = 2;
+  string rule_name = 3;
+  string sql_filter = 4;
+}
+
+message AddRuleReply {
+  string error = 1;
+}
+
+message DeleteRuleRequest {
+  string topic_name = 1;
+  string subscription_name = 2;
+  string rule_name = 3;
+}
+
+message DeleteRuleReply {
+  string error = 1;
+}
+
 // ─── Queue Properties ────────────────────────────────
 
 message GetQueuePropertiesRequest {
@@ -249,6 +273,18 @@ message SubscriptionDetails {
   int64 dead_letter_count = 12;
   string forward_to = 13;
   int64 auto_delete_on_idle_seconds = 14;
+}
+
+// ─── Update Subscription TTL ─────────────────────────
+
+message UpdateSubscriptionTtlRequest {
+  string topic_name = 1;
+  string subscription_name = 2;
+  int64 default_message_ttl_seconds = 3;
+}
+
+message UpdateSubscriptionTtlReply {
+  string error = 1;
 }
 
 // ─── Messages ───────────────────────────────────────

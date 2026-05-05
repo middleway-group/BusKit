@@ -140,6 +140,18 @@ internal enum Buskit_BusKitService: Sendable {
                 method: "ListRules"
             )
         }
+        /// Namespace for "AddRule" metadata.
+        internal enum AddRule: Sendable {
+            /// Request type for "AddRule".
+            internal typealias Input = Buskit_AddRuleRequest
+            /// Response type for "AddRule".
+            internal typealias Output = Buskit_AddRuleReply
+            /// Descriptor for "AddRule".
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "AddRule"
+            )
+        }
         /// Namespace for "UpdateRule" metadata.
         internal enum UpdateRule: Sendable {
             /// Request type for "UpdateRule".
@@ -150,6 +162,18 @@ internal enum Buskit_BusKitService: Sendable {
             internal static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
                 method: "UpdateRule"
+            )
+        }
+        /// Namespace for "DeleteRule" metadata.
+        internal enum DeleteRule: Sendable {
+            /// Request type for "DeleteRule".
+            internal typealias Input = Buskit_DeleteRuleRequest
+            /// Response type for "DeleteRule".
+            internal typealias Output = Buskit_DeleteRuleReply
+            /// Descriptor for "DeleteRule".
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "DeleteRule"
             )
         }
         /// Namespace for "GetQueueProperties" metadata.
@@ -174,6 +198,18 @@ internal enum Buskit_BusKitService: Sendable {
             internal static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
                 method: "GetSubscriptionProperties"
+            )
+        }
+        /// Namespace for "UpdateSubscriptionTtl" metadata.
+        internal enum UpdateSubscriptionTtl: Sendable {
+            /// Request type for "UpdateSubscriptionTtl".
+            internal typealias Input = Buskit_UpdateSubscriptionTtlRequest
+            /// Response type for "UpdateSubscriptionTtl".
+            internal typealias Output = Buskit_UpdateSubscriptionTtlReply
+            /// Descriptor for "UpdateSubscriptionTtl".
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "UpdateSubscriptionTtl"
             )
         }
         /// Namespace for "PurgeMessages" metadata.
@@ -260,9 +296,12 @@ internal enum Buskit_BusKitService: Sendable {
             ListTopics.descriptor,
             ListSubscriptions.descriptor,
             ListRules.descriptor,
+            AddRule.descriptor,
             UpdateRule.descriptor,
+            DeleteRule.descriptor,
             GetQueueProperties.descriptor,
             GetSubscriptionProperties.descriptor,
+            UpdateSubscriptionTtl.descriptor,
             PurgeMessages.descriptor,
             PeekMessages.descriptor,
             SendMessage.descriptor,
@@ -478,6 +517,25 @@ extension Buskit_BusKitService {
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_ListRulesReply>) async throws -> Result
         ) async throws -> Result where Result: Sendable
 
+        /// Call the "AddRule" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_AddRuleRequest` message.
+        ///   - serializer: A serializer for `Buskit_AddRuleRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_AddRuleReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func addRule<Result>(
+            request: GRPCCore.ClientRequest<Buskit_AddRuleRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_AddRuleRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_AddRuleReply>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_AddRuleReply>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
         /// Call the "UpdateRule" method.
         ///
         /// - Parameters:
@@ -495,6 +553,25 @@ extension Buskit_BusKitService {
             deserializer: some GRPCCore.MessageDeserializer<Buskit_UpdateRuleReply>,
             options: GRPCCore.CallOptions,
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_UpdateRuleReply>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "DeleteRule" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_DeleteRuleRequest` message.
+        ///   - serializer: A serializer for `Buskit_DeleteRuleRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_DeleteRuleReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func deleteRule<Result>(
+            request: GRPCCore.ClientRequest<Buskit_DeleteRuleRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_DeleteRuleRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_DeleteRuleReply>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteRuleReply>) async throws -> Result
         ) async throws -> Result where Result: Sendable
 
         /// Call the "GetQueueProperties" method.
@@ -533,6 +610,25 @@ extension Buskit_BusKitService {
             deserializer: some GRPCCore.MessageDeserializer<Buskit_GetSubscriptionPropertiesReply>,
             options: GRPCCore.CallOptions,
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_GetSubscriptionPropertiesReply>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "UpdateSubscriptionTtl" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_UpdateSubscriptionTtlRequest` message.
+        ///   - serializer: A serializer for `Buskit_UpdateSubscriptionTtlRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_UpdateSubscriptionTtlReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func updateSubscriptionTtl<Result>(
+            request: GRPCCore.ClientRequest<Buskit_UpdateSubscriptionTtlRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_UpdateSubscriptionTtlRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_UpdateSubscriptionTtlReply>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_UpdateSubscriptionTtlReply>) async throws -> Result
         ) async throws -> Result where Result: Sendable
 
         /// Call the "PurgeMessages" method.
@@ -966,6 +1062,36 @@ extension Buskit_BusKitService {
             )
         }
 
+        /// Call the "AddRule" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_AddRuleRequest` message.
+        ///   - serializer: A serializer for `Buskit_AddRuleRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_AddRuleReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        internal func addRule<Result>(
+            request: GRPCCore.ClientRequest<Buskit_AddRuleRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_AddRuleRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_AddRuleReply>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_AddRuleReply>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Buskit_BusKitService.Method.AddRule.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
         /// Call the "UpdateRule" method.
         ///
         /// - Parameters:
@@ -989,6 +1115,36 @@ extension Buskit_BusKitService {
             try await self.client.unary(
                 request: request,
                 descriptor: Buskit_BusKitService.Method.UpdateRule.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "DeleteRule" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_DeleteRuleRequest` message.
+        ///   - serializer: A serializer for `Buskit_DeleteRuleRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_DeleteRuleReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        internal func deleteRule<Result>(
+            request: GRPCCore.ClientRequest<Buskit_DeleteRuleRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_DeleteRuleRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_DeleteRuleReply>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteRuleReply>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Buskit_BusKitService.Method.DeleteRule.descriptor,
                 serializer: serializer,
                 deserializer: deserializer,
                 options: options,
@@ -1049,6 +1205,36 @@ extension Buskit_BusKitService {
             try await self.client.unary(
                 request: request,
                 descriptor: Buskit_BusKitService.Method.GetSubscriptionProperties.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "UpdateSubscriptionTtl" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_UpdateSubscriptionTtlRequest` message.
+        ///   - serializer: A serializer for `Buskit_UpdateSubscriptionTtlRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_UpdateSubscriptionTtlReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        internal func updateSubscriptionTtl<Result>(
+            request: GRPCCore.ClientRequest<Buskit_UpdateSubscriptionTtlRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_UpdateSubscriptionTtlRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_UpdateSubscriptionTtlReply>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_UpdateSubscriptionTtlReply>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Buskit_BusKitService.Method.UpdateSubscriptionTtl.descriptor,
                 serializer: serializer,
                 deserializer: deserializer,
                 options: options,
@@ -1489,6 +1675,31 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
+    /// Call the "AddRule" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_AddRuleRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func addRule<Result>(
+        request: GRPCCore.ClientRequest<Buskit_AddRuleRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_AddRuleReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.addRule(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_AddRuleRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_AddRuleReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
     /// Call the "UpdateRule" method.
     ///
     /// - Parameters:
@@ -1509,6 +1720,31 @@ extension Buskit_BusKitService.ClientProtocol {
             request: request,
             serializer: GRPCProtobuf.ProtobufSerializer<Buskit_UpdateRuleRequest>(),
             deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_UpdateRuleReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DeleteRule" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_DeleteRuleRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func deleteRule<Result>(
+        request: GRPCCore.ClientRequest<Buskit_DeleteRuleRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteRuleReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.deleteRule(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_DeleteRuleRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_DeleteRuleReply>(),
             options: options,
             onResponse: handleResponse
         )
@@ -1559,6 +1795,31 @@ extension Buskit_BusKitService.ClientProtocol {
             request: request,
             serializer: GRPCProtobuf.ProtobufSerializer<Buskit_GetSubscriptionPropertiesRequest>(),
             deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_GetSubscriptionPropertiesReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "UpdateSubscriptionTtl" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_UpdateSubscriptionTtlRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func updateSubscriptionTtl<Result>(
+        request: GRPCCore.ClientRequest<Buskit_UpdateSubscriptionTtlRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_UpdateSubscriptionTtlReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.updateSubscriptionTtl(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_UpdateSubscriptionTtlRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_UpdateSubscriptionTtlReply>(),
             options: options,
             onResponse: handleResponse
         )
@@ -2006,6 +2267,35 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
+    /// Call the "AddRule" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func addRule<Result>(
+        _ message: Buskit_AddRuleRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_AddRuleReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Buskit_AddRuleRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.addRule(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
     /// Call the "UpdateRule" method.
     ///
     /// - Parameters:
@@ -2029,6 +2319,35 @@ extension Buskit_BusKitService.ClientProtocol {
             metadata: metadata
         )
         return try await self.updateRule(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DeleteRule" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func deleteRule<Result>(
+        _ message: Buskit_DeleteRuleRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteRuleReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Buskit_DeleteRuleRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.deleteRule(
             request: request,
             options: options,
             onResponse: handleResponse
@@ -2087,6 +2406,35 @@ extension Buskit_BusKitService.ClientProtocol {
             metadata: metadata
         )
         return try await self.getSubscriptionProperties(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "UpdateSubscriptionTtl" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func updateSubscriptionTtl<Result>(
+        _ message: Buskit_UpdateSubscriptionTtlRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_UpdateSubscriptionTtlReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Buskit_UpdateSubscriptionTtlRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.updateSubscriptionTtl(
             request: request,
             options: options,
             onResponse: handleResponse

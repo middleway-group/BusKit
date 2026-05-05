@@ -42,6 +42,35 @@ final class EntityActionStore {
         pendingRefresh = RefreshRequest(target: target)
     }
 
+    // MARK: - Focus Rules tab
+
+    struct FocusRulesAction: Equatable {
+        let nonce = UUID()
+        let entityKey: String
+        static func == (lhs: Self, rhs: Self) -> Bool { lhs.nonce == rhs.nonce }
+    }
+
+    var pendingFocusRules: FocusRulesAction?
+
+    func focusRules(entityKey: String) {
+        pendingFocusRules = FocusRulesAction(entityKey: entityKey)
+    }
+
+    // MARK: - Rules refresh request
+
+    struct RulesRefreshRequest: Equatable {
+        let nonce = UUID()
+        let topicName: String
+        let subscriptionName: String
+        static func == (lhs: Self, rhs: Self) -> Bool { lhs.nonce == rhs.nonce }
+    }
+
+    var pendingRulesRefresh: RulesRefreshRequest?
+
+    func requestRulesRefresh(topicName: String, subscriptionName: String) {
+        pendingRulesRefresh = RulesRefreshRequest(topicName: topicName, subscriptionName: subscriptionName)
+    }
+
     // MARK: - Entity key helpers
 
     static func queueKey(_ name: String) -> String { "q:\(name)" }

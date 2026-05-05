@@ -8,6 +8,17 @@ private enum LoadState<T> {
     case failed(String)
 }
 
+extension LoadState: Equatable where T: Equatable {
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        switch (lhs, rhs) {
+        case (.loading, .loading):           return true
+        case (.loaded(let a), .loaded(let b)): return a == b
+        case (.failed(let a), .failed(let b)): return a == b
+        default:                             return false
+        }
+    }
+}
+
 // MARK: - Message count badge
 
 private struct MessageCountBadge: View {
@@ -59,6 +70,23 @@ private final class SidebarModel {
     var showPurgeResult    = false
     var purgeResultTitle   = ""
     var purgeResultMessage = ""
+
+    // Rule operation state
+    var ruleOpTarget: (rule: RuleItem, sub: SubscriptionItem)? = nil
+    var showEditRuleSheet    = false
+    var editRuleFilter       = ""
+    var editRuleError: String? = nil
+    var isEditingRule        = false
+    var showDeleteRuleConfirm = false
+    var isDeletingRule       = false
+
+    // Add Rule state
+    var showAddRuleSheet  = false
+    var addRuleTarget: SubscriptionItem? = nil
+    var addRuleName   = ""
+    var addRuleFilter = ""
+    var addRuleError: String? = nil
+    var isAddingRule  = false
 }
 
 // MARK: - Receive Count Dialog
@@ -110,6 +138,7 @@ private struct ReceiveCountDialog: View {
 struct SidebarView: View {
     @Environment(GRPCManager.self) var grpc
     @Environment(EntityActionStore.self) var actionStore
+    @Environment(ActivityLogStore.self) var activityLog
     @Binding var selection: SidebarSelection?
     @State private var model = SidebarModel()
     @State private var namespaceExpanded = true
@@ -212,6 +241,48 @@ struct SidebarView: View {
         } message: {
             Text(model.purgeResultMessage)
         }
+        // ── Edit Rule sheet ───────────────────────────────────────
+        .sheet(isPresented: $model.showEditRuleSheet) {
+            if let target = model.ruleOpTarget {
+                EditRuleSidebarSheet(
+                    ruleName: target.rule.name,
+                    filter: $model.editRuleFilter,
+                    errorMessage: $model.editRuleError,
+                    isSaving: $model.isEditingRule
+                ) {
+                    Task { await performEditRule() }
+                }
+            }
+        }
+        // ── Add Rule sheet ────────────────────────────────────────
+        .sheet(isPresented: $model.showAddRuleSheet) {
+            if let target = model.addRuleTarget {
+                AddRuleSidebarSheet(
+                    subscriptionPath: "\(target.topicName)/\(target.name)",
+                    ruleName: $model.addRuleName,
+                    filter: $model.addRuleFilter,
+                    errorMessage: $model.addRuleError,
+                    isSaving: $model.isAddingRule
+                ) {
+                    Task { await performAddRule() }
+                }
+            }
+        }
+        // ── Delete Rule confirm ───────────────────────────────────
+        .confirmationDialog(
+            "Delete Rule?",
+            isPresented: $model.showDeleteRuleConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                Task { await performDeleteRule() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            if let target = model.ruleOpTarget {
+                Text("Rule \"\(target.rule.name)\" will be permanently deleted from \(target.sub.topicName)/\(target.sub.name).")
+            }
+        }
         .navigationTitle("BusKit")
         .toolbar {
             ToolbarItem {
@@ -247,6 +318,10 @@ struct SidebarView: View {
                     await refreshSubscriptionCounts(topicName: topic, subName: sub)
                 }
             }
+        }
+        .onChange(of: actionStore.pendingRulesRefresh) { _, req in
+            guard let req else { return }
+            invalidateRules(topicName: req.topicName, subName: req.subscriptionName)
         }
     }
 
@@ -293,8 +368,9 @@ struct SidebarView: View {
         guard let target = model.contextTarget else { return "" }
         let name: String
         switch target {
-        case .queue(let q):            name = q.name
-        case .subscription(let s):    name = "\(s.topicName)/\(s.name)"
+        case .queue(let q):         name = q.name
+        case .subscription(let s):  name = "\(s.topicName)/\(s.name)"
+        case .rulesGroup, .rule:    return ""
         }
         let kind = model.purgeIsDLQ ? "dead-letter messages" : "messages"
         return "All \(kind) in \"\(name)\" will be permanently deleted. This cannot be undone."
@@ -310,6 +386,8 @@ struct SidebarView: View {
         case .subscription(let s):
             key = EntityActionStore.subscriptionKey(topic: s.topicName, sub: s.name)
             selection = .subscription(s)
+        case .rulesGroup, .rule:
+            return
         }
         actionStore.receive(entityKey: key, isDLQ: model.receiveIsDLQ, count: Int32(model.receiveCount))
     }
@@ -327,6 +405,10 @@ struct SidebarView: View {
                 count = try await grpc.purgeMessages(
                     topicName: s.topicName, subscriptionName: s.name, isDLQ: isDLQ)
                 await refreshSubscriptionCounts(topicName: s.topicName, subName: s.name)
+            case .rule:
+                return
+            case .rulesGroup:
+                return
             }
             model.purgeResultTitle   = "Purge Complete"
             model.purgeResultMessage = "Purged \(count) message\(count == 1 ? "" : "s")."
@@ -357,6 +439,89 @@ struct SidebarView: View {
                                      activeMessageCount: info.activeMessageCount,
                                      deadLetterCount: info.deadLetterCount)
         model.subscriptions[topicName] = .loaded(subs)
+    }
+
+    /// Invalidates the cached rules for a subscription so the next expansion re-fetches.
+    private func invalidateRules(topicName: String, subName: String) {
+        model.rules["\(topicName)/\(subName)"] = nil
+    }
+
+    // MARK: - Rule operations (from sidebar context menu)
+
+    private func performEditRule() async {
+        guard let target = model.ruleOpTarget else { return }
+        model.isEditingRule = true
+        model.editRuleError = nil
+        do {
+            try await grpc.updateRule(
+                topicName: target.sub.topicName,
+                subscriptionName: target.sub.name,
+                ruleName: target.rule.name,
+                sqlFilter: model.editRuleFilter)
+            model.showEditRuleSheet = false
+            model.isEditingRule = false
+            invalidateRules(topicName: target.sub.topicName, subName: target.sub.name)
+            actionStore.requestRulesRefresh(topicName: target.sub.topicName,
+                                            subscriptionName: target.sub.name)
+            activityLog.log(action: .editRule, messageId: target.rule.name,
+                            result: .success("Filter updated on \(target.sub.topicName)/\(target.sub.name)"))
+        } catch {
+            model.editRuleError = error.localizedDescription
+            model.isEditingRule = false
+            activityLog.log(action: .editRule, messageId: target.rule.name,
+                            result: .failure(error.localizedDescription),
+                            hint: "Check your SQL filter syntax and permissions.")
+        }
+    }
+
+    private func performDeleteRule() async {
+        guard let target = model.ruleOpTarget else { return }
+        model.isDeletingRule = true
+        defer { model.isDeletingRule = false }
+        do {
+            try await grpc.deleteRule(
+                topicName: target.sub.topicName,
+                subscriptionName: target.sub.name,
+                ruleName: target.rule.name)
+            if case .rule(let r, _) = selection, r.id == target.rule.id {
+                selection = .subscription(target.sub)
+            }
+            invalidateRules(topicName: target.sub.topicName, subName: target.sub.name)
+            actionStore.requestRulesRefresh(topicName: target.sub.topicName,
+                                            subscriptionName: target.sub.name)
+            activityLog.log(action: .deleteRule, messageId: target.rule.name,
+                            result: .success("Deleted from \(target.sub.topicName)/\(target.sub.name)"))
+        } catch {
+            activityLog.log(action: .deleteRule, messageId: target.rule.name,
+                            result: .failure(error.localizedDescription),
+                            hint: "The rule may already have been deleted.")
+        }
+    }
+
+    private func performAddRule() async {
+        guard let target = model.addRuleTarget else { return }
+        model.isAddingRule = true
+        model.addRuleError = nil
+        do {
+            try await grpc.addRule(
+                topicName: target.topicName,
+                subscriptionName: target.name,
+                ruleName: model.addRuleName,
+                sqlFilter: model.addRuleFilter)
+            model.showAddRuleSheet = false
+            model.isAddingRule = false
+            invalidateRules(topicName: target.topicName, subName: target.name)
+            actionStore.requestRulesRefresh(topicName: target.topicName,
+                                            subscriptionName: target.name)
+            activityLog.log(action: .editRule, messageId: model.addRuleName,
+                            result: .success("Rule created in \(target.topicName)/\(target.name)"))
+        } catch {
+            model.addRuleError = error.localizedDescription
+            model.isAddingRule = false
+            activityLog.log(action: .editRule, messageId: model.addRuleName,
+                            result: .failure(error.localizedDescription),
+                            hint: "Check the rule name and SQL filter syntax.")
+        }
     }
 
     // MARK: - Data loading
@@ -429,11 +594,12 @@ private struct TopicRow: View {
         model.subscriptions[topic.name] = .loading
         do {
             let infos = try await grpc.listSubscriptions(topicName: topic.name)
-            model.subscriptions[topic.name] = .loaded(infos.map {
+            let subs = infos.map {
                 SubscriptionItem(topicName: topic.name, name: $0.name,
                                  activeMessageCount: $0.activeMessageCount,
                                  deadLetterCount: $0.deadLetterCount)
-            })
+            }
+            model.subscriptions[topic.name] = .loaded(subs)
         } catch {
             model.subscriptions[topic.name] = .failed(error.localizedDescription)
         }
@@ -449,45 +615,28 @@ private struct SubscriptionRow: View {
     let grpc: GRPCManager
 
     @State private var isExpanded = false
-    private var key: String { "\(sub.topicName)/\(sub.name)" }
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
-            switch model.rules[key] {
-            case .none, .loading:
-                HStack {
-                    ProgressView().controlSize(.small)
-                    Text("Loading rules…").font(.caption).foregroundStyle(.secondary)
-                }
-                .padding(.leading, 8)
-
-            case .failed(let msg):
-                Label(msg, systemImage: "exclamationmark.triangle")
-                    .font(.caption).foregroundStyle(.red).padding(.leading, 8)
-
-            case .loaded(let ruleList):
-                if ruleList.isEmpty {
-                    Text("No rules").font(.caption).foregroundStyle(.secondary).padding(.leading, 8)
-                } else {
-                    ForEach(ruleList) { rule in
-                        RuleRow(rule: rule).padding(.leading, 8)
-                    }
-                }
-            }
+            RulesGroupRow(sub: sub, model: model, grpc: grpc)
         } label: {
-            HStack {
-                Label(sub.name, systemImage: "tray.2")
-                Spacer()
-                MessageCountBadge(
-                    active: sub.activeMessageCount,
-                    deadLetter: sub.deadLetterCount)
-            }
-            .contentShape(Rectangle())
+            subLabel
         }
+    }
+
+    @ViewBuilder private var subLabel: some View {
+        let hasData = grpc.rbacAccessLevel.hasDataAccess
+        HStack {
+            Label(sub.name, systemImage: "tray.2")
+            Spacer()
+            MessageCountBadge(
+                active: sub.activeMessageCount,
+                deadLetter: sub.deadLetterCount)
+        }
+        .contentShape(Rectangle())
         .opacity(sub.activeMessageCount == 0 && sub.deadLetterCount == 0 ? 0.4 : 1.0)
         .tag(SidebarSelection.subscription(sub))
         .contextMenu {
-            let hasData = grpc.rbacAccessLevel.hasDataAccess
             Button("Receive Messages") {
                 model.contextTarget    = .subscription(sub)
                 model.receiveIsDLQ     = false
@@ -519,37 +668,291 @@ private struct SubscriptionRow: View {
                     .foregroundStyle(.secondary)
             }
         }
+    }
+}
+
+// MARK: - RulesGroupRow
+
+@available(macOS 15.0, *)
+private struct RulesGroupRow: View {
+    let sub: SubscriptionItem
+    let model: SidebarModel
+    let grpc: GRPCManager
+
+    @State private var isExpanded = false
+    @State private var fetchTask: Task<Void, Never>? = nil
+
+    private var ruleKey: String { "\(sub.topicName)/\(sub.name)" }
+
+    private var canManage: Bool { grpc.capabilityMap.manageFilters }
+    private var isLoading: Bool {
+        if case .loading = model.rules[ruleKey] { return true }
+        return false
+    }
+
+    var body: some View {
+        DisclosureGroup(isExpanded: $isExpanded) {
+            rulesContent
+        } label: {
+            Label("Rules", systemImage: "line.3.horizontal.decrease.circle")
+                .foregroundStyle(.secondary)
+                .tag(SidebarSelection.rulesGroup(sub))
+                .accessibilityLabel(accessibilityLabel)
+                .contextMenu {
+                    Button("Add New Rule") {
+                        model.addRuleTarget  = sub
+                        model.addRuleName    = ""
+                        model.addRuleFilter  = ""
+                        model.addRuleError   = nil
+                        model.showAddRuleSheet = true
+                    }
+                    .disabled(isLoading || !canManage)
+                    Button("Refresh Rules") { refresh() }
+                        .disabled(isLoading)
+                }
+        }
         .onChange(of: isExpanded) { _, expanded in
-            if expanded, model.rules[key] == nil {
-                Task { await loadRules() }
+            if expanded {
+                if model.rules[ruleKey] == nil { startFetch() }
+            } else {
+                fetchTask?.cancel()
+                fetchTask = nil
+            }
+        }
+        // Re-fetch when cache is externally invalidated while expanded
+        .onChange(of: model.rules[ruleKey]) { _, newState in
+            if isExpanded, newState == nil { startFetch() }
+        }
+    }
+
+    @ViewBuilder private var rulesContent: some View {
+        switch model.rules[ruleKey] {
+        case .none, .loading:
+            HStack(spacing: 6) {
+                ProgressView()
+                    .controlSize(.small)
+                    .accessibilityLabel("Loading rules")
+                Text("Loading…")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 2)
+
+        case .failed(let msg):
+            HStack {
+                Label(msg, systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                Spacer()
+                Button("Retry") { startFetch() }
+                    .font(.caption)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.tint)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Failed to load rules. \(msg)")
+            .accessibilityHint("Activate Retry button to try again")
+
+        case .loaded(let rules):
+            if rules.isEmpty {
+                Text("No rules")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(rules) { rule in
+                    SidebarRuleRow(rule: rule, subscription: sub, model: model, grpc: grpc)
+                }
             }
         }
     }
 
-    private func loadRules() async {
-        model.rules[key] = .loading
-        do {
-            let infos = try await grpc.listRules(topicName: sub.topicName,
-                                                 subscriptionName: sub.name)
-            model.rules[key] = .loaded(infos.map { RuleItem(name: $0.name, filter: $0.filter) })
-        } catch {
-            model.rules[key] = .failed(error.localizedDescription)
+    private var accessibilityLabel: String {
+        switch model.rules[ruleKey] {
+        case .none:              return "Rules"
+        case .loading:           return "Rules, loading"
+        case .failed:            return "Rules, failed to load"
+        case .loaded(let list):  return "Rules, \(list.count) \(list.count == 1 ? "item" : "items")"
+        }
+    }
+
+    private func startFetch() {
+        fetchTask?.cancel()
+        model.rules[ruleKey] = .loading
+        fetchTask = Task {
+            do {
+                let infos = try await grpc.listRules(topicName: sub.topicName,
+                                                     subscriptionName: sub.name)
+                guard !Task.isCancelled else { return }
+                model.rules[ruleKey] = .loaded(infos.map {
+                    RuleItem(name: $0.name, filter: $0.filter)
+                })
+            } catch {
+                guard !Task.isCancelled else { return }
+                model.rules[ruleKey] = .failed(error.localizedDescription)
+            }
+        }
+    }
+
+    private func refresh() {
+        fetchTask?.cancel()
+        fetchTask = nil
+        if isExpanded {
+            startFetch()
+        } else {
+            model.rules[ruleKey] = nil
         }
     }
 }
 
-// MARK: - RuleRow
+// MARK: - SidebarRuleRow
 
 @available(macOS 15.0, *)
-private struct RuleRow: View {
+private struct SidebarRuleRow: View {
     let rule: RuleItem
+    let subscription: SubscriptionItem
+    let model: SidebarModel
+    let grpc: GRPCManager
+
+    private var canManage: Bool { grpc.capabilityMap.manageFilters }
+
+    /// Strip "SQL: " prefix to expose raw expression for editing.
+    private var rawFilter: String {
+        rule.filter.hasPrefix("SQL: ") ? String(rule.filter.dropFirst(5)) : rule.filter
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Label(rule.name, systemImage: "line.3.horizontal.decrease.circle").font(.body)
-            Text(rule.filter)
-                .font(.caption2).foregroundStyle(.secondary).padding(.leading, 20)
+        Label(rule.name, systemImage: "line.3.horizontal.decrease.circle")
+            .font(.subheadline)
+            .tag(SidebarSelection.rule(rule, subscription))
+            .contextMenu {
+                Button("Edit Filter") {
+                    model.ruleOpTarget    = (rule, subscription)
+                    model.editRuleFilter  = rawFilter
+                    model.editRuleError   = nil
+                    model.showEditRuleSheet = true
+                }
+                .disabled(!canManage)
+                Divider()
+                Button("Delete Rule", role: .destructive) {
+                    model.ruleOpTarget          = (rule, subscription)
+                    model.showDeleteRuleConfirm = true
+                }
+                .disabled(!canManage)
+            }
+    }
+}
+
+// MARK: - Edit Rule Sheet (sidebar)
+
+@available(macOS 15.0, *)
+private struct EditRuleSidebarSheet: View {
+    let ruleName: String
+    @Binding var filter: String
+    @Binding var errorMessage: String?
+    @Binding var isSaving: Bool
+    let onSave: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    private var isValid: Bool {
+        !filter.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Edit Filter: \(ruleName)")
+                .font(.headline)
+
+            Divider()
+
+            Form {
+                LabeledContent("SQL Filter") {
+                    TextField("e.g. Priority = 'High'", text: $filter)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(.body, design: .monospaced))
+                }
+            }
+            .formStyle(.grouped)
+
+            if let error = errorMessage {
+                Label(error, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.red)
+                    .font(.caption)
+            }
+
+            Divider()
+
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.escape)
+                Button("Save") { onSave() }
+                    .buttonStyle(.borderedProminent)
+                    .keyboardShortcut(.return)
+                    .disabled(!isValid || isSaving)
+            }
         }
+        .padding()
+        .frame(width: 380)
+    }
+}
+
+// MARK: - Add Rule Sheet (sidebar)
+
+@available(macOS 15.0, *)
+private struct AddRuleSidebarSheet: View {
+    let subscriptionPath: String
+    @Binding var ruleName: String
+    @Binding var filter: String
+    @Binding var errorMessage: String?
+    @Binding var isSaving: Bool
+    let onSave: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    private var isValid: Bool {
+        !ruleName.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !filter.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Add Rule — \(subscriptionPath)")
+                .font(.headline)
+
+            Divider()
+
+            Form {
+                LabeledContent("Rule Name") {
+                    TextField("e.g. HighPriority", text: $ruleName)
+                        .textFieldStyle(.roundedBorder)
+                }
+                LabeledContent("SQL Filter") {
+                    TextField("e.g. Priority = 'High'", text: $filter)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(.body, design: .monospaced))
+                }
+            }
+            .formStyle(.grouped)
+
+            if let error = errorMessage {
+                Label(error, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.red)
+                    .font(.caption)
+            }
+
+            Divider()
+
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.escape)
+                Button("Add Rule") { onSave() }
+                    .buttonStyle(.borderedProminent)
+                    .keyboardShortcut(.return)
+                    .disabled(!isValid || isSaving)
+            }
+        }
+        .padding()
+        .frame(width: 420)
     }
 }
 
