@@ -113,11 +113,11 @@ final class ActivityLogStore {
             toasts.append(toast)
         }
 
-        // Auto-dismiss success toasts after 6 s; errors stay until manually closed.
+        // Auto-dismiss success toasts after 3 s; errors stay until manually closed.
         if result.isSuccess {
             let toastId = toast.id
             Task { @MainActor [weak self] in
-                try? await Task.sleep(for: .seconds(6))
+                try? await Task.sleep(for: .seconds(3))
                 self?.dismissToast(id: toastId)
             }
         }

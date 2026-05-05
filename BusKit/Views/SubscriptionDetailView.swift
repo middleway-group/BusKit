@@ -693,17 +693,39 @@ private struct SubMessagesTab: View {
     @State private var messages: [MessageItem] = []
     @State private var isLoading = false
     @State private var loadError: String?
-    @State private var selectedMessageID: UUID?
+    @State private var selectedMessageIDs: Set<UUID> = []
     @State private var showRepairSheet = false
+    @State private var showBulkResubmitSheet = false
     @State private var showDeleteConfirm = false
     @State private var isDeleting = false
 
     private var selectedMessage: MessageItem? {
-        messages.first { $0.id == selectedMessageID }
+        guard let id = selectedMessageIDs.first else { return nil }
+        return messages.first { $0.id == id }
+    }
+
+    private var selectedMessages: [MessageItem] {
+        messages.filter { selectedMessageIDs.contains($0.id) }
     }
 
     private var actionToolbar: some View {
         HStack(spacing: 0) {
+            if isDLQ {
+                Button {
+                    showBulkResubmitSheet = true
+                } label: {
+                    let count = selectedMessageIDs.count
+                    Label(count > 1 ? "Resubmit Selected (\(count))" : "Resubmit Selected",
+                          systemImage: "arrow.uturn.forward")
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                }
+                .buttonStyle(.borderless)
+                .disabled(selectedMessageIDs.isEmpty)
+                .help("Resubmit selected dead-letter messages, optionally stripping DLQ properties")
+
+                subToolbarDivider
+            }
+
             Button {
                 showRepairSheet = true
             } label: {
@@ -711,30 +733,30 @@ private struct SubMessagesTab: View {
                     .padding(.horizontal, 8).padding(.vertical, 4)
             }
             .buttonStyle(.borderless)
-            .disabled(selectedMessage == nil)
+            .disabled(selectedMessageIDs.count != 1)
             .help("Repair and resubmit the selected message")
 
             subToolbarDivider
 
             Button {
-                if let msg = selectedMessage { saveMessage(msg) }
+                saveMessages(selectedMessages)
             } label: {
                 Label("Save", systemImage: "square.and.arrow.down")
                     .padding(.horizontal, 8).padding(.vertical, 4)
             }
             .buttonStyle(.borderless)
-            .disabled(selectedMessage == nil)
-            .help("Save message to disk as JSON")
+            .disabled(selectedMessageIDs.isEmpty)
+            .help("Save selected message(s) to disk")
 
             Button {
-                if selectedMessage != nil { showDeleteConfirm = true }
+                if !selectedMessageIDs.isEmpty { showDeleteConfirm = true }
             } label: {
                 Label("Delete", systemImage: "trash")
                     .padding(.horizontal, 8).padding(.vertical, 4)
             }
             .buttonStyle(.borderless)
-            .disabled(selectedMessage == nil)
-            .help("Permanently delete the selected message")
+            .disabled(selectedMessageIDs.isEmpty)
+            .help("Permanently delete selected message(s)")
 
             Spacer()
 
@@ -782,7 +804,7 @@ private struct SubMessagesTab: View {
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
-                        Table(messages, selection: $selectedMessageID) {
+                        Table(messages, selection: $selectedMessageIDs) {
                             TableColumn("Message ID") { msg in
                                 Text(msg.messageId.isEmpty ? "—" : msg.messageId)
                                     .font(.system(.caption, design: .monospaced))
@@ -818,17 +840,33 @@ private struct SubMessagesTab: View {
                             .width(65)
                         }
                         .contextMenu(forSelectionType: UUID.self) { ids in
-                            if let id = ids.first, let msg = messages.first(where: { $0.id == id }) {
-                                Button("Repair and Resubmit Selected Message") {
-                                    selectedMessageID = id
+                            if isDLQ && !ids.isEmpty {
+                                Button(ids.count == 1
+                                       ? "Resubmit Selected Message"
+                                       : "Resubmit \(ids.count) Messages") {
+                                    selectedMessageIDs = ids
+                                    showBulkResubmitSheet = true
+                                }
+                                Divider()
+                            }
+                            if ids.count == 1, let id = ids.first {
+                                Button("Repair and Resubmit") {
+                                    selectedMessageIDs = [id]
                                     showRepairSheet = true
                                 }
                                 Divider()
-                                Button("Save Selected Message") {
-                                    saveMessage(msg)
+                            }
+                            if !ids.isEmpty {
+                                Button(ids.count == 1 ? "Save Message" : "Save \(ids.count) Messages") {
+                                    saveMessages(messages.filter { ids.contains($0.id) })
                                 }
-                                Button("Delete Selected Message", role: .destructive) {
-                                    selectedMessageID = id
+                            }
+                            if !ids.isEmpty {
+                                Button(ids.count == 1
+                                       ? "Delete Message"
+                                       : "Delete \(ids.count) Messages",
+                                       role: .destructive) {
+                                    selectedMessageIDs = ids
                                     showDeleteConfirm = true
                                 }
                             }
@@ -856,18 +894,26 @@ private struct SubMessagesTab: View {
                 RepairResubmitSheet(message: msg, queueOrTopic: subscription.topicName)
             }
         }
+        .sheet(isPresented: $showBulkResubmitSheet) {
+            BulkResubmitSheet(messages: selectedMessages,
+                              queueOrTopic: subscription.topicName,
+                              subscriptionName: subscription.name)
+        }
         .confirmationDialog(
-            "Delete Message?",
+            selectedMessageIDs.count == 1 ? "Delete Message?" : "Delete \(selectedMessageIDs.count) Messages?",
             isPresented: $showDeleteConfirm,
             titleVisibility: .visible
         ) {
-            Button("Delete", role: .destructive) {
-                Task { await deleteSelectedMessage() }
+            Button(selectedMessageIDs.count == 1 ? "Delete" : "Delete \(selectedMessageIDs.count) Messages",
+                   role: .destructive) {
+                Task { await deleteSelectedMessages() }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            if let msg = selectedMessage {
+            if selectedMessageIDs.count == 1, let msg = selectedMessage {
                 Text("Message \(msg.messageId) will be permanently removed.")
+            } else {
+                Text("\(selectedMessageIDs.count) messages will be permanently removed.")
             }
         }
     }
@@ -890,7 +936,54 @@ private struct SubMessagesTab: View {
         }
     }
 
-    private func saveMessage(_ msg: MessageItem) {
+    private func saveMessages(_ msgs: [MessageItem]) {
+        guard !msgs.isEmpty else { return }
+
+        if msgs.count == 1 {
+            saveSingleMessage(msgs[0])
+            return
+        }
+
+        let allJSON = msgs.allSatisfy { isValidJSONBody($0.body) }
+        let panel   = NSSavePanel()
+        if allJSON {
+            panel.allowedContentTypes  = [.json]
+            panel.nameFieldStringValue = "messages-\(msgs.count).json"
+        } else {
+            panel.allowedContentTypes  = [.plainText]
+            panel.nameFieldStringValue = "messages-\(msgs.count).txt"
+        }
+
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            do {
+                let fileData: Data
+                if allJSON {
+                    let objects = msgs.compactMap { msg -> Any? in
+                        guard let data = msg.body.data(using: .utf8) else { return nil }
+                        return try? JSONSerialization.jsonObject(with: data)
+                    }
+                    fileData = try JSONSerialization.data(withJSONObject: objects,
+                                                         options: [.prettyPrinted, .sortedKeys])
+                } else {
+                    fileData = msgs.map(\.body).joined(separator: " ").data(using: .utf8) ?? Data()
+                }
+                try fileData.write(to: url)
+                Task { @MainActor in
+                    activityLog.log(action: .save, messageId: "",
+                                    result: .success("Saved \(msgs.count) messages to \(url.lastPathComponent)"))
+                }
+            } catch {
+                Task { @MainActor in
+                    activityLog.log(action: .save, messageId: "",
+                                    result: .failure("Save failed: \(error.localizedDescription)"),
+                                    hint: "Check write permissions for the chosen location.")
+                }
+            }
+        }
+    }
+
+    private func saveSingleMessage(_ msg: MessageItem) {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.json]
         panel.nameFieldStringValue = "message-\(msg.messageId).json"
@@ -928,27 +1021,36 @@ private struct SubMessagesTab: View {
         }
     }
 
-    private func deleteSelectedMessage() async {
-        guard let msg = selectedMessage else { return }
+    private func isValidJSONBody(_ string: String) -> Bool {
+        guard let data = string.data(using: .utf8),
+              (try? JSONSerialization.jsonObject(with: data)) != nil else { return false }
+        return true
+    }
+
+    private func deleteSelectedMessages() async {
+        let toDelete = selectedMessages
+        guard !toDelete.isEmpty else { return }
         isDeleting = true
         defer { isDeleting = false }
-        do {
-            try await grpc.deleteMessage(
-                topicName: subscription.topicName,
-                subscriptionName: subscription.name,
-                isDLQ: isDLQ,
-                sequenceNumber: msg.sequenceNumber
-            )
-            messages.removeAll { $0.id == msg.id }
-            selectedMessageID = nil
-            actionStore.requestRefresh(.subscription(topic: subscription.topicName, sub: subscription.name))
-            activityLog.log(action: .delete, messageId: msg.messageId,
-                            result: .success("Deleted successfully"))
-        } catch {
-            activityLog.log(action: .delete, messageId: msg.messageId,
-                            result: .failure(error.localizedDescription),
-                            hint: "The message may have already been consumed or the subscription lock expired.")
+        for msg in toDelete {
+            do {
+                try await grpc.deleteMessage(
+                    topicName: subscription.topicName,
+                    subscriptionName: subscription.name,
+                    isDLQ: isDLQ,
+                    sequenceNumber: msg.sequenceNumber
+                )
+                messages.removeAll { $0.id == msg.id }
+                selectedMessageIDs.remove(msg.id)
+                activityLog.log(action: .delete, messageId: msg.messageId,
+                                result: .success("Deleted successfully"))
+            } catch {
+                activityLog.log(action: .delete, messageId: msg.messageId,
+                                result: .failure(error.localizedDescription),
+                                hint: "The message may have already been consumed or the subscription lock expired.")
+            }
         }
+        actionStore.requestRefresh(.subscription(topic: subscription.topicName, sub: subscription.name))
     }
 }
 
