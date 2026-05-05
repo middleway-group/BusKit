@@ -204,3 +204,19 @@ Desktop.ini
 *.pfx
 secrets.json
 appsettings.Development.json
+
+# ============================================
+# .NET / Sidecar Backend
+# ============================================
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.dll          # Do NOT commit dlls - build them in pipeline
+*.exe
+*.pdb
+packages/
+SidecarBin/
+# Ignore the Assets folder as it contains large files that are not necessary for the repository
+Assets/
