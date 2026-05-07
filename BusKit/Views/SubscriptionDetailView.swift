@@ -894,7 +894,7 @@ private struct SubMessagesTab: View {
                 RepairResubmitSheet(message: msg, queueOrTopic: subscription.topicName)
             }
         }
-        .sheet(isPresented: $showBulkResubmitSheet) {
+        .sheet(isPresented: $showBulkResubmitSheet, onDismiss: { Task { await loadMessages() } }) {
             BulkResubmitSheet(messages: selectedMessages,
                               queueOrTopic: subscription.topicName,
                               subscriptionName: subscription.name)

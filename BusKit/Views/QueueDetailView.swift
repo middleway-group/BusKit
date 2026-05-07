@@ -396,7 +396,7 @@ private struct MessagesTab: View {
                 RepairResubmitSheet(message: msg, queueOrTopic: queue.name)
             }
         }
-        .sheet(isPresented: $showBulkResubmitSheet) {
+        .sheet(isPresented: $showBulkResubmitSheet, onDismiss: { Task { await loadMessages() } }) {
             BulkResubmitSheet(messages: selectedMessages, queueOrTopic: queue.name)
         }
         .confirmationDialog(
