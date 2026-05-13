@@ -24,6 +24,8 @@ final class GRPCManager {
         case idle
         /// Browser is open waiting for the user to authenticate.
         case signingIn
+        /// Multiple directories were found; waiting for the user to choose one.
+        case selectingTenant
         /// Signed in — subscription + namespace pickers are available.
         case ready
         /// Connecting to the selected namespace.
@@ -33,8 +35,10 @@ final class GRPCManager {
     var azureLoginPhase: AzureLoginPhase = .idle
     var azureLoginError: String?
     var azureSubscriptions: [Buskit_AzureSubscriptionInfo] = []
+    var azureTenants: [Buskit_AzureTenantInfo] = []
     var azureNamespaces: [Buskit_ServiceBusNamespaceInfo] = []
     var selectedAzureSubscriptionId: String = ""
+    var selectedAzureTenantId: String = ""
     var selectedAzureNamespaceFQNS: String = ""
     var isLoadingAzureNamespaces: Bool = false
 
@@ -283,10 +287,19 @@ final class GRPCManager {
 
     // MARK: - Connect (Azure AD / RBAC)
 
-    func listAzureSubscriptions() async throws -> [Buskit_AzureSubscriptionInfo] {
+    func listAzureSubscriptions() async throws -> Buskit_ListAzureSubscriptionsReply {
         guard let buskit else { throw GRPCManagerError.notConnected }
         let req = Buskit_ListAzureSubscriptionsRequest()
         let reply: Buskit_ListAzureSubscriptionsReply = try await buskit.listAzureSubscriptions(req)
+        if !reply.error.isEmpty { throw GRPCManagerError.azureError(reply.error) }
+        return reply
+    }
+
+    func selectAzureTenant(tenantId: String) async throws -> [Buskit_AzureSubscriptionInfo] {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_SelectAzureTenantRequest()
+        req.tenantID = tenantId
+        let reply: Buskit_SelectAzureTenantReply = try await buskit.selectAzureTenant(req)
         if !reply.error.isEmpty { throw GRPCManagerError.azureError(reply.error) }
         return Array(reply.subscriptions).sorted { $0.displayName.localizedCompare($1.displayName) == .orderedAscending }
     }
@@ -427,8 +440,10 @@ final class GRPCManager {
         azureLoginPhase = .idle
         azureLoginError = nil
         azureSubscriptions = []
+        azureTenants = []
         azureNamespaces = []
         selectedAzureSubscriptionId = ""
+        selectedAzureTenantId = ""
         selectedAzureNamespaceFQNS = ""
         isLoadingAzureNamespaces = false
         rbacAccessLevel = .notApplicable

@@ -68,6 +68,18 @@ internal enum Buskit_BusKitService: Sendable {
                 method: "ListAzureSubscriptions"
             )
         }
+        /// Namespace for "SelectAzureTenant" metadata.
+        internal enum SelectAzureTenant: Sendable {
+            /// Request type for "SelectAzureTenant".
+            internal typealias Input = Buskit_SelectAzureTenantRequest
+            /// Response type for "SelectAzureTenant".
+            internal typealias Output = Buskit_SelectAzureTenantReply
+            /// Descriptor for "SelectAzureTenant".
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "SelectAzureTenant"
+            )
+        }
         /// Namespace for "ListServiceBusNamespaces" metadata.
         internal enum ListServiceBusNamespaces: Sendable {
             /// Request type for "ListServiceBusNamespaces".
@@ -290,6 +302,7 @@ internal enum Buskit_BusKitService: Sendable {
             ConnectWithAzureAD.descriptor,
             Disconnect.descriptor,
             ListAzureSubscriptions.descriptor,
+            SelectAzureTenant.descriptor,
             ListServiceBusNamespaces.descriptor,
             CheckRbacPermissions.descriptor,
             ListQueues.descriptor,
@@ -401,6 +414,25 @@ extension Buskit_BusKitService {
             deserializer: some GRPCCore.MessageDeserializer<Buskit_ListAzureSubscriptionsReply>,
             options: GRPCCore.CallOptions,
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_ListAzureSubscriptionsReply>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "SelectAzureTenant" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_SelectAzureTenantRequest` message.
+        ///   - serializer: A serializer for `Buskit_SelectAzureTenantRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_SelectAzureTenantReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func selectAzureTenant<Result>(
+            request: GRPCCore.ClientRequest<Buskit_SelectAzureTenantRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_SelectAzureTenantRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_SelectAzureTenantReply>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_SelectAzureTenantReply>) async throws -> Result
         ) async throws -> Result where Result: Sendable
 
         /// Call the "ListServiceBusNamespaces" method.
@@ -875,6 +907,36 @@ extension Buskit_BusKitService {
             try await self.client.unary(
                 request: request,
                 descriptor: Buskit_BusKitService.Method.ListAzureSubscriptions.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "SelectAzureTenant" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_SelectAzureTenantRequest` message.
+        ///   - serializer: A serializer for `Buskit_SelectAzureTenantRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_SelectAzureTenantReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        internal func selectAzureTenant<Result>(
+            request: GRPCCore.ClientRequest<Buskit_SelectAzureTenantRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_SelectAzureTenantRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_SelectAzureTenantReply>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_SelectAzureTenantReply>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Buskit_BusKitService.Method.SelectAzureTenant.descriptor,
                 serializer: serializer,
                 deserializer: deserializer,
                 options: options,
@@ -1525,6 +1587,31 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
+    /// Call the "SelectAzureTenant" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_SelectAzureTenantRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func selectAzureTenant<Result>(
+        request: GRPCCore.ClientRequest<Buskit_SelectAzureTenantRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_SelectAzureTenantReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.selectAzureTenant(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_SelectAzureTenantRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_SelectAzureTenantReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
     /// Call the "ListServiceBusNamespaces" method.
     ///
     /// - Parameters:
@@ -2087,6 +2174,35 @@ extension Buskit_BusKitService.ClientProtocol {
             metadata: metadata
         )
         return try await self.listAzureSubscriptions(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "SelectAzureTenant" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func selectAzureTenant<Result>(
+        _ message: Buskit_SelectAzureTenantRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_SelectAzureTenantReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Buskit_SelectAzureTenantRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.selectAzureTenant(
             request: request,
             options: options,
             onResponse: handleResponse

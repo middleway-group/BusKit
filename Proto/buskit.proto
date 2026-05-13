@@ -11,6 +11,7 @@ service BusKitService {
   rpc ConnectWithAzureAD (ConnectWithAzureADRequest) returns (ConnectReply);
   rpc Disconnect (DisconnectRequest) returns (DisconnectReply);
   rpc ListAzureSubscriptions (ListAzureSubscriptionsRequest) returns (ListAzureSubscriptionsReply);
+  rpc SelectAzureTenant (SelectAzureTenantRequest) returns (SelectAzureTenantReply);
   rpc ListServiceBusNamespaces (ListServiceBusNamespacesRequest) returns (ListServiceBusNamespacesReply);
   rpc CheckRbacPermissions (CheckRbacPermissionsRequest) returns (CheckRbacPermissionsReply);
   rpc ListQueues (ListQueuesRequest) returns (ListQueuesReply);
@@ -58,11 +59,26 @@ message ListAzureSubscriptionsRequest {}
 message ListAzureSubscriptionsReply {
   repeated AzureSubscriptionInfo subscriptions = 1;
   string error = 2;
+  repeated AzureTenantInfo tenants = 3;
 }
 
 message AzureSubscriptionInfo {
   string subscription_id = 1;
   string display_name = 2;
+}
+
+message AzureTenantInfo {
+  string tenant_id = 1;
+  string display_name = 2;
+}
+
+message SelectAzureTenantRequest {
+  string tenant_id = 1;
+}
+
+message SelectAzureTenantReply {
+  repeated AzureSubscriptionInfo subscriptions = 1;
+  string error = 2;
 }
 
 message ListServiceBusNamespacesRequest {
