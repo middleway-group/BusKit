@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 100;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -28,13 +28,11 @@
 /* Begin PBXFrameworksBuildPhase section */
 		4FC8890B2F59C09700DC035E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				4FC889452F5AC22300DC035E /* GRPCNIOTransportHTTP2 in Frameworks */,
 				4FC8893F2F5AC17000DC035E /* GRPCCore in Frameworks */,
 				4FC889422F5AC1C900DC035E /* GRPCProtobuf in Frameworks */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -69,8 +67,6 @@
 				4FC8890C2F59C09700DC035E /* Resources */,
 			);
 			buildRules = (
-			);
-			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
 				4FC889102F59C09700DC035E /* BusKit */,
@@ -115,7 +111,7 @@
 				4FC889402F5AC1C900DC035E /* XCRemoteSwiftPackageReference "grpc-swift-protobuf" */,
 				4FC889432F5AC22300DC035E /* XCRemoteSwiftPackageReference "grpc-swift-nio-transport" */,
 			);
-			preferredProjectObjectVersion = 77;
+			preferredProjectObjectVersion = 100;
 			productRefGroup = 4FC8890F2F59C09700DC035E /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -128,19 +124,14 @@
 /* Begin PBXResourcesBuildPhase section */
 		4FC8890C2F59C09700DC035E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		D56E9D3707B04D03A2FA3ADD /* Build Sidecar */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
 			inputPaths = (
 				"$(SRCROOT)/Sidecar/BusKit.Sidecar/BusKit.Sidecar.csproj",
 			);
@@ -149,24 +140,24 @@
 				"$(BUILT_PRODUCTS_DIR)/$(WRAPPER_NAME)/Contents/Resources/SidecarBin/BusKit.Sidecar",
 				"$(BUILT_PRODUCTS_DIR)/$(WRAPPER_NAME)/Contents/Resources/SidecarBin/BusKit.Sidecar.dll",
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "\"${SRCROOT}/Scripts/build-sidecar.sh\"\n";
+			shellScript = (
+				"\"${SRCROOT}/Scripts/build-sidecar.sh\"",
+				"",
+			);
 		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		4FC8890A2F59C09700DC035E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		4FC889172F59C09800DC035E /* Debug */ = {
+		4FC889172F59C09800DC035E /* Debug configuration for PBXProject "BusKit" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -229,7 +220,7 @@
 			};
 			name = Debug;
 		};
-		4FC889182F59C09800DC035E /* Release */ = {
+		4FC889182F59C09800DC035E /* Release configuration for PBXProject "BusKit" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -284,7 +275,7 @@
 			};
 			name = Release;
 		};
-		4FC8891A2F59C09800DC035E /* Debug */ = {
+		4FC8891A2F59C09800DC035E /* Debug configuration for PBXNativeTarget "BusKit" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -323,7 +314,7 @@
 			};
 			name = Debug;
 		};
-		4FC8891B2F59C09800DC035E /* Release */ = {
+		4FC8891B2F59C09800DC035E /* Release configuration for PBXNativeTarget "BusKit" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -368,19 +359,17 @@
 		4FC889092F59C09700DC035E /* Build configuration list for PBXProject "BusKit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				4FC889172F59C09800DC035E /* Debug */,
-				4FC889182F59C09800DC035E /* Release */,
+				4FC889172F59C09800DC035E /* Debug configuration for PBXProject "BusKit" */,
+				4FC889182F59C09800DC035E /* Release configuration for PBXProject "BusKit" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		4FC889192F59C09800DC035E /* Build configuration list for PBXNativeTarget "BusKit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				4FC8891A2F59C09800DC035E /* Debug */,
-				4FC8891B2F59C09800DC035E /* Release */,
+				4FC8891A2F59C09800DC035E /* Debug configuration for PBXNativeTarget "BusKit" */,
+				4FC8891B2F59C09800DC035E /* Release configuration for PBXNativeTarget "BusKit" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
