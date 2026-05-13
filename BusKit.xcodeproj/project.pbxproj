@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 100;
+	objectVersion = 90;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -111,7 +111,7 @@
 				4FC889402F5AC1C900DC035E /* XCRemoteSwiftPackageReference "grpc-swift-protobuf" */,
 				4FC889432F5AC22300DC035E /* XCRemoteSwiftPackageReference "grpc-swift-nio-transport" */,
 			);
-			preferredProjectObjectVersion = 100;
+			preferredProjectObjectVersion = 90;
 			productRefGroup = 4FC8890F2F59C09700DC035E /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
