@@ -1,5 +1,4 @@
 name: CI
-
 on:
   push:
     branches: [main]
@@ -11,10 +10,16 @@ jobs:
   build:
     name: Build
     runs-on: macos-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Clear SPM Cache
+        run: |
+          rm -rf ~/Library/Caches/org.swift.swiftpm
+          rm -rf ~/Library/org.swift.swiftpm
+          rm -rf .build
+          rm -f Package.resolved
 
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
@@ -32,5 +37,5 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            SWIFT_CONCURRENCY_CHECKING=none \
+            SWIFT_STRICT_CONCURRENCY=minimal \
             2>&1 | grep -E "(error:|warning:|BUILD SUCCEEDED|BUILD FAILED)"
