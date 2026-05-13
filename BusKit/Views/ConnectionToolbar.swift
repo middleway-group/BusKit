@@ -18,6 +18,7 @@ struct ConnectionToolbar: View {
             get: {
                 manualShowPopover
                 || (grpc.azureLoginPhase == .ready && grpc.connectionState != .connected)
+                || (grpc.azureLoginPhase == .selectingTenant)
                 || (grpc.azureLoginPhase == .connecting)
             },
             set: { manualShowPopover = $0 }
@@ -179,6 +180,9 @@ private struct AzureADPanel: View {
                 .environment(grpc)
         case .signingIn:
             AzureSigningInView()
+        case .selectingTenant:
+            AzureTenantPickerView(isConnecting: $isConnecting)
+                .environment(grpc)
         case .ready, .connecting:
             AzureNamespaceForm(isConnecting: $isConnecting)
                 .environment(grpc)
@@ -218,13 +222,34 @@ private struct AzureSignInPrompt: View {
     private func signIn() async {
         grpc.azureLoginError = nil
         grpc.azureLoginPhase = .signingIn
+        grpc.azureSubscriptions = []
+        grpc.azureTenants = []
+        grpc.azureNamespaces = []
+        grpc.selectedAzureSubscriptionId = ""
+        grpc.selectedAzureTenantId = ""
+        grpc.selectedAzureNamespaceFQNS = ""
         isConnecting = true
         defer { isConnecting = false }
         do {
-            let subs = try await grpc.listAzureSubscriptions()
-            grpc.azureSubscriptions = subs
-            grpc.selectedAzureSubscriptionId = subs.first?.subscriptionID ?? ""
-            grpc.azureLoginPhase = .ready
+            let reply = try await grpc.listAzureSubscriptions()
+            let tenants = Array(reply.tenants).sorted { $0.displayName.localizedCompare($1.displayName) == .orderedAscending }
+            grpc.azureTenants = tenants
+
+            if tenants.count == 1 {
+                let tenant = tenants[0]
+                grpc.selectedAzureTenantId = tenant.tenantID
+                let subs = try await grpc.selectAzureTenant(tenantId: tenant.tenantID)
+                grpc.azureSubscriptions = subs
+                grpc.selectedAzureSubscriptionId = subs.first?.subscriptionID ?? ""
+                grpc.azureLoginPhase = .ready
+            } else if tenants.isEmpty {
+                let subs = Array(reply.subscriptions).sorted { $0.displayName.localizedCompare($1.displayName) == .orderedAscending }
+                grpc.azureSubscriptions = subs
+                grpc.selectedAzureSubscriptionId = subs.first?.subscriptionID ?? ""
+                grpc.azureLoginPhase = .ready
+            } else {
+                grpc.azureLoginPhase = .selectingTenant
+            }
         } catch {
             grpc.azureLoginError = error.localizedDescription
             grpc.azureLoginPhase = .idle
@@ -252,6 +277,93 @@ private struct AzureSigningInView: View {
     }
 }
 
+@available(macOS 15.0, *)
+private struct AzureTenantPickerView: View {
+    @Environment(GRPCManager.self) var grpc
+    @Binding var isConnecting: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Your account has access to multiple directories. Choose the directory you want to use.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let err = grpc.azureLoginError {
+                ErrorBanner(message: err)
+            }
+
+            VStack(spacing: 0) {
+                ForEach(grpc.azureTenants, id: \.tenantID) { tenant in
+                    Button {
+                        Task { await selectTenant(tenant.tenantID) }
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(tenant.displayName.isEmpty ? tenant.tenantID : tenant.displayName)
+                                    .font(.body)
+                                Text(tenant.tenantID)
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
+                            Spacer()
+                            if isConnecting && grpc.selectedAzureTenantId == tenant.tenantID {
+                                ProgressView().controlSize(.small)
+                            } else {
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isConnecting)
+
+                    if tenant.tenantID != grpc.azureTenants.last?.tenantID {
+                        Divider()
+                    }
+                }
+            }
+            .background(Color(nsColor: .textBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.3)))
+
+            HStack {
+                Button("Sign out") {
+                    grpc.resetAzureLoginState()
+                }
+                .foregroundStyle(.secondary)
+                .buttonStyle(.plain)
+                .disabled(isConnecting)
+                Spacer()
+            }
+        }
+    }
+
+    private func selectTenant(_ tenantId: String) async {
+        grpc.azureLoginError = nil
+        grpc.selectedAzureTenantId = tenantId
+        grpc.azureSubscriptions = []
+        grpc.azureNamespaces = []
+        grpc.selectedAzureSubscriptionId = ""
+        grpc.selectedAzureNamespaceFQNS = ""
+        isConnecting = true
+        defer { isConnecting = false }
+        do {
+            let subs = try await grpc.selectAzureTenant(tenantId: tenantId)
+            grpc.azureSubscriptions = subs
+            grpc.selectedAzureSubscriptionId = subs.first?.subscriptionID ?? ""
+            grpc.azureLoginPhase = .ready
+        } catch {
+            grpc.azureLoginError = error.localizedDescription
+            grpc.selectedAzureTenantId = ""
+        }
+    }
+}
+
 // ── Signed-in form: subscription + namespace pickers ──
 
 @available(macOS 15.0, *)
@@ -270,6 +382,23 @@ private struct AzureNamespaceForm: View {
                     Text("Connected to \(ns)")
                         .font(.callout)
                         .foregroundStyle(.secondary)
+                }
+            }
+
+            if grpc.azureTenants.count > 1 {
+                let activeTenant = grpc.azureTenants.first { $0.tenantID == grpc.selectedAzureTenantId }
+                LabeledContent("Directory") {
+                    HStack(spacing: 6) {
+                        Text(activeTenant?.displayName ?? grpc.selectedAzureTenantId)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Button("Switch…") {
+                            grpc.azureLoginPhase = .selectingTenant
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Color.accentColor)
+                        .font(.callout)
+                        .disabled(isConnecting || grpc.azureLoginPhase == .connecting)
+                    }
                 }
             }
 

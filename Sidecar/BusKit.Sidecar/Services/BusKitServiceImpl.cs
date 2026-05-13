@@ -18,6 +18,8 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
     private string? _connectionString;
     private Azure.Core.TokenCredential? _azureCredential;
     private string? _userObjectId;
+    private IPublicClientApplication? _msalApp;
+    private IAccount? _msalAccount;
 
     private readonly PermissionEvaluationEngine _permissionEngine;
 
@@ -147,6 +149,10 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
                 _adminClient = null;
             }
             _connectionString = null;
+            _azureCredential = null;
+            _userObjectId = null;
+            _msalApp = null;
+            _msalAccount = null;
 
             // Build a fresh MSAL public client with an in-memory cache.
             // A new instance every time means no cached accounts are carried
@@ -158,6 +164,7 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
                                AadAuthorityAudience.AzureAdAndPersonalMicrosoftAccount)
                 .WithDefaultRedirectUri()
                 .Build();
+            _msalApp = msalApp;
 
             // Prompt.SelectAccount always shows the account picker in the
             // browser — SSO never auto-signs in the previous account.
@@ -165,6 +172,7 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
                 .AcquireTokenInteractive(new[] { "https://management.azure.com/.default" })
                 .WithPrompt(Prompt.SelectAccount)
                 .ExecuteAsync(CancellationToken.None);
+            _msalAccount = authResult.Account;
 
             _azureCredential = new MsalTokenCredential(msalApp, authResult.Account);
             _userObjectId    = authResult.Account.HomeAccountId.ObjectId;
@@ -178,6 +186,20 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
                     SubscriptionId = sub.Data.SubscriptionId,
                     DisplayName = sub.Data.DisplayName ?? sub.Data.SubscriptionId
                 });
+            }
+
+            await foreach (var tenant in armClient.GetTenants().GetAllAsync())
+            {
+                var tenantId = tenant.Data.TenantId?.ToString() ?? "";
+                var displayName = tenant.Data.DisplayName;
+                if (!string.IsNullOrEmpty(tenantId))
+                {
+                    reply.Tenants.Add(new AzureTenantInfo
+                    {
+                        TenantId = tenantId,
+                        DisplayName = string.IsNullOrEmpty(displayName) ? tenantId : displayName
+                    });
+                }
             }
 
             // Pre-warm the Service Bus token using the refresh token already
@@ -199,6 +221,68 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         {
             if (reply.Subscriptions.Count == 0)
                 _azureCredential = null;
+            reply.Error = ex.Message;
+        }
+        return reply;
+    }
+
+    public override async Task<SelectAzureTenantReply> SelectAzureTenant(
+        SelectAzureTenantRequest request, ServerCallContext context)
+    {
+        var reply = new SelectAzureTenantReply();
+        try
+        {
+            if (_msalApp == null || _msalAccount == null)
+            {
+                reply.Error = "Not signed in. Call ListAzureSubscriptions first.";
+                return reply;
+            }
+
+            AuthenticationResult authResult;
+            try
+            {
+                authResult = await _msalApp
+                    .AcquireTokenSilent(new[] { "https://management.azure.com/.default" }, _msalAccount)
+                    .WithTenantId(request.TenantId)
+                    .ExecuteAsync(CancellationToken.None);
+            }
+            catch (MsalUiRequiredException)
+            {
+                authResult = await _msalApp
+                    .AcquireTokenInteractive(new[] { "https://management.azure.com/.default" })
+                    .WithAccount(_msalAccount)
+                    .WithTenantId(request.TenantId)
+                    .ExecuteAsync(CancellationToken.None);
+            }
+
+            _msalAccount = authResult.Account;
+            _azureCredential = new MsalTokenCredential(_msalApp, authResult.Account, request.TenantId);
+            _userObjectId    = authResult.Account.HomeAccountId.ObjectId;
+
+            var armClient = new ArmClient(_azureCredential);
+
+            await foreach (var sub in armClient.GetSubscriptions().GetAllAsync())
+            {
+                reply.Subscriptions.Add(new AzureSubscriptionInfo
+                {
+                    SubscriptionId = sub.Data.SubscriptionId,
+                    DisplayName = sub.Data.DisplayName ?? sub.Data.SubscriptionId
+                });
+            }
+
+            try
+            {
+                await _azureCredential.GetTokenAsync(
+                    new Azure.Core.TokenRequestContext(new[] { "https://servicebus.azure.net/.default" }),
+                    CancellationToken.None);
+            }
+            catch (Exception warmEx)
+            {
+                Console.WriteLine($"[BusKit] SB token pre-warm failed: {warmEx.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
             reply.Error = ex.Message;
         }
         return reply;
@@ -915,11 +999,13 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
     {
         private readonly IPublicClientApplication _app;
         private IAccount _account;
+        private readonly string? _tenantId;
 
-        public MsalTokenCredential(IPublicClientApplication app, IAccount account)
+        public MsalTokenCredential(IPublicClientApplication app, IAccount account, string? tenantId = null)
         {
             _app = app;
             _account = account;
+            _tenantId = tenantId;
         }
 
         public override Azure.Core.AccessToken GetToken(
@@ -931,20 +1017,19 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         {
             try
             {
-                var result = await _app
-                    .AcquireTokenSilent(requestContext.Scopes, _account)
-                    .ExecuteAsync(cancellationToken);
+                var builder = _app.AcquireTokenSilent(requestContext.Scopes, _account);
+                if (_tenantId != null)
+                    builder = builder.WithTenantId(_tenantId);
+                var result = await builder.ExecuteAsync(cancellationToken);
                 _account = result.Account;
                 return new Azure.Core.AccessToken(result.AccessToken, result.ExpiresOn);
             }
             catch (MsalUiRequiredException)
             {
-                // Refresh token expired — go interactive with the known account
-                // (no Prompt.SelectAccount here; this is a background refresh).
-                var result = await _app
-                    .AcquireTokenInteractive(requestContext.Scopes)
-                    .WithAccount(_account)
-                    .ExecuteAsync(cancellationToken);
+                var builder = _app.AcquireTokenInteractive(requestContext.Scopes).WithAccount(_account);
+                if (_tenantId != null)
+                    builder = builder.WithTenantId(_tenantId);
+                var result = await builder.ExecuteAsync(cancellationToken);
                 _account = result.Account;
                 return new Azure.Core.AccessToken(result.AccessToken, result.ExpiresOn);
             }
