@@ -1,0 +1,92 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Release
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          echo "tag=$TAG"       >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "🏷️ Releasing version: $VERSION"
+
+      - name: Stamp version into Xcode project
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          PBXPROJ="BusKit.xcodeproj/project.pbxproj"
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          BUILD=$(( MAJOR * 10000 + MINOR * 100 + PATCH ))
+
+          CURRENT_MV=$(grep 'MARKETING_VERSION' "$PBXPROJ" | head -1 \
+            | sed 's/.*MARKETING_VERSION = //;s/;//' | xargs)
+          ESCAPED_MV="${CURRENT_MV//./\\.}"
+          sed -i '' "s/MARKETING_VERSION = ${ESCAPED_MV};/MARKETING_VERSION = ${VERSION};/g" "$PBXPROJ"
+
+          CURRENT_CPV=$(grep 'CURRENT_PROJECT_VERSION' "$PBXPROJ" | head -1 \
+            | sed 's/.*CURRENT_PROJECT_VERSION = //;s/;//' | xargs)
+          sed -i '' "s/CURRENT_PROJECT_VERSION = ${CURRENT_CPV};/CURRENT_PROJECT_VERSION = ${BUILD};/g" "$PBXPROJ"
+
+          echo "✅ MARKETING_VERSION=$VERSION  CURRENT_PROJECT_VERSION=$BUILD"
+
+      - name: Build DMG
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          ./Scripts/package.sh \
+            --arch arm64 \
+            --output "BusKit-${VERSION}-arm64.dmg"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "BusKit v${{ steps.version.outputs.version }}"
+          tag_name: ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: BusKit-${{ steps.version.outputs.version }}-arm64.dmg
+
+      - name: Bump patch version on main
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Apply bump on top of the current tip of main (not the tagged commit)
+          git fetch origin main
+          git checkout -b version-bump origin/main
+
+          ./Scripts/bump-version.sh --patch
+
+          NEW_VERSION=$(grep 'MARKETING_VERSION' BusKit.xcodeproj/project.pbxproj \
+            | head -1 | sed 's/.*MARKETING_VERSION = //;s/;//' | xargs)
+
+          git add BusKit.xcodeproj/project.pbxproj
+          git diff --staged --quiet \
+            && echo "⚠️ No version changes to commit — skipping." \
+            && exit 0
+
+          git commit -m "chore: bump version to ${NEW_VERSION} [skip ci]"
+          git push origin version-bump:main
+          echo "✅ Bumped to ${NEW_VERSION} on main"
