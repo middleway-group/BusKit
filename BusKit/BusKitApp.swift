@@ -28,6 +28,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.terminate(nil)
     }
 
+    @objc func checkForUpdates() {
+        UpdateChecker.shared.checkForUpdates()
+    }
+
     @objc func showAboutWindow() {
         if aboutWindow == nil {
             let controller = NSHostingController(rootView: AboutView())
@@ -70,6 +74,9 @@ struct BusKitApp: App {
             CommandGroup(replacing: .appInfo) {
                 Button("About BusKit") {
                     NSApp.sendAction(#selector(AppDelegate.showAboutWindow), to: nil, from: nil)
+                }
+                Button("Check for Updates...") {
+                    NSApp.sendAction(#selector(AppDelegate.checkForUpdates), to: nil, from: nil)
                 }
             }
         }
