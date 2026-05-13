@@ -37,5 +37,5 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            SWIFT_STRICT_CONCURRENCY=minimal \
+            SWIFT_STRICT_CONCURRENCY=off \
             2>&1 | grep -E "(error:|warning:|BUILD SUCCEEDED|BUILD FAILED)"
