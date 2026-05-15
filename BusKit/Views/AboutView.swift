@@ -1,5 +1,40 @@
 import SwiftUI
 
+private struct AcknowledgmentEntry: Identifiable {
+    let id = UUID()
+    let name: String
+    let copyright: String
+    let license: String
+    let url: URL
+}
+
+private let acknowledgments: [AcknowledgmentEntry] = [
+    AcknowledgmentEntry(
+        name: "Azure Service Bus SDK",
+        copyright: "Copyright (c) Microsoft Corporation",
+        license: "MIT License",
+        url: URL(string: "https://github.com/Azure/azure-sdk-for-net")!
+    ),
+    AcknowledgmentEntry(
+        name: "Azure Identity SDK",
+        copyright: "Copyright (c) Microsoft Corporation",
+        license: "MIT License",
+        url: URL(string: "https://github.com/Azure/azure-sdk-for-net")!
+    ),
+    AcknowledgmentEntry(
+        name: "gRPC Swift",
+        copyright: "Copyright (c) gRPC authors",
+        license: "Apache License, Version 2.0",
+        url: URL(string: "https://github.com/grpc/grpc-swift")!
+    ),
+    AcknowledgmentEntry(
+        name: "Sparkle",
+        copyright: "Copyright (c) 2006-present Sparkle Project Contributors",
+        license: "MIT License",
+        url: URL(string: "https://sparkle-project.org")!
+    ),
+]
+
 @available(macOS 15.0, *)
 struct AboutView: View {
     private var appVersion: String {
@@ -9,17 +44,58 @@ struct AboutView: View {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
+        HStack(alignment: .top, spacing: 0) {
+            appInfoColumn
+            acknowledgementsColumn
+        }
+        .frame(width: 520, height: 260)
+    }
+
+    private var acknowledgementsColumn: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Acknowledgments")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+                    .padding(.bottom, 8)
+
+                ForEach(Array(acknowledgments.enumerated()), id: \.element.id) { index, entry in
+                    if index > 0 {
+                        Spacer().frame(height: 6)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Link(entry.name, destination: entry.url)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                        Text(entry.copyright)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text(entry.license)
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            }
+            .padding(16)
+        }
+        .frame(width: 260)
+    }
+
+    private var appInfoColumn: some View {
+        VStack(spacing: 10) {
+            Spacer()
+
             Image("BusKitLogo")
                 .resizable()
                 .interpolation(.high)
                 .scaledToFit()
-                .frame(width: 128, height: 128)
-                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                .frame(width: 64, height: 64)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .shadow(color: .black.opacity(0.15), radius: 6, x: 0, y: 3)
 
             Text("BusKit")
-                .font(.title)
+                .font(.title2)
                 .fontWeight(.bold)
 
             Text("Version \(appVersion)")
@@ -27,35 +103,23 @@ struct AboutView: View {
                 .foregroundStyle(.secondary)
 
             Text("Azure Service Bus client for macOS")
-                .font(.body)
+                .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
-            Divider()
+            Spacer()
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Acknowledgments")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                HStack(spacing: 4) {
-                    Link("Sparkle", destination: URL(string: "https://sparkle-project.org/")!)
-                        .font(.caption)
-                    Text("is by Sparkle Project.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+            VStack(spacing: 2) {
+                Text("Released under the MIT License")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                Text("© 2026 Peter Karda")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
             }
-
-            Divider()
-
-            Text("© 2026 Peter Karda")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
         }
-        .padding(32)
-        .frame(width: 320)
+        .padding(20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(width: 260)
     }
 }
