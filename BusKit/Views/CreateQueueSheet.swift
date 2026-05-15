@@ -13,90 +13,6 @@ private struct DurationComponents {
     }
 }
 
-// MARK: - Duration row
-
-@available(macOS 15.0, *)
-private struct DurationRow: View {
-    let label: String
-    @Binding var components: DurationComponents
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.secondary)
-
-            HStack(spacing: 12) {
-                durationField(label: "Days",    value: $components.days,    range: 0...36500)
-                durationField(label: "Hours",   value: $components.hours,   range: 0...23)
-                durationField(label: "Minutes", value: $components.minutes, range: 0...59)
-                durationField(label: "Seconds", value: $components.seconds, range: 0...59)
-            }
-        }
-    }
-
-    private func durationField(label: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
-        VStack(spacing: 3) {
-            HStack(spacing: 2) {
-                TextField("", value: value, format: .number)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 58)
-                    .multilineTextAlignment(.trailing)
-                    .onChange(of: value.wrappedValue) { _, v in
-                        value.wrappedValue = max(range.lowerBound, min(range.upperBound, v))
-                    }
-                Stepper("", value: value, in: range)
-                    .labelsHidden()
-                    .frame(width: 18)
-            }
-            Text(label)
-                .font(.system(size: 10))
-                .foregroundStyle(.secondary)
-        }
-    }
-}
-
-// MARK: - Option row with info popover
-
-@available(macOS 15.0, *)
-private struct OptionRow: View {
-    let title: String
-    let info: String
-    @Binding var isOn: Bool
-
-    @State private var showPopover = false
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Toggle(isOn: $isOn) {
-                Text(title)
-                    .font(.system(size: 13))
-            }
-            .toggleStyle(.checkbox)
-
-            Button {
-                showPopover.toggle()
-            } label: {
-                Image(systemName: "info.circle")
-                    .foregroundStyle(.secondary)
-                    .imageScale(.small)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Info for \(title)")
-            .popover(isPresented: $showPopover, arrowEdge: .trailing) {
-                Text(info)
-                    .font(.system(size: 12))
-                    .padding(12)
-                    .frame(maxWidth: 280)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer()
-        }
-        .accessibilityElement(children: .contain)
-    }
-}
-
 // MARK: - CreateQueueSheet
 
 @available(macOS 15.0, *)
@@ -144,15 +60,10 @@ struct CreateQueueSheet: View {
             headerView
             Divider()
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    nameSection
-                    maxSizeSection
-                    maxDeliveryCountSection
-                    messageTtlSection
-                    lockDurationSection
-                    optionsSection
-                }
-                .padding(20)
+                formGrid
+                    .padding(.horizontal, 20)
+                    .padding(.top, 14)
+                    .padding(.bottom, 20)
             }
             if let err = errorMessage {
                 HStack {
@@ -171,8 +82,8 @@ struct CreateQueueSheet: View {
             Divider()
             footerView
         }
-        .frame(width: 480)
-        .frame(minHeight: 600)
+        .frame(width: 560)
+        .frame(minHeight: 620)
         .onAppear { nameFocused = true }
         .confirmationDialog(
             "Discard changes?",
@@ -203,147 +114,284 @@ struct CreateQueueSheet: View {
         .padding(.vertical, 14)
     }
 
-    // MARK: - Queue Name
+    // MARK: - Form Grid
+    //
+    // Center-equalized 2-column layout per Apple macOS layout guidelines:
+    // - Left column: right-aligned labels
+    // - Right column: left-aligned controls
+    // - 20 pt outer margins, 14 pt from titlebar to first control
+    // - 6 pt between controls, 12 pt padding above/below section separators
 
-    private var nameSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 4) {
-                Text("Queue Name")
-                    .font(.system(size: 13))
-                Text("*")
-                    .foregroundStyle(.red)
-                    .font(.system(size: 13))
-            }
-            TextField("Enter queue name", text: $queueName)
-                .textFieldStyle(.roundedBorder)
-                .focused($nameFocused)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 5)
-                        .stroke(nameIsEmpty ? Color.red : Color.clear, lineWidth: 1.5)
-                )
-                .onChange(of: queueName) { _, _ in
-                    if nameIsEmpty && !queueName.trimmingCharacters(in: .whitespaces).isEmpty {
-                        nameIsEmpty = false
-                    }
+    private var formGrid: some View {
+        Grid(alignment: .topLeading, horizontalSpacing: 8, verticalSpacing: 6) {
+
+            // MARK: General
+
+            GridRow {
+                HStack(spacing: 2) {
+                    Text("Queue name")
+                    Text("*").foregroundStyle(.red)
                 }
-                .accessibilityLabel("Queue name, required")
-            Text("Must be unique within the namespace.")
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    // MARK: - Max Queue Size
-
-    private var maxSizeSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Max Queue Size")
                 .font(.system(size: 13))
-            Picker("", selection: $maxSizeGbIndex) {
-                ForEach(maxSizeOptions.indices, id: \.self) { i in
-                    Text(maxSizeOptions[i].label).tag(i)
+                .gridColumnAlignment(.trailing)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    TextField("Enter queue name", text: $queueName)
+                        .textFieldStyle(.roundedBorder)
+                        .focused($nameFocused)
+                        .frame(maxWidth: .infinity)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 5)
+                                .stroke(nameIsEmpty ? Color.red : Color.clear, lineWidth: 1.5)
+                        )
+                        .onChange(of: queueName) { _, _ in
+                            if nameIsEmpty && !queueName.trimmingCharacters(in: .whitespaces).isEmpty {
+                                nameIsEmpty = false
+                            }
+                        }
+                        .accessibilityLabel("Queue name, required")
+                    if nameIsEmpty {
+                        Text("Name is required.")
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
                 }
             }
-            .pickerStyle(.menu)
-            .labelsHidden()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityLabel("Max queue size")
-        }
-    }
 
-    // MARK: - Max Delivery Count
+            GridRow {
+                Text("Max queue size")
+                    .font(.system(size: 13))
 
-    private var maxDeliveryCountSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 4) {
-                Text("Max Delivery Count")
-                    .font(.system(size: 13))
-                Text("*")
-                    .foregroundStyle(.red)
-                    .font(.system(size: 13))
-            }
-            HStack(spacing: 4) {
-                TextField("", value: $maxDeliveryCount, format: .number)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 80)
-                    .multilineTextAlignment(.trailing)
-                    .onChange(of: maxDeliveryCount) { _, v in
-                        maxDeliveryCount = max(1, min(2000, v))
+                Picker("", selection: $maxSizeGbIndex) {
+                    ForEach(maxSizeOptions.indices, id: \.self) { i in
+                        Text(maxSizeOptions[i].label).tag(i)
                     }
-                Stepper("", value: $maxDeliveryCount, in: 1...2000)
-                    .labelsHidden()
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .frame(alignment: .leading)
+                .accessibilityLabel("Max queue size")
             }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Max delivery count, required, 1 to 2000")
-        }
-    }
 
-    // MARK: - Message TTL
+            GridRow {
+                HStack(spacing: 2) {
+                    Text("Max delivery count")
+                    Text("*").foregroundStyle(.red)
+                }
+                .font(.system(size: 13))
 
-    private var messageTtlSection: some View {
-        DurationRow(label: "Message Time to Live", components: $messageTtl)
-    }
+                HStack(spacing: 4) {
+                    TextField("", value: $maxDeliveryCount, format: .number)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 80)
+                        .multilineTextAlignment(.trailing)
+                        .onChange(of: maxDeliveryCount) { _, v in
+                            maxDeliveryCount = max(1, min(2000, v))
+                        }
+                    Stepper("", value: $maxDeliveryCount, in: 1...2000)
+                        .labelsHidden()
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Max delivery count, required, 1 to 2000")
+            }
 
-    // MARK: - Lock Duration
+            // MARK: Auto-Delete
 
-    private var lockDurationSection: some View {
-        DurationRow(label: "Lock Duration", components: $lockDuration)
-    }
+            formSectionDivider
+            formSectionHeader("Auto-Delete")
 
-    // MARK: - Options
+            GridRow {
+                emptyLabel
+                HStack(spacing: 8) {
+                    Toggle("Enable auto-delete on idle queue", isOn: $autoDeleteOnIdle)
+                        .toggleStyle(.checkbox)
+                        .font(.system(size: 13))
+                        .accessibilityLabel("Enable auto-delete on idle queue")
+                    HelpPopover(info: "Automatically delete the queue after it has been idle for a specified duration. Useful for temporary or session-based queues.")
+                    Spacer()
+                }
+            }
 
-    private var optionsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("OPTIONS")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.secondary)
+            // MARK: Duplicate Detection
 
-            VStack(alignment: .leading, spacing: 8) {
-                OptionRow(
-                    title: "Enable auto-delete on idle queue",
-                    info: "Automatically delete the queue after it has been idle for a specified duration. Useful for temporary or session-based queues.",
-                    isOn: $autoDeleteOnIdle
-                )
-                OptionRow(
-                    title: "Enable duplicate detection",
-                    info: "Allows the queue to detect and discard duplicate messages sent within the duplicate detection window.",
-                    isOn: $duplicateDetection
-                )
-                OptionRow(
-                    title: "Enable dead lettering on message expiration",
-                    info: "When enabled, expired messages are moved to the dead-letter sub-queue instead of being discarded.",
-                    isOn: $deadLetterOnExpiration
-                )
-                OptionRow(
-                    title: "Enable partitioning",
-                    info: "Partitions the queue across multiple message brokers and stores, increasing throughput and availability.",
-                    isOn: $enablePartitioning
-                )
-                OptionRow(
-                    title: "Enable sessions",
-                    info: "Enables session-based message grouping, allowing related messages to be processed in order by the same consumer.",
-                    isOn: $enableSessions
-                )
+            formSectionDivider
+            formSectionHeader("Duplicate Detection")
 
-                OptionRow(
-                    title: "Forward messages to queue/topic",
-                    info: "Automatically forwards messages from this queue to another queue or topic.",
-                    isOn: $forwardMessages
-                )
-                if forwardMessages {
+            GridRow {
+                emptyLabel
+                HStack(spacing: 8) {
+                    Toggle("Enable duplicate detection", isOn: $duplicateDetection)
+                        .toggleStyle(.checkbox)
+                        .font(.system(size: 13))
+                        .accessibilityLabel("Enable duplicate detection")
+                    HelpPopover(info: "Allows the queue to detect and discard duplicate messages sent within the duplicate detection window.")
+                    Spacer()
+                }
+            }
+
+            // MARK: TTL & Dead-Lettering
+
+            formSectionDivider
+            formSectionHeader("TTL & Dead-Lettering")
+
+            GridRow {
+                Text("Message time to live:")
+                    .font(.system(size: 13))
+
+                durationFields($messageTtl, maxDays: 36500, maxHours: 23, maxMinutes: 59)
+            }
+
+            GridRow {
+                emptyLabel
+                Toggle("Enable dead lettering on message expiration", isOn: $deadLetterOnExpiration)
+                    .toggleStyle(.checkbox)
+                    .font(.system(size: 13))
+                    .accessibilityLabel("Enable dead lettering on message expiration")
+            }
+
+            // MARK: Lock Duration
+
+            formSectionDivider
+            formSectionHeader("Lock Duration")
+
+            GridRow {
+                HStack(spacing: 4) {
+                    Text("Lock duration:")
+                        .font(.system(size: 13))
+                    HelpPopover(info: "Duration a message is locked for processing. Other consumers cannot receive the message while it is locked. Range: 0 seconds to 5 minutes.")
+                }
+
+                durationFields($lockDuration, maxDays: 0, maxHours: 0, maxMinutes: 5)
+            }
+
+            // MARK: Sessions & Partitioning
+
+            formSectionDivider
+            formSectionHeader("Sessions & Partitioning")
+
+            GridRow {
+                emptyLabel
+                HStack(spacing: 8) {
+                    Toggle("Enable sessions", isOn: $enableSessions)
+                        .toggleStyle(.checkbox)
+                        .font(.system(size: 13))
+                        .accessibilityLabel("Enable sessions")
+                        .accessibilityHint("Enables session-based FIFO message delivery")
+                    HelpPopover(info: "Enables session-based message grouping, allowing related messages to be processed in order by the same consumer.")
+                    Spacer()
+                }
+            }
+
+            GridRow {
+                emptyLabel
+                HStack(spacing: 8) {
+                    Toggle("Enable partitioning", isOn: $enablePartitioning)
+                        .toggleStyle(.checkbox)
+                        .font(.system(size: 13))
+                        .accessibilityLabel("Enable partitioning")
+                    HelpPopover(info: "Partitions the queue across multiple message brokers and stores, increasing throughput and availability.")
+                    Spacer()
+                }
+            }
+
+            // MARK: Forwarding
+
+            formSectionDivider
+            formSectionHeader("Forwarding")
+
+            GridRow {
+                emptyLabel
+                HStack(spacing: 8) {
+                    Toggle("Forward messages to queue/topic", isOn: $forwardMessages)
+                        .toggleStyle(.checkbox)
+                        .font(.system(size: 13))
+                        .accessibilityLabel("Forward messages to queue or topic")
+                    HelpPopover(info: "Automatically forwards messages from this queue to another queue or topic.")
+                    Spacer()
+                }
+            }
+
+            if forwardMessages {
+                GridRow {
+                    Text("Forward to:")
+                        .font(.system(size: 13))
+
                     TextField("Target queue or topic name", text: $forwardTo)
                         .textFieldStyle(.roundedBorder)
-                        .padding(.leading, 22)
                         .accessibilityLabel("Forward to queue or topic name")
                 }
             }
-            .padding(12)
-            .background(Color(nsColor: .controlBackgroundColor))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
-            )
+        }
+    }
+
+    // MARK: - Grid Helpers
+
+    /// Invisible spacer that occupies the label column without contributing to its width.
+    private var emptyLabel: some View {
+        Color.clear.gridCellUnsizedAxes([.horizontal, .vertical])
+    }
+
+    /// Full-width divider row with 12 pt breathing room on each side (per guidelines).
+    private var formSectionDivider: some View {
+        GridRow {
+            Divider()
+                .padding(.vertical, 12)
+                .gridCellColumns(2)
+        }
+    }
+
+    /// Section title spanning both columns, left-aligned, bold secondary text.
+    private func formSectionHeader(_ title: String) -> some View {
+        GridRow {
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .accessibilityAddTraits(.isHeader)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .gridCellColumns(2)
+        }
+    }
+
+    /// Duration field cluster. Shows Days/Hours when maxDays > 0, Hours when maxHours > 0.
+    private func durationFields(
+        _ components: Binding<DurationComponents>,
+        disabled: Bool = false,
+        maxDays: Int = 36500,
+        maxHours: Int = 23,
+        maxMinutes: Int = 59
+    ) -> some View {
+        HStack(spacing: 5) {
+            if maxDays > 0 {
+                durationField("Days", value: components.days, range: 0...maxDays)
+            }
+            if maxHours > 0 || maxDays > 0 {
+                durationField("Hours", value: components.hours, range: 0...maxHours)
+            }
+            durationField("Minutes", value: components.minutes, range: 0...maxMinutes)
+            durationField("Seconds", value: components.seconds, range: 0...59)
+        }
+        .disabled(disabled)
+        .opacity(disabled ? 0.4 : 1.0)
+    }
+
+    private func durationField(_ label: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
+        VStack(alignment: .center, spacing: 2) {
+            HStack(spacing: 3) {
+                TextField("", value: value, format: .number)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 46)
+                    .multilineTextAlignment(.trailing)
+                    .onChange(of: value.wrappedValue) { _, v in
+                        value.wrappedValue = max(range.lowerBound, min(range.upperBound, v))
+                    }
+                    .accessibilityLabel(label)
+                Stepper("", value: value, in: range)
+                    .labelsHidden()
+            }
+            Text(label)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize()
         }
     }
 
@@ -434,6 +482,32 @@ struct CreateQueueSheet: View {
             dismiss()
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+}
+
+// MARK: - HelpPopover
+
+@available(macOS 15.0, *)
+private struct HelpPopover: View {
+    let info: String
+    @State private var showPopover = false
+
+    var body: some View {
+        Button { showPopover.toggle() } label: {
+            Image(systemName: "info.circle")
+                .foregroundStyle(.secondary)
+                .imageScale(.small)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("More information")
+        .accessibilityHint(info)
+        .popover(isPresented: $showPopover, arrowEdge: .trailing) {
+            Text(info)
+                .font(.system(size: 12))
+                .padding(12)
+                .frame(maxWidth: 280)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

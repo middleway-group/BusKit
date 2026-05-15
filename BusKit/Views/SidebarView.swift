@@ -715,7 +715,7 @@ private struct TopicRow: View {
         } label: {
             Label(topic.name, systemImage: "bubble.left.and.bubble.right")
                 .contextMenu {
-                    Button("Add Subscription") {
+                    Button("Create Subscription") {
                         model.createSubscriptionTopic = topic
                         model.showCreateSubscriptionSheet = true
                     }

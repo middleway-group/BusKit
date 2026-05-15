@@ -45,14 +45,10 @@ struct CreateSubscriptionSheet: View {
             headerView
             Divider()
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    generalSection
-                    autoDeleteSection
-                    sessionsSection
-                    ttlDeadLetterSection
-                    lockDurationSection
-                }
-                .padding(20)
+                formGrid
+                    .padding(.horizontal, 20)
+                    .padding(.top, 14)
+                    .padding(.bottom, 20)
             }
             if let err = errorMessage {
                 HStack {
@@ -72,7 +68,7 @@ struct CreateSubscriptionSheet: View {
             footerView
         }
         .frame(width: 560)
-        .frame(minHeight: 640)
+        .frame(minHeight: 620)
         .onAppear { nameFocused = true }
         .confirmationDialog(
             "Discard changes?",
@@ -103,48 +99,57 @@ struct CreateSubscriptionSheet: View {
         .padding(.vertical, 14)
     }
 
-    // MARK: - Section 1: General
+    // MARK: - Form Grid
+    //
+    // Center-equalized 2-column layout per Apple macOS layout guidelines:
+    // - Left column: right-aligned labels
+    // - Right column: left-aligned controls
+    // - 20 pt outer margins, 14 pt from titlebar to first control
+    // - 6 pt between controls, 12 pt padding above/below section separators
 
-    private var generalSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            // Name
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 4) {
+    private var formGrid: some View {
+        Grid(alignment: .topLeading, horizontalSpacing: 8, verticalSpacing: 6) {
+
+            // MARK: General
+
+            GridRow {
+                HStack(spacing: 2) {
                     Text("Name")
-                        .font(.system(size: 13))
-                    Text("*")
-                        .foregroundStyle(.red)
-                        .font(.system(size: 13))
+                    Text("*").foregroundStyle(.red)
                 }
-                TextField("Enter subscription name", text: $subscriptionName)
-                    .textFieldStyle(.roundedBorder)
-                    .focused($nameFocused)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 5)
-                            .stroke(nameIsEmpty ? Color.red : Color.clear, lineWidth: 1.5)
-                    )
-                    .onChange(of: subscriptionName) { _, _ in
-                        if nameIsEmpty && !subscriptionName.trimmingCharacters(in: .whitespaces).isEmpty {
-                            nameIsEmpty = false
+                .font(.system(size: 13))
+                .gridColumnAlignment(.trailing)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    TextField("Enter subscription name", text: $subscriptionName)
+                        .textFieldStyle(.roundedBorder)
+                        .focused($nameFocused)
+                        .frame(maxWidth: .infinity)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 5)
+                                .stroke(nameIsEmpty ? Color.red : Color.clear, lineWidth: 1.5)
+                        )
+                        .onChange(of: subscriptionName) { _, _ in
+                            if nameIsEmpty && !subscriptionName.trimmingCharacters(in: .whitespaces).isEmpty {
+                                nameIsEmpty = false
+                            }
                         }
+                        .accessibilityLabel("Subscription name, required")
+                    if nameIsEmpty {
+                        Text("Name is required.")
+                            .font(.caption)
+                            .foregroundStyle(.red)
                     }
-                    .accessibilityLabel("Subscription name, required")
-                if nameIsEmpty {
-                    Text("Name is required.")
-                        .font(.caption)
-                        .foregroundStyle(.red)
                 }
             }
 
-            // Max Delivery Count
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 4) {
+            GridRow {
+                HStack(spacing: 2) {
                     Text("Max delivery count")
-                        .font(.system(size: 13))
-                    Text("*")
-                        .foregroundStyle(.red)
-                        .font(.system(size: 13))
+                    Text("*").foregroundStyle(.red)
                 }
+                .font(.system(size: 13))
+
                 HStack(spacing: 4) {
                     TextField("", value: $maxDeliveryCount, format: .number)
                         .textFieldStyle(.roundedBorder)
@@ -159,131 +164,197 @@ struct CreateSubscriptionSheet: View {
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("Max delivery count, required, 1 to 2000")
             }
-        }
-    }
 
-    // MARK: - Section 2: Auto-Delete
+            // MARK: Auto-Delete
 
-    private var autoDeleteSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SubSectionHeader(title: "AUTO-DELETE")
+            formSectionDivider
+            formSectionHeader("Auto-Delete")
 
-            SubDurationRow(
-                label: "Auto-delete after idle for",
-                components: $autoDelete,
-                disabled: neverAutoDelete
-            )
-
-            Toggle(isOn: $neverAutoDelete) {
-                Text("Never auto-delete")
+            GridRow {
+                Text("Auto-delete after idle:")
                     .font(.system(size: 13))
+                    .foregroundStyle(neverAutoDelete ? .secondary : .primary)
+
+                durationFields($autoDelete, disabled: neverAutoDelete, maxDays: 36500, maxHours: 23, maxMinutes: 59)
             }
-            .toggleStyle(.checkbox)
-            .accessibilityLabel("Never auto-delete")
-            .accessibilityHint("When enabled, disables the auto-delete idle time fields")
 
-            HStack(spacing: 8) {
-                Toggle(isOn: $forwardMessages) {
-                    Text("Forward messages to queue/topic")
+            GridRow {
+                emptyLabel
+                Toggle("Never auto-delete", isOn: $neverAutoDelete)
+                    .toggleStyle(.checkbox)
+                    .font(.system(size: 13))
+                    .accessibilityLabel("Never auto-delete")
+                    .accessibilityHint("When enabled, disables the auto-delete idle time fields")
+            }
+
+            GridRow {
+                emptyLabel
+                HStack(spacing: 8) {
+                    Toggle("Forward messages to queue/topic", isOn: $forwardMessages)
+                        .toggleStyle(.checkbox)
                         .font(.system(size: 13))
+                        .accessibilityLabel("Forward messages to queue or topic")
+                    SubHelpPopover(
+                        info: "When enabled, messages from this subscription are automatically forwarded to the specified queue or topic."
+                    )
+                    Spacer()
                 }
-                .toggleStyle(.checkbox)
-                .accessibilityLabel("Forward messages to queue or topic")
-
-                SubHelpPopover(
-                    info: "When enabled, messages from this subscription are automatically forwarded to the specified queue or topic."
-                )
-                Spacer()
             }
 
             if forwardMessages {
-                TextField("Target queue or topic name", text: $forwardTo)
-                    .textFieldStyle(.roundedBorder)
-                    .padding(.leading, 22)
-                    .accessibilityLabel("Forward to queue or topic name")
+                GridRow {
+                    Text("Forward to:")
+                        .font(.system(size: 13))
+
+                    TextField("Target queue or topic name", text: $forwardTo)
+                        .textFieldStyle(.roundedBorder)
+                        .accessibilityLabel("Forward to queue or topic name")
+                }
             }
-        }
-        .padding(12)
-        .background(Color(nsColor: .controlBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(nsColor: .separatorColor), lineWidth: 1))
-    }
 
-    // MARK: - Section 3: Message Sessions
+            // MARK: Message Sessions
 
-    private var sessionsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SubSectionHeader(title: "MESSAGE SESSIONS")
+            formSectionDivider
+            formSectionHeader("Message Sessions")
 
-            Text("Sessions enable ordered, lock-based processing of related messages using a session identifier. Only one consumer processes messages per session at a time. ")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-            + Text("[Learn more](https://learn.microsoft.com/azure/service-bus-messaging/message-sessions)")
-                .font(.system(size: 12))
+            GridRow {
+                emptyLabel
+                (
+                    Text("Sessions enable ordered, lock-based processing of related messages using a session identifier. Only one consumer processes messages per session at a time.  ")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                    + Text("[Learn more](https://learn.microsoft.com/azure/service-bus-messaging/message-sessions)")
+                        .font(.system(size: 12))
+                )
+                .fixedSize(horizontal: false, vertical: true)
+            }
 
-            Toggle(isOn: $enableSessions) {
-                Text("Enable sessions")
+            GridRow {
+                emptyLabel
+                Toggle("Enable sessions", isOn: $enableSessions)
+                    .toggleStyle(.checkbox)
                     .font(.system(size: 13))
+                    .accessibilityLabel("Enable sessions")
+                    .accessibilityHint("Enables session-based FIFO message delivery")
             }
-            .toggleStyle(.checkbox)
-            .accessibilityLabel("Enable sessions")
-            .accessibilityHint("Enables session-based FIFO message delivery")
-        }
-        .padding(12)
-        .background(Color(nsColor: .controlBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(nsColor: .separatorColor), lineWidth: 1))
-    }
 
-    // MARK: - Section 4: TTL & Dead-Lettering
+            // MARK: TTL & Dead-Lettering
 
-    private var ttlDeadLetterSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SubSectionHeader(title: "MESSAGE TIME TO LIVE AND DEAD-LETTERING")
+            formSectionDivider
+            formSectionHeader("TTL & Dead-Lettering")
 
-            SubDurationRow(label: "Message time to live (default)", components: $messageTtl)
-
-            Toggle(isOn: $deadLetterOnExpiration) {
-                Text("Enable dead lettering on message expiration")
+            GridRow {
+                Text("Message time to live:")
                     .font(.system(size: 13))
-            }
-            .toggleStyle(.checkbox)
-            .accessibilityLabel("Enable dead lettering on message expiration")
 
-            Toggle(isOn: $deadLetterOnFilterException) {
-                Text("Move messages that cause filter evaluation exceptions to the dead-letter subqueue")
+                durationFields($messageTtl, maxDays: 36500, maxHours: 23, maxMinutes: 59)
+            }
+
+            GridRow {
+                emptyLabel
+                Toggle("Enable dead lettering on message expiration", isOn: $deadLetterOnExpiration)
+                    .toggleStyle(.checkbox)
+                    .font(.system(size: 13))
+                    .accessibilityLabel("Enable dead lettering on message expiration")
+            }
+
+            GridRow {
+                emptyLabel
+                Toggle("Move messages that cause filter evaluation exceptions to the dead-letter subqueue", isOn: $deadLetterOnFilterException)
+                    .toggleStyle(.checkbox)
                     .font(.system(size: 13))
                     .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityLabel("Move messages causing filter evaluation exceptions to dead-letter subqueue")
             }
-            .toggleStyle(.checkbox)
-            .accessibilityLabel("Move messages causing filter evaluation exceptions to dead-letter subqueue")
+
+            // MARK: Lock Duration
+
+            formSectionDivider
+            formSectionHeader("Lock Duration")
+
+            GridRow {
+                HStack(spacing: 4) {
+                    Text("Lock duration:")
+                        .font(.system(size: 13))
+                    SubHelpPopover(
+                        info: "Duration a message is locked for processing. Other consumers cannot receive the message while it is locked. Range: 0 seconds to 5 minutes."
+                    )
+                }
+
+                durationFields($lockDuration, maxDays: 0, maxHours: 0, maxMinutes: 5)
+            }
         }
-        .padding(12)
-        .background(Color(nsColor: .controlBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(nsColor: .separatorColor), lineWidth: 1))
     }
 
-    // MARK: - Section 5: Lock Duration
+    // MARK: - Grid Helpers
 
-    private var lockDurationSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SubSectionHeader(title: "MESSAGE LOCK DURATION")
+    /// Invisible spacer that occupies the label column without contributing to its width.
+    private var emptyLabel: some View {
+        Color.clear.gridCellUnsizedAxes([.horizontal, .vertical])
+    }
 
-            HStack(spacing: 6) {
-                Text("Lock duration")
-                    .font(.system(size: 13))
-                SubHelpPopover(
-                    info: "Duration a message is locked for processing. Other consumers cannot receive the message while it is locked. Range: 0 seconds to 5 minutes."
-                )
-            }
-
-            SubDurationRow(label: nil, components: $lockDuration, maxDays: 0, maxHours: 0, maxMinutes: 5)
+    /// Full-width divider row with 12 pt breathing room on each side (per guidelines).
+    private var formSectionDivider: some View {
+        GridRow {
+            Divider()
+                .padding(.vertical, 12)
+                .gridCellColumns(2)
         }
-        .padding(12)
-        .background(Color(nsColor: .controlBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(nsColor: .separatorColor), lineWidth: 1))
+    }
+
+    /// Section title spanning both columns, left-aligned, bold secondary text.
+    private func formSectionHeader(_ title: String) -> some View {
+        GridRow {
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .accessibilityAddTraits(.isHeader)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .gridCellColumns(2)
+        }
+    }
+
+    /// Duration field cluster. Shows Days/Hours when maxDays > 0, Hours when maxHours > 0.
+    private func durationFields(
+        _ components: Binding<SubDurationComponents>,
+        disabled: Bool = false,
+        maxDays: Int = 36500,
+        maxHours: Int = 23,
+        maxMinutes: Int = 59
+    ) -> some View {
+        HStack(spacing: 5) {
+            if maxDays > 0 {
+                durationField("Days", value: components.days, range: 0...maxDays)
+            }
+            if maxHours > 0 || maxDays > 0 {
+                durationField("Hours", value: components.hours, range: 0...maxHours)
+            }
+            durationField("Minutes", value: components.minutes, range: 0...maxMinutes)
+            durationField("Seconds", value: components.seconds, range: 0...59)
+        }
+        .disabled(disabled)
+        .opacity(disabled ? 0.4 : 1.0)
+    }
+
+    private func durationField(_ label: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
+        VStack(alignment: .center, spacing: 2) {
+            HStack(spacing: 3) {
+                TextField("", value: value, format: .number)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 46)
+                    .multilineTextAlignment(.trailing)
+                    .onChange(of: value.wrappedValue) { _, v in
+                        value.wrappedValue = max(range.lowerBound, min(range.upperBound, v))
+                    }
+                    .accessibilityLabel(label)
+                Stepper("", value: value, in: range)
+                    .labelsHidden()
+            }
+            Text(label)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize()
+        }
     }
 
     // MARK: - Footer
@@ -391,18 +462,6 @@ private struct SubDurationComponents {
 }
 
 @available(macOS 15.0, *)
-private struct SubSectionHeader: View {
-    let title: String
-
-    var body: some View {
-        Text(title)
-            .font(.system(size: 11, weight: .medium))
-            .foregroundStyle(.secondary)
-            .accessibilityAddTraits(.isHeader)
-    }
-}
-
-@available(macOS 15.0, *)
 private struct SubHelpPopover: View {
     let info: String
     @State private var showPopover = false
@@ -424,60 +483,6 @@ private struct SubHelpPopover: View {
                 .padding(12)
                 .frame(maxWidth: 280)
                 .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-}
-
-@available(macOS 15.0, *)
-private struct SubDurationRow: View {
-    let label: String?
-    @Binding var components: SubDurationComponents
-    var disabled: Bool = false
-    var maxDays: Int = 36500
-    var maxHours: Int = 23
-    var maxMinutes: Int = 59
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if let label {
-                Text(label)
-                    .font(.system(size: 13))
-                    .foregroundStyle(disabled ? .secondary : .primary)
-            }
-
-            HStack(spacing: 12) {
-                if maxDays > 0 {
-                    durationField(label: "Days", value: $components.days, range: 0...maxDays)
-                }
-                if maxHours > 0 || maxDays > 0 {
-                    durationField(label: "Hours", value: $components.hours, range: 0...maxHours)
-                }
-                durationField(label: "Minutes", value: $components.minutes, range: 0...maxMinutes)
-                durationField(label: "Seconds", value: $components.seconds, range: 0...59)
-            }
-            .disabled(disabled)
-            .opacity(disabled ? 0.4 : 1.0)
-        }
-    }
-
-    private func durationField(label: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
-        VStack(spacing: 3) {
-            HStack(spacing: 2) {
-                TextField("", value: value, format: .number)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 58)
-                    .multilineTextAlignment(.trailing)
-                    .onChange(of: value.wrappedValue) { _, v in
-                        value.wrappedValue = max(range.lowerBound, min(range.upperBound, v))
-                    }
-                    .accessibilityLabel("\(label)")
-                Stepper("", value: value, in: range)
-                    .labelsHidden()
-                    .frame(width: 18)
-            }
-            Text(label)
-                .font(.system(size: 10))
-                .foregroundStyle(.secondary)
         }
     }
 }
