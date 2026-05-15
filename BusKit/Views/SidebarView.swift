@@ -95,6 +95,14 @@ private final class SidebarModel {
     var deleteQueueTarget: QueueItem? = nil
     var showDeleteQueueConfirm = false
     var isDeletingQueue = false
+
+    // Create Topic state
+    var showCreateTopicSheet = false
+
+    // Delete Topic state
+    var deleteTopicTarget: TopicItem? = nil
+    var showDeleteTopicConfirm = false
+    var isDeletingTopic = false
 }
 
 // MARK: - Receive Count Dialog
@@ -219,6 +227,12 @@ struct SidebarView: View {
                         }
                     } label: {
                         Label("Topics", systemImage: "bubble.left.and.bubble.right")
+                            .contextMenu {
+                                Button("Create Topic") {
+                                    model.showCreateTopicSheet = true
+                                }
+                                .disabled(!grpc.capabilityMap.createResources)
+                            }
                     }
 
                 } label: {
@@ -290,6 +304,14 @@ struct SidebarView: View {
             .environment(grpc)
             .environment(activityLog)
         }
+        // ── Create Topic sheet ────────────────────────────────
+        .sheet(isPresented: $model.showCreateTopicSheet) {
+            CreateTopicSheet { _ in
+                Task { await load() }
+            }
+            .environment(grpc)
+            .environment(activityLog)
+        }
         // ── Delete Rule confirm ───────────────────────────────────
         .confirmationDialog(
             "Delete Rule?",
@@ -318,6 +340,21 @@ struct SidebarView: View {
         } message: {
             if let q = model.deleteQueueTarget {
                 Text("Queue \"\(q.name)\" and all its messages will be permanently deleted. This cannot be undone.")
+            }
+        }
+        // ── Delete Topic confirm ──────────────────────────────────
+        .confirmationDialog(
+            "Delete Topic?",
+            isPresented: $model.showDeleteTopicConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                Task { await performDeleteTopic() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            if let t = model.deleteTopicTarget {
+                Text("Topic \"\(t.name)\" and all its subscriptions will be permanently deleted. This cannot be undone.")
             }
         }
         .navigationTitle("BusKit")
@@ -588,6 +625,23 @@ struct SidebarView: View {
         }
     }
 
+    private func performDeleteTopic() async {
+        guard let topic = model.deleteTopicTarget else { return }
+        model.isDeletingTopic = true
+        defer { model.isDeletingTopic = false }
+        do {
+            try await grpc.deleteTopic(name: topic.name)
+            model.topics.removeAll { $0.id == topic.id }
+            model.subscriptions.removeValue(forKey: topic.name)
+            activityLog.log(action: .deleteTopic, messageId: topic.name,
+                            result: .success("Topic \"\(topic.name)\" deleted"))
+        } catch {
+            activityLog.log(action: .deleteTopic, messageId: topic.name,
+                            result: .failure(error.localizedDescription),
+                            hint: "The topic may still have active subscriptions.")
+        }
+    }
+
     // MARK: - Data loading
 
     private func load() async {
@@ -646,6 +700,13 @@ private struct TopicRow: View {
             }
         } label: {
             Label(topic.name, systemImage: "bubble.left.and.bubble.right")
+                .contextMenu {
+                    Button("Delete Topic", role: .destructive) {
+                        model.deleteTopicTarget = topic
+                        model.showDeleteTopicConfirm = true
+                    }
+                    .disabled(!grpc.capabilityMap.createResources)
+                }
         }
         .onChange(of: isExpanded) { _, expanded in
             if expanded, model.subscriptions[topic.name] == nil {

@@ -653,6 +653,67 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         return reply;
     }
 
+    // ── Create Topic ─────────────────────────────────────
+
+    public override async Task<CreateTopicReply> CreateTopic(
+        CreateTopicRequest request, ServerCallContext context)
+    {
+        var reply = new CreateTopicReply();
+
+        if (_adminClient == null)
+        {
+            reply.Error = "Not connected";
+            return reply;
+        }
+
+        try
+        {
+            var options = new Azure.Messaging.ServiceBus.Administration.CreateTopicOptions(request.TopicName)
+            {
+                MaxSizeInMegabytes = request.MaxSizeMb > 0 ? (long)request.MaxSizeMb : 1024,
+                DefaultMessageTimeToLive = request.DefaultMessageTtlSeconds > 0
+                    ? TimeSpan.FromSeconds(request.DefaultMessageTtlSeconds)
+                    : TimeSpan.FromDays(14),
+                RequiresDuplicateDetection = request.RequiresDuplicateDetection,
+                EnablePartitioning = request.EnablePartitioning,
+                SupportOrdering = request.SupportOrdering,
+            };
+
+            if (request.AutoDeleteOnIdleSeconds > 0)
+                options.AutoDeleteOnIdle = TimeSpan.FromSeconds(request.AutoDeleteOnIdleSeconds);
+
+            await _adminClient.CreateTopicAsync(options);
+        }
+        catch (Exception ex)
+        {
+            reply.Error = ex.Message;
+        }
+
+        return reply;
+    }
+
+    // ── Delete Topic ─────────────────────────────────────
+
+    public override async Task<DeleteTopicReply> DeleteTopic(
+        DeleteTopicRequest request, ServerCallContext context)
+    {
+        var reply = new DeleteTopicReply();
+        try
+        {
+            if (_adminClient == null)
+            {
+                reply.Error = "Not connected to Service Bus.";
+                return reply;
+            }
+            await _adminClient.DeleteTopicAsync(request.TopicName);
+        }
+        catch (Exception ex)
+        {
+            reply.Error = ex.Message;
+        }
+        return reply;
+    }
+
     // ── Get Queue Properties ─────────────────────────────
 
     public override async Task<GetQueuePropertiesReply> GetQueueProperties(

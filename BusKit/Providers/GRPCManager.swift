@@ -617,6 +617,40 @@ final class GRPCManager {
         if !reply.error.isEmpty { throw GRPCManagerError.operationFailed(reply.error) }
     }
 
+    // MARK: - Create Topic
+
+    func createTopic(
+        name: String,
+        maxSizeMb: Int64,
+        defaultMessageTtlSeconds: Int64,
+        requiresDuplicateDetection: Bool,
+        enablePartitioning: Bool,
+        supportOrdering: Bool,
+        autoDeleteOnIdleSeconds: Int64
+    ) async throws {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_CreateTopicRequest()
+        req.topicName = name
+        req.maxSizeMb = maxSizeMb
+        req.defaultMessageTtlSeconds = defaultMessageTtlSeconds
+        req.requiresDuplicateDetection = requiresDuplicateDetection
+        req.enablePartitioning = enablePartitioning
+        req.supportOrdering = supportOrdering
+        req.autoDeleteOnIdleSeconds = autoDeleteOnIdleSeconds
+        let reply: Buskit_CreateTopicReply = try await buskit.createTopic(req)
+        if !reply.error.isEmpty { throw GRPCManagerError.operationFailed(reply.error) }
+    }
+
+    // MARK: - Delete Topic
+
+    func deleteTopic(name: String) async throws {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_DeleteTopicRequest()
+        req.topicName = name
+        let reply: Buskit_DeleteTopicReply = try await buskit.deleteTopic(req)
+        if !reply.error.isEmpty { throw GRPCManagerError.operationFailed(reply.error) }
+    }
+
     // MARK: - Add Rule
 
     func addRule(topicName: String, subscriptionName: String, ruleName: String, sqlFilter: String) async throws {

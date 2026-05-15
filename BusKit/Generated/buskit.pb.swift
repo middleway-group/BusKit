@@ -689,6 +689,66 @@ public struct Buskit_DeleteQueueReply: Sendable {
   public init() {}
 }
 
+public struct Buskit_CreateTopicRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var topicName: String = String()
+
+  public var maxSizeMb: Int64 = 0
+
+  public var defaultMessageTtlSeconds: Int64 = 0
+
+  public var requiresDuplicateDetection: Bool = false
+
+  public var enablePartitioning: Bool = false
+
+  public var supportOrdering: Bool = false
+
+  public var autoDeleteOnIdleSeconds: Int64 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_CreateTopicReply: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var error: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_DeleteTopicRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var topicName: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_DeleteTopicReply: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var error: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
 public struct Buskit_GetQueuePropertiesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -2511,6 +2571,144 @@ extension Buskit_DeleteQueueReply: SwiftProtobuf.Message, SwiftProtobuf._Message
   }
 
   public static func ==(lhs: Buskit_DeleteQueueReply, rhs: Buskit_DeleteQueueReply) -> Bool {
+    if lhs.error != rhs.error {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_CreateTopicRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".CreateTopicRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0\u{3}max_size_mb\0\u{3}default_message_ttl_seconds\0\u{3}requires_duplicate_detection\0\u{3}enable_partitioning\0\u{3}support_ordering\0\u{3}auto_delete_on_idle_seconds\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.topicName) }()
+      case 2: try { try decoder.decodeSingularInt64Field(value: &self.maxSizeMb) }()
+      case 3: try { try decoder.decodeSingularInt64Field(value: &self.defaultMessageTtlSeconds) }()
+      case 4: try { try decoder.decodeSingularBoolField(value: &self.requiresDuplicateDetection) }()
+      case 5: try { try decoder.decodeSingularBoolField(value: &self.enablePartitioning) }()
+      case 6: try { try decoder.decodeSingularBoolField(value: &self.supportOrdering) }()
+      case 7: try { try decoder.decodeSingularInt64Field(value: &self.autoDeleteOnIdleSeconds) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.topicName.isEmpty {
+      try visitor.visitSingularStringField(value: self.topicName, fieldNumber: 1)
+    }
+    if self.maxSizeMb != 0 {
+      try visitor.visitSingularInt64Field(value: self.maxSizeMb, fieldNumber: 2)
+    }
+    if self.defaultMessageTtlSeconds != 0 {
+      try visitor.visitSingularInt64Field(value: self.defaultMessageTtlSeconds, fieldNumber: 3)
+    }
+    if self.requiresDuplicateDetection != false {
+      try visitor.visitSingularBoolField(value: self.requiresDuplicateDetection, fieldNumber: 4)
+    }
+    if self.enablePartitioning != false {
+      try visitor.visitSingularBoolField(value: self.enablePartitioning, fieldNumber: 5)
+    }
+    if self.supportOrdering != false {
+      try visitor.visitSingularBoolField(value: self.supportOrdering, fieldNumber: 6)
+    }
+    if self.autoDeleteOnIdleSeconds != 0 {
+      try visitor.visitSingularInt64Field(value: self.autoDeleteOnIdleSeconds, fieldNumber: 7)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_CreateTopicRequest, rhs: Buskit_CreateTopicRequest) -> Bool {
+    if lhs.topicName != rhs.topicName {return false}
+    if lhs.maxSizeMb != rhs.maxSizeMb {return false}
+    if lhs.defaultMessageTtlSeconds != rhs.defaultMessageTtlSeconds {return false}
+    if lhs.requiresDuplicateDetection != rhs.requiresDuplicateDetection {return false}
+    if lhs.enablePartitioning != rhs.enablePartitioning {return false}
+    if lhs.supportOrdering != rhs.supportOrdering {return false}
+    if lhs.autoDeleteOnIdleSeconds != rhs.autoDeleteOnIdleSeconds {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_CreateTopicReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".CreateTopicReply"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.error) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.error.isEmpty {
+      try visitor.visitSingularStringField(value: self.error, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_CreateTopicReply, rhs: Buskit_CreateTopicReply) -> Bool {
+    if lhs.error != rhs.error {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_DeleteTopicRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DeleteTopicRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.topicName) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.topicName.isEmpty {
+      try visitor.visitSingularStringField(value: self.topicName, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_DeleteTopicRequest, rhs: Buskit_DeleteTopicRequest) -> Bool {
+    if lhs.topicName != rhs.topicName {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_DeleteTopicReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DeleteTopicReply"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.error) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.error.isEmpty {
+      try visitor.visitSingularStringField(value: self.error, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_DeleteTopicReply, rhs: Buskit_DeleteTopicReply) -> Bool {
     if lhs.error != rhs.error {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

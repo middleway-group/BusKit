@@ -212,6 +212,30 @@ internal enum Buskit_BusKitService: Sendable {
                 method: "DeleteQueue"
             )
         }
+        /// Namespace for "CreateTopic" metadata.
+        internal enum CreateTopic: Sendable {
+            /// Request type for "CreateTopic".
+            internal typealias Input = Buskit_CreateTopicRequest
+            /// Response type for "CreateTopic".
+            internal typealias Output = Buskit_CreateTopicReply
+            /// Descriptor for "CreateTopic".
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "CreateTopic"
+            )
+        }
+        /// Namespace for "DeleteTopic" metadata.
+        internal enum DeleteTopic: Sendable {
+            /// Request type for "DeleteTopic".
+            internal typealias Input = Buskit_DeleteTopicRequest
+            /// Response type for "DeleteTopic".
+            internal typealias Output = Buskit_DeleteTopicReply
+            /// Descriptor for "DeleteTopic".
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "DeleteTopic"
+            )
+        }
         /// Namespace for "GetQueueProperties" metadata.
         internal enum GetQueueProperties: Sendable {
             /// Request type for "GetQueueProperties".
@@ -338,6 +362,8 @@ internal enum Buskit_BusKitService: Sendable {
             DeleteRule.descriptor,
             CreateQueue.descriptor,
             DeleteQueue.descriptor,
+            CreateTopic.descriptor,
+            DeleteTopic.descriptor,
             GetQueueProperties.descriptor,
             GetSubscriptionProperties.descriptor,
             UpdateSubscriptionTtl.descriptor,
@@ -668,6 +694,44 @@ extension Buskit_BusKitService {
             deserializer: some GRPCCore.MessageDeserializer<Buskit_DeleteQueueReply>,
             options: GRPCCore.CallOptions,
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteQueueReply>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "CreateTopic" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_CreateTopicRequest` message.
+        ///   - serializer: A serializer for `Buskit_CreateTopicRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_CreateTopicReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func createTopic<Result>(
+            request: GRPCCore.ClientRequest<Buskit_CreateTopicRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_CreateTopicRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_CreateTopicReply>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_CreateTopicReply>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "DeleteTopic" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_DeleteTopicRequest` message.
+        ///   - serializer: A serializer for `Buskit_DeleteTopicRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_DeleteTopicReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func deleteTopic<Result>(
+            request: GRPCCore.ClientRequest<Buskit_DeleteTopicRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_DeleteTopicRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_DeleteTopicReply>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteTopicReply>) async throws -> Result
         ) async throws -> Result where Result: Sendable
 
         /// Call the "GetQueueProperties" method.
@@ -1331,6 +1395,66 @@ extension Buskit_BusKitService {
             try await self.client.unary(
                 request: request,
                 descriptor: Buskit_BusKitService.Method.DeleteQueue.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "CreateTopic" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_CreateTopicRequest` message.
+        ///   - serializer: A serializer for `Buskit_CreateTopicRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_CreateTopicReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        internal func createTopic<Result>(
+            request: GRPCCore.ClientRequest<Buskit_CreateTopicRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_CreateTopicRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_CreateTopicReply>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_CreateTopicReply>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Buskit_BusKitService.Method.CreateTopic.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "DeleteTopic" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_DeleteTopicRequest` message.
+        ///   - serializer: A serializer for `Buskit_DeleteTopicRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_DeleteTopicReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        internal func deleteTopic<Result>(
+            request: GRPCCore.ClientRequest<Buskit_DeleteTopicRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_DeleteTopicRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_DeleteTopicReply>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteTopicReply>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Buskit_BusKitService.Method.DeleteTopic.descriptor,
                 serializer: serializer,
                 deserializer: deserializer,
                 options: options,
@@ -2006,6 +2130,56 @@ extension Buskit_BusKitService.ClientProtocol {
             request: request,
             serializer: GRPCProtobuf.ProtobufSerializer<Buskit_DeleteQueueRequest>(),
             deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_DeleteQueueReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "CreateTopic" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_CreateTopicRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func createTopic<Result>(
+        request: GRPCCore.ClientRequest<Buskit_CreateTopicRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_CreateTopicReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.createTopic(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_CreateTopicRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_CreateTopicReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DeleteTopic" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_DeleteTopicRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func deleteTopic<Result>(
+        request: GRPCCore.ClientRequest<Buskit_DeleteTopicRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteTopicReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.deleteTopic(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_DeleteTopicRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_DeleteTopicReply>(),
             options: options,
             onResponse: handleResponse
         )
@@ -2696,6 +2870,64 @@ extension Buskit_BusKitService.ClientProtocol {
             metadata: metadata
         )
         return try await self.deleteQueue(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "CreateTopic" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func createTopic<Result>(
+        _ message: Buskit_CreateTopicRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_CreateTopicReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Buskit_CreateTopicRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.createTopic(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DeleteTopic" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func deleteTopic<Result>(
+        _ message: Buskit_DeleteTopicRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteTopicReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Buskit_DeleteTopicRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.deleteTopic(
             request: request,
             options: options,
             onResponse: handleResponse

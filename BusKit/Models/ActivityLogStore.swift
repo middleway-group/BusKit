@@ -13,6 +13,8 @@ enum ActionKind: String, CaseIterable {
     case updateTtl   = "Update TTL"
     case createQueue = "Create Queue"
     case deleteQueue = "Delete Queue"
+    case createTopic = "Create Topic"
+    case deleteTopic = "Delete Topic"
 
     var systemImage: String {
         switch self {
@@ -25,6 +27,8 @@ enum ActionKind: String, CaseIterable {
         case .updateTtl:   return "clock.arrow.2.circlepath"
         case .createQueue: return "tray.and.arrow.down"
         case .deleteQueue: return "tray.xmark"
+        case .createTopic: return "bubble.left.and.bubble.right"
+        case .deleteTopic: return "bubble.left.and.bubble.right.fill"
         }
     }
 }
