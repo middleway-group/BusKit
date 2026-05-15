@@ -33,8 +33,22 @@ final class UpdateChecker {
         }
 
         guard let data,
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let tagName = json["tag_name"] as? String,
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else {
+            if userInitiated {
+                showError("Received an unexpected response from the server.")
+            }
+            return
+        }
+
+        if let message = json["message"] as? String, message == "Not Found" {
+            if userInitiated {
+                showNoReleasesAvailable()
+            }
+            return
+        }
+
+        guard let tagName = json["tag_name"] as? String,
               let htmlURL = json["html_url"] as? String
         else {
             if userInitiated {
@@ -74,6 +88,15 @@ final class UpdateChecker {
         let alert = NSAlert()
         alert.messageText = "You're up-to-date!"
         alert.informativeText = "BusKit \(currentVersion) is currently the newest version available."
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
+    private func showNoReleasesAvailable() {
+        let alert = NSAlert()
+        alert.messageText = "No Releases Available"
+        alert.informativeText = "There are no releases published for BusKit yet."
         alert.alertStyle = .informational
         alert.addButton(withTitle: "OK")
         alert.runModal()
