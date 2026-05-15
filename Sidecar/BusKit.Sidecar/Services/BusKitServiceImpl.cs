@@ -584,8 +584,6 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         return reply;
     }
 
-    }
-
     // ── Create Queue ──────────────────────────────────────
 
     public override async Task<CreateQueueReply> CreateQueue(
