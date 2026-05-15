@@ -1277,6 +1277,17 @@ extension Buskit_BusKitService {
         }
 
         /// Call the "GetQueueProperties" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_GetQueuePropertiesRequest` message.
+        ///   - serializer: A serializer for `Buskit_GetQueuePropertiesRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_GetQueuePropertiesReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        internal func getQueueProperties<Result>(
             request: GRPCCore.ClientRequest<Buskit_GetQueuePropertiesRequest>,
             serializer: some GRPCCore.MessageSerializer<Buskit_GetQueuePropertiesRequest>,
             deserializer: some GRPCCore.MessageDeserializer<Buskit_GetQueuePropertiesReply>,
@@ -1923,6 +1934,22 @@ extension Buskit_BusKitService.ClientProtocol {
     ///       hasn't already finished.
     /// - Returns: The result of `handleResponse`.
     internal func getQueueProperties<Result>(
+        request: GRPCCore.ClientRequest<Buskit_GetQueuePropertiesRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_GetQueuePropertiesReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.getQueueProperties(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_GetQueuePropertiesRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_GetQueuePropertiesReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "GetSubscriptionProperties" method.
     ///
     /// - Parameters:
     ///   - request: A request containing a single `Buskit_GetSubscriptionPropertiesRequest` message.
