@@ -575,6 +575,38 @@ final class GRPCManager {
         return Array(reply.rules)
     }
 
+    // MARK: - Create Queue
+
+    func createQueue(
+        name: String,
+        maxSizeMb: Int64,
+        maxDeliveryCount: Int32,
+        defaultMessageTtlSeconds: Int64,
+        lockDurationSeconds: Int64,
+        requiresDuplicateDetection: Bool,
+        requiresSession: Bool,
+        deadLetteringOnExpiration: Bool,
+        enablePartitioning: Bool,
+        forwardTo: String,
+        autoDeleteOnIdleSeconds: Int64
+    ) async throws {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_CreateQueueRequest()
+        req.queueName = name
+        req.maxSizeMb = maxSizeMb
+        req.maxDeliveryCount = maxDeliveryCount
+        req.defaultMessageTtlSeconds = defaultMessageTtlSeconds
+        req.lockDurationSeconds = lockDurationSeconds
+        req.requiresDuplicateDetection = requiresDuplicateDetection
+        req.requiresSession = requiresSession
+        req.deadLetteringOnExpiration = deadLetteringOnExpiration
+        req.enablePartitioning = enablePartitioning
+        req.forwardTo = forwardTo
+        req.autoDeleteOnIdleSeconds = autoDeleteOnIdleSeconds
+        let reply: Buskit_CreateQueueReply = try await buskit.createQueue(req)
+        if !reply.error.isEmpty { throw GRPCManagerError.operationFailed(reply.error) }
+    }
+
     // MARK: - Add Rule
 
     func addRule(topicName: String, subscriptionName: String, ruleName: String, sqlFilter: String) async throws {

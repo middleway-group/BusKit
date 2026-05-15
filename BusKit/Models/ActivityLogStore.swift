@@ -11,16 +11,18 @@ enum ActionKind: String, CaseIterable {
     case editRule    = "Edit Rule"
     case deleteRule  = "Delete Rule"
     case updateTtl   = "Update TTL"
+    case createQueue = "Create Queue"
 
     var systemImage: String {
         switch self {
-        case .delete:     return "trash"
-        case .save:       return "square.and.arrow.down"
-        case .resubmit:   return "arrow.uturn.right"
-        case .repair:     return "wrench.and.screwdriver"
-        case .editRule:   return "pencil"
-        case .deleteRule: return "line.3.horizontal.decrease.circle.fill"
-        case .updateTtl:  return "clock.arrow.2.circlepath"
+        case .delete:      return "trash"
+        case .save:        return "square.and.arrow.down"
+        case .resubmit:    return "arrow.uturn.right"
+        case .repair:      return "wrench.and.screwdriver"
+        case .editRule:    return "pencil"
+        case .deleteRule:  return "line.3.horizontal.decrease.circle.fill"
+        case .updateTtl:   return "clock.arrow.2.circlepath"
+        case .createQueue: return "tray.and.arrow.down"
         }
     }
 }

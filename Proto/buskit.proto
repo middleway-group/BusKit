@@ -21,6 +21,7 @@ service BusKitService {
   rpc AddRule (AddRuleRequest) returns (AddRuleReply);
   rpc UpdateRule (UpdateRuleRequest) returns (UpdateRuleReply);
   rpc DeleteRule (DeleteRuleRequest) returns (DeleteRuleReply);
+  rpc CreateQueue (CreateQueueRequest) returns (CreateQueueReply);
   rpc GetQueueProperties (GetQueuePropertiesRequest) returns (GetQueuePropertiesReply);
   rpc GetSubscriptionProperties (GetSubscriptionPropertiesRequest) returns (GetSubscriptionPropertiesReply);
   rpc UpdateSubscriptionTtl (UpdateSubscriptionTtlRequest) returns (UpdateSubscriptionTtlReply);
@@ -231,6 +232,26 @@ message DeleteRuleRequest {
 }
 
 message DeleteRuleReply {
+  string error = 1;
+}
+
+// ─── Create Queue ─────────────────────────────────────
+
+message CreateQueueRequest {
+  string queue_name = 1;
+  int64 max_size_mb = 2;
+  int32 max_delivery_count = 3;
+  int64 default_message_ttl_seconds = 4;
+  int64 lock_duration_seconds = 5;
+  bool requires_duplicate_detection = 6;
+  bool requires_session = 7;
+  bool dead_lettering_on_expiration = 8;
+  bool enable_partitioning = 9;
+  string forward_to = 10;
+  int64 auto_delete_on_idle_seconds = 11;
+}
+
+message CreateQueueReply {
   string error = 1;
 }
 

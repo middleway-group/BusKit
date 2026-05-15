@@ -188,6 +188,18 @@ internal enum Buskit_BusKitService: Sendable {
                 method: "DeleteRule"
             )
         }
+        /// Namespace for "CreateQueue" metadata.
+        internal enum CreateQueue: Sendable {
+            /// Request type for "CreateQueue".
+            internal typealias Input = Buskit_CreateQueueRequest
+            /// Response type for "CreateQueue".
+            internal typealias Output = Buskit_CreateQueueReply
+            /// Descriptor for "CreateQueue".
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "CreateQueue"
+            )
+        }
         /// Namespace for "GetQueueProperties" metadata.
         internal enum GetQueueProperties: Sendable {
             /// Request type for "GetQueueProperties".
@@ -312,6 +324,7 @@ internal enum Buskit_BusKitService: Sendable {
             AddRule.descriptor,
             UpdateRule.descriptor,
             DeleteRule.descriptor,
+            CreateQueue.descriptor,
             GetQueueProperties.descriptor,
             GetSubscriptionProperties.descriptor,
             UpdateSubscriptionTtl.descriptor,
@@ -604,6 +617,25 @@ extension Buskit_BusKitService {
             deserializer: some GRPCCore.MessageDeserializer<Buskit_DeleteRuleReply>,
             options: GRPCCore.CallOptions,
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteRuleReply>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "CreateQueue" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_CreateQueueRequest` message.
+        ///   - serializer: A serializer for `Buskit_CreateQueueRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_CreateQueueReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func createQueue<Result>(
+            request: GRPCCore.ClientRequest<Buskit_CreateQueueRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_CreateQueueRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_CreateQueueReply>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_CreateQueueReply>) async throws -> Result
         ) async throws -> Result where Result: Sendable
 
         /// Call the "GetQueueProperties" method.
@@ -1214,18 +1246,37 @@ extension Buskit_BusKitService {
             )
         }
 
-        /// Call the "GetQueueProperties" method.
+        /// Call the "CreateQueue" method.
         ///
         /// - Parameters:
-        ///   - request: A request containing a single `Buskit_GetQueuePropertiesRequest` message.
-        ///   - serializer: A serializer for `Buskit_GetQueuePropertiesRequest` messages.
-        ///   - deserializer: A deserializer for `Buskit_GetQueuePropertiesReply` messages.
+        ///   - request: A request containing a single `Buskit_CreateQueueRequest` message.
+        ///   - serializer: A serializer for `Buskit_CreateQueueRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_CreateQueueReply` messages.
         ///   - options: Options to apply to this RPC.
         ///   - handleResponse: A closure which handles the response, the result of which is
         ///       returned to the caller. Returning from the closure will cancel the RPC if it
         ///       hasn't already finished.
         /// - Returns: The result of `handleResponse`.
-        internal func getQueueProperties<Result>(
+        internal func createQueue<Result>(
+            request: GRPCCore.ClientRequest<Buskit_CreateQueueRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_CreateQueueRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_CreateQueueReply>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_CreateQueueReply>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Buskit_BusKitService.Method.CreateQueue.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "GetQueueProperties" method.
             request: GRPCCore.ClientRequest<Buskit_GetQueuePropertiesRequest>,
             serializer: some GRPCCore.MessageSerializer<Buskit_GetQueuePropertiesRequest>,
             deserializer: some GRPCCore.MessageDeserializer<Buskit_GetQueuePropertiesReply>,
@@ -1837,6 +1888,31 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
+    /// Call the "CreateQueue" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_CreateQueueRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func createQueue<Result>(
+        request: GRPCCore.ClientRequest<Buskit_CreateQueueRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_CreateQueueReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.createQueue(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_CreateQueueRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_CreateQueueReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
     /// Call the "GetQueueProperties" method.
     ///
     /// - Parameters:
@@ -1847,22 +1923,6 @@ extension Buskit_BusKitService.ClientProtocol {
     ///       hasn't already finished.
     /// - Returns: The result of `handleResponse`.
     internal func getQueueProperties<Result>(
-        request: GRPCCore.ClientRequest<Buskit_GetQueuePropertiesRequest>,
-        options: GRPCCore.CallOptions = .defaults,
-        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_GetQueuePropertiesReply>) async throws -> Result = { response in
-            try response.message
-        }
-    ) async throws -> Result where Result: Sendable {
-        try await self.getQueueProperties(
-            request: request,
-            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_GetQueuePropertiesRequest>(),
-            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_GetQueuePropertiesReply>(),
-            options: options,
-            onResponse: handleResponse
-        )
-    }
-
-    /// Call the "GetSubscriptionProperties" method.
     ///
     /// - Parameters:
     ///   - request: A request containing a single `Buskit_GetSubscriptionPropertiesRequest` message.
@@ -2464,6 +2524,35 @@ extension Buskit_BusKitService.ClientProtocol {
             metadata: metadata
         )
         return try await self.deleteRule(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "CreateQueue" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func createQueue<Result>(
+        _ message: Buskit_CreateQueueRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_CreateQueueReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Buskit_CreateQueueRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.createQueue(
             request: request,
             options: options,
             onResponse: handleResponse

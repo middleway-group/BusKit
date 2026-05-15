@@ -621,6 +621,50 @@ public struct Buskit_DeleteRuleReply: Sendable {
   public init() {}
 }
 
+public struct Buskit_CreateQueueRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var queueName: String = String()
+
+  public var maxSizeMb: Int64 = 0
+
+  public var maxDeliveryCount: Int32 = 0
+
+  public var defaultMessageTtlSeconds: Int64 = 0
+
+  public var lockDurationSeconds: Int64 = 0
+
+  public var requiresDuplicateDetection: Bool = false
+
+  public var requiresSession: Bool = false
+
+  public var deadLetteringOnExpiration: Bool = false
+
+  public var enablePartitioning: Bool = false
+
+  public var forwardTo: String = String()
+
+  public var autoDeleteOnIdleSeconds: Int64 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_CreateQueueReply: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var error: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
 public struct Buskit_GetQueuePropertiesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -2279,6 +2323,116 @@ extension Buskit_DeleteRuleReply: SwiftProtobuf.Message, SwiftProtobuf._MessageI
   }
 
   public static func ==(lhs: Buskit_DeleteRuleReply, rhs: Buskit_DeleteRuleReply) -> Bool {
+    if lhs.error != rhs.error {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_CreateQueueRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".CreateQueueRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}queue_name\0\u{3}max_size_mb\0\u{3}max_delivery_count\0\u{3}default_message_ttl_seconds\0\u{3}lock_duration_seconds\0\u{3}requires_duplicate_detection\0\u{3}requires_session\0\u{3}dead_lettering_on_expiration\0\u{3}enable_partitioning\0\u{3}forward_to\0\u{3}auto_delete_on_idle_seconds\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1:  try { try decoder.decodeSingularStringField(value: &self.queueName) }()
+      case 2:  try { try decoder.decodeSingularInt64Field(value: &self.maxSizeMb) }()
+      case 3:  try { try decoder.decodeSingularInt32Field(value: &self.maxDeliveryCount) }()
+      case 4:  try { try decoder.decodeSingularInt64Field(value: &self.defaultMessageTtlSeconds) }()
+      case 5:  try { try decoder.decodeSingularInt64Field(value: &self.lockDurationSeconds) }()
+      case 6:  try { try decoder.decodeSingularBoolField(value: &self.requiresDuplicateDetection) }()
+      case 7:  try { try decoder.decodeSingularBoolField(value: &self.requiresSession) }()
+      case 8:  try { try decoder.decodeSingularBoolField(value: &self.deadLetteringOnExpiration) }()
+      case 9:  try { try decoder.decodeSingularBoolField(value: &self.enablePartitioning) }()
+      case 10: try { try decoder.decodeSingularStringField(value: &self.forwardTo) }()
+      case 11: try { try decoder.decodeSingularInt64Field(value: &self.autoDeleteOnIdleSeconds) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.queueName.isEmpty {
+      try visitor.visitSingularStringField(value: self.queueName, fieldNumber: 1)
+    }
+    if self.maxSizeMb != 0 {
+      try visitor.visitSingularInt64Field(value: self.maxSizeMb, fieldNumber: 2)
+    }
+    if self.maxDeliveryCount != 0 {
+      try visitor.visitSingularInt32Field(value: self.maxDeliveryCount, fieldNumber: 3)
+    }
+    if self.defaultMessageTtlSeconds != 0 {
+      try visitor.visitSingularInt64Field(value: self.defaultMessageTtlSeconds, fieldNumber: 4)
+    }
+    if self.lockDurationSeconds != 0 {
+      try visitor.visitSingularInt64Field(value: self.lockDurationSeconds, fieldNumber: 5)
+    }
+    if self.requiresDuplicateDetection != false {
+      try visitor.visitSingularBoolField(value: self.requiresDuplicateDetection, fieldNumber: 6)
+    }
+    if self.requiresSession != false {
+      try visitor.visitSingularBoolField(value: self.requiresSession, fieldNumber: 7)
+    }
+    if self.deadLetteringOnExpiration != false {
+      try visitor.visitSingularBoolField(value: self.deadLetteringOnExpiration, fieldNumber: 8)
+    }
+    if self.enablePartitioning != false {
+      try visitor.visitSingularBoolField(value: self.enablePartitioning, fieldNumber: 9)
+    }
+    if !self.forwardTo.isEmpty {
+      try visitor.visitSingularStringField(value: self.forwardTo, fieldNumber: 10)
+    }
+    if self.autoDeleteOnIdleSeconds != 0 {
+      try visitor.visitSingularInt64Field(value: self.autoDeleteOnIdleSeconds, fieldNumber: 11)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_CreateQueueRequest, rhs: Buskit_CreateQueueRequest) -> Bool {
+    if lhs.queueName != rhs.queueName {return false}
+    if lhs.maxSizeMb != rhs.maxSizeMb {return false}
+    if lhs.maxDeliveryCount != rhs.maxDeliveryCount {return false}
+    if lhs.defaultMessageTtlSeconds != rhs.defaultMessageTtlSeconds {return false}
+    if lhs.lockDurationSeconds != rhs.lockDurationSeconds {return false}
+    if lhs.requiresDuplicateDetection != rhs.requiresDuplicateDetection {return false}
+    if lhs.requiresSession != rhs.requiresSession {return false}
+    if lhs.deadLetteringOnExpiration != rhs.deadLetteringOnExpiration {return false}
+    if lhs.enablePartitioning != rhs.enablePartitioning {return false}
+    if lhs.forwardTo != rhs.forwardTo {return false}
+    if lhs.autoDeleteOnIdleSeconds != rhs.autoDeleteOnIdleSeconds {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_CreateQueueReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".CreateQueueReply"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.error) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.error.isEmpty {
+      try visitor.visitSingularStringField(value: self.error, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_CreateQueueReply, rhs: Buskit_CreateQueueReply) -> Bool {
     if lhs.error != rhs.error {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

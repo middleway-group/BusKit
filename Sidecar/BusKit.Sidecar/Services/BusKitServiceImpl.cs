@@ -584,6 +584,55 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         return reply;
     }
 
+    }
+
+    // ── Create Queue ──────────────────────────────────────
+
+    public override async Task<CreateQueueReply> CreateQueue(
+        CreateQueueRequest request, ServerCallContext context)
+    {
+        var reply = new CreateQueueReply();
+
+        if (_adminClient == null)
+        {
+            reply.Error = "Not connected";
+            return reply;
+        }
+
+        try
+        {
+            var options = new Azure.Messaging.ServiceBus.Administration.CreateQueueOptions(request.QueueName)
+            {
+                MaxSizeInMegabytes = request.MaxSizeMb > 0 ? (long)request.MaxSizeMb : 1024,
+                MaxDeliveryCount = request.MaxDeliveryCount > 0 ? (int)request.MaxDeliveryCount : 10,
+                DefaultMessageTimeToLive = request.DefaultMessageTtlSeconds > 0
+                    ? TimeSpan.FromSeconds(request.DefaultMessageTtlSeconds)
+                    : TimeSpan.FromDays(14),
+                LockDuration = request.LockDurationSeconds > 0
+                    ? TimeSpan.FromSeconds(request.LockDurationSeconds)
+                    : TimeSpan.FromMinutes(1),
+                RequiresDuplicateDetection = request.RequiresDuplicateDetection,
+                RequiresSession = request.RequiresSession,
+                DeadLetteringOnMessageExpiration = request.DeadLetteringOnExpiration,
+                EnablePartitioning = request.EnablePartitioning,
+            };
+
+            if (!string.IsNullOrWhiteSpace(request.ForwardTo))
+                options.ForwardTo = request.ForwardTo;
+
+            if (request.AutoDeleteOnIdleSeconds > 0)
+                options.AutoDeleteOnIdle = TimeSpan.FromSeconds(request.AutoDeleteOnIdleSeconds);
+
+            await _adminClient.CreateQueueAsync(options);
+        }
+        catch (Exception ex)
+        {
+            reply.Error = ex.Message;
+        }
+
+        return reply;
+    }
+
     // ── Get Queue Properties ─────────────────────────────
 
     public override async Task<GetQueuePropertiesReply> GetQueueProperties(

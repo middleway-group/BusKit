@@ -87,6 +87,9 @@ private final class SidebarModel {
     var addRuleFilter = ""
     var addRuleError: String? = nil
     var isAddingRule  = false
+
+    // Create Queue state
+    var showCreateQueueSheet = false
 }
 
 // MARK: - Receive Count Dialog
@@ -192,6 +195,12 @@ struct SidebarView: View {
                     } label: {
                         Label("Queues", systemImage: "tray.full")
                     }
+                    .contextMenu {
+                        Button("Create Queue") {
+                            model.showCreateQueueSheet = true
+                        }
+                        .disabled(!grpc.capabilityMap.createResources)
+                    }
 
                     // ── Topics ──────────────────────────────────────
                     DisclosureGroup(isExpanded: $topicsExpanded) {
@@ -267,6 +276,14 @@ struct SidebarView: View {
                     Task { await performAddRule() }
                 }
             }
+        }
+        // ── Create Queue sheet ────────────────────────────────
+        .sheet(isPresented: $model.showCreateQueueSheet) {
+            CreateQueueSheet { _ in
+                Task { await load() }
+            }
+            .environment(grpc)
+            .environment(activityLog)
         }
         // ── Delete Rule confirm ───────────────────────────────────
         .confirmationDialog(
