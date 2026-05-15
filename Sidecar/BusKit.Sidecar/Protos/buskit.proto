@@ -25,6 +25,7 @@ service BusKitService {
   rpc DeleteQueue (DeleteQueueRequest) returns (DeleteQueueReply);
   rpc CreateTopic (CreateTopicRequest) returns (CreateTopicReply);
   rpc DeleteTopic (DeleteTopicRequest) returns (DeleteTopicReply);
+  rpc CreateSubscription (CreateSubscriptionRequest) returns (CreateSubscriptionReply);
   rpc GetQueueProperties (GetQueuePropertiesRequest) returns (GetQueuePropertiesReply);
   rpc GetSubscriptionProperties (GetSubscriptionPropertiesRequest) returns (GetSubscriptionPropertiesReply);
   rpc UpdateSubscriptionTtl (UpdateSubscriptionTtlRequest) returns (UpdateSubscriptionTtlReply);
@@ -287,6 +288,27 @@ message DeleteTopicRequest {
 }
 
 message DeleteTopicReply {
+  string error = 1;
+}
+
+// ─── Create Subscription ─────────────────────────────
+
+message CreateSubscriptionRequest {
+  string topic_name = 1;
+  string subscription_name = 2;
+  int32 max_delivery_count = 3;
+  int64 default_message_ttl_seconds = 4;
+  int64 lock_duration_seconds = 5;
+  int64 auto_delete_on_idle_seconds = 6;
+  bool never_auto_delete = 7;
+  bool enable_sessions = 8;
+  bool dead_lettering_on_expiration = 9;
+  bool dead_lettering_on_filter_evaluation = 10;
+  bool forward_messages = 11;
+  string forward_to = 12;
+}
+
+message CreateSubscriptionReply {
   string error = 1;
 }
 

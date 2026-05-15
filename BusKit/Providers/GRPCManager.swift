@@ -651,7 +651,41 @@ final class GRPCManager {
         if !reply.error.isEmpty { throw GRPCManagerError.operationFailed(reply.error) }
     }
 
-    // MARK: - Add Rule
+    // MARK: - Create Subscription
+
+    func createSubscription(
+        topicName: String,
+        subscriptionName: String,
+        maxDeliveryCount: Int32,
+        defaultMessageTtlSeconds: Int64,
+        lockDurationSeconds: Int64,
+        autoDeleteOnIdleSeconds: Int64,
+        neverAutoDelete: Bool,
+        enableSessions: Bool,
+        deadLetteringOnExpiration: Bool,
+        deadLetteringOnFilterEvaluation: Bool,
+        forwardMessages: Bool,
+        forwardTo: String
+    ) async throws {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_CreateSubscriptionRequest()
+        req.topicName = topicName
+        req.subscriptionName = subscriptionName
+        req.maxDeliveryCount = maxDeliveryCount
+        req.defaultMessageTtlSeconds = defaultMessageTtlSeconds
+        req.lockDurationSeconds = lockDurationSeconds
+        req.autoDeleteOnIdleSeconds = autoDeleteOnIdleSeconds
+        req.neverAutoDelete = neverAutoDelete
+        req.enableSessions = enableSessions
+        req.deadLetteringOnExpiration = deadLetteringOnExpiration
+        req.deadLetteringOnFilterEvaluation = deadLetteringOnFilterEvaluation
+        req.forwardMessages = forwardMessages
+        req.forwardTo = forwardTo
+        let reply: Buskit_CreateSubscriptionReply = try await buskit.createSubscription(req)
+        if !reply.error.isEmpty { throw GRPCManagerError.operationFailed(reply.error) }
+    }
+
+
 
     func addRule(topicName: String, subscriptionName: String, ruleName: String, sqlFilter: String) async throws {
         guard let buskit else { throw GRPCManagerError.notConnected }

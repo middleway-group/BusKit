@@ -99,6 +99,10 @@ private final class SidebarModel {
     // Create Topic state
     var showCreateTopicSheet = false
 
+    // Create Subscription state
+    var showCreateSubscriptionSheet = false
+    var createSubscriptionTopic: TopicItem? = nil
+
     // Delete Topic state
     var deleteTopicTarget: TopicItem? = nil
     var showDeleteTopicConfirm = false
@@ -311,6 +315,16 @@ struct SidebarView: View {
             }
             .environment(grpc)
             .environment(activityLog)
+        }
+        // ── Create Subscription sheet ─────────────────────────
+        .sheet(isPresented: $model.showCreateSubscriptionSheet) {
+            if let topic = model.createSubscriptionTopic {
+                CreateSubscriptionSheet(topicName: topic.name) { _ in
+                    model.subscriptions[topic.name] = nil
+                }
+                .environment(grpc)
+                .environment(activityLog)
+            }
         }
         // ── Delete Rule confirm ───────────────────────────────────
         .confirmationDialog(
@@ -701,6 +715,12 @@ private struct TopicRow: View {
         } label: {
             Label(topic.name, systemImage: "bubble.left.and.bubble.right")
                 .contextMenu {
+                    Button("Add Subscription") {
+                        model.createSubscriptionTopic = topic
+                        model.showCreateSubscriptionSheet = true
+                    }
+                    .disabled(!grpc.capabilityMap.createResources)
+                    Divider()
                     Button("Delete Topic", role: .destructive) {
                         model.deleteTopicTarget = topic
                         model.showDeleteTopicConfirm = true

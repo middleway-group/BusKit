@@ -749,6 +749,41 @@ public struct Buskit_DeleteTopicReply: Sendable {
   public init() {}
 }
 
+public struct Buskit_CreateSubscriptionRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var topicName: String = String()
+  public var subscriptionName: String = String()
+  public var maxDeliveryCount: Int32 = 0
+  public var defaultMessageTtlSeconds: Int64 = 0
+  public var lockDurationSeconds: Int64 = 0
+  public var autoDeleteOnIdleSeconds: Int64 = 0
+  public var neverAutoDelete: Bool = false
+  public var enableSessions: Bool = false
+  public var deadLetteringOnExpiration: Bool = false
+  public var deadLetteringOnFilterEvaluation: Bool = false
+  public var forwardMessages: Bool = false
+  public var forwardTo: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_CreateSubscriptionReply: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var error: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
 public struct Buskit_GetQueuePropertiesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -2709,6 +2744,91 @@ extension Buskit_DeleteTopicReply: SwiftProtobuf.Message, SwiftProtobuf._Message
   }
 
   public static func ==(lhs: Buskit_DeleteTopicReply, rhs: Buskit_DeleteTopicReply) -> Bool {
+    if lhs.error != rhs.error {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_CreateSubscriptionRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".CreateSubscriptionRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0\u{3}subscription_name\0\u{3}max_delivery_count\0\u{3}default_message_ttl_seconds\0\u{3}lock_duration_seconds\0\u{3}auto_delete_on_idle_seconds\0\u{3}never_auto_delete\0\u{3}enable_sessions\0\u{3}dead_lettering_on_expiration\0\u{3}dead_lettering_on_filter_evaluation\0\u{3}forward_messages\0\u{3}forward_to\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.topicName) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.subscriptionName) }()
+      case 3: try { try decoder.decodeSingularInt32Field(value: &self.maxDeliveryCount) }()
+      case 4: try { try decoder.decodeSingularInt64Field(value: &self.defaultMessageTtlSeconds) }()
+      case 5: try { try decoder.decodeSingularInt64Field(value: &self.lockDurationSeconds) }()
+      case 6: try { try decoder.decodeSingularInt64Field(value: &self.autoDeleteOnIdleSeconds) }()
+      case 7: try { try decoder.decodeSingularBoolField(value: &self.neverAutoDelete) }()
+      case 8: try { try decoder.decodeSingularBoolField(value: &self.enableSessions) }()
+      case 9: try { try decoder.decodeSingularBoolField(value: &self.deadLetteringOnExpiration) }()
+      case 10: try { try decoder.decodeSingularBoolField(value: &self.deadLetteringOnFilterEvaluation) }()
+      case 11: try { try decoder.decodeSingularBoolField(value: &self.forwardMessages) }()
+      case 12: try { try decoder.decodeSingularStringField(value: &self.forwardTo) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.topicName.isEmpty { try visitor.visitSingularStringField(value: self.topicName, fieldNumber: 1) }
+    if !self.subscriptionName.isEmpty { try visitor.visitSingularStringField(value: self.subscriptionName, fieldNumber: 2) }
+    if self.maxDeliveryCount != 0 { try visitor.visitSingularInt32Field(value: self.maxDeliveryCount, fieldNumber: 3) }
+    if self.defaultMessageTtlSeconds != 0 { try visitor.visitSingularInt64Field(value: self.defaultMessageTtlSeconds, fieldNumber: 4) }
+    if self.lockDurationSeconds != 0 { try visitor.visitSingularInt64Field(value: self.lockDurationSeconds, fieldNumber: 5) }
+    if self.autoDeleteOnIdleSeconds != 0 { try visitor.visitSingularInt64Field(value: self.autoDeleteOnIdleSeconds, fieldNumber: 6) }
+    if self.neverAutoDelete != false { try visitor.visitSingularBoolField(value: self.neverAutoDelete, fieldNumber: 7) }
+    if self.enableSessions != false { try visitor.visitSingularBoolField(value: self.enableSessions, fieldNumber: 8) }
+    if self.deadLetteringOnExpiration != false { try visitor.visitSingularBoolField(value: self.deadLetteringOnExpiration, fieldNumber: 9) }
+    if self.deadLetteringOnFilterEvaluation != false { try visitor.visitSingularBoolField(value: self.deadLetteringOnFilterEvaluation, fieldNumber: 10) }
+    if self.forwardMessages != false { try visitor.visitSingularBoolField(value: self.forwardMessages, fieldNumber: 11) }
+    if !self.forwardTo.isEmpty { try visitor.visitSingularStringField(value: self.forwardTo, fieldNumber: 12) }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_CreateSubscriptionRequest, rhs: Buskit_CreateSubscriptionRequest) -> Bool {
+    if lhs.topicName != rhs.topicName {return false}
+    if lhs.subscriptionName != rhs.subscriptionName {return false}
+    if lhs.maxDeliveryCount != rhs.maxDeliveryCount {return false}
+    if lhs.defaultMessageTtlSeconds != rhs.defaultMessageTtlSeconds {return false}
+    if lhs.lockDurationSeconds != rhs.lockDurationSeconds {return false}
+    if lhs.autoDeleteOnIdleSeconds != rhs.autoDeleteOnIdleSeconds {return false}
+    if lhs.neverAutoDelete != rhs.neverAutoDelete {return false}
+    if lhs.enableSessions != rhs.enableSessions {return false}
+    if lhs.deadLetteringOnExpiration != rhs.deadLetteringOnExpiration {return false}
+    if lhs.deadLetteringOnFilterEvaluation != rhs.deadLetteringOnFilterEvaluation {return false}
+    if lhs.forwardMessages != rhs.forwardMessages {return false}
+    if lhs.forwardTo != rhs.forwardTo {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_CreateSubscriptionReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".CreateSubscriptionReply"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.error) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.error.isEmpty {
+      try visitor.visitSingularStringField(value: self.error, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_CreateSubscriptionReply, rhs: Buskit_CreateSubscriptionReply) -> Bool {
     if lhs.error != rhs.error {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
