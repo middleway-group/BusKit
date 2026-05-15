@@ -1,10 +1,16 @@
 import SwiftUI
 import AppKit
+import Sparkle
 
 // MARK: - AppDelegate
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var aboutWindow: NSWindow?
+    private let updaterController: SPUStandardUpdaterController
+
+    override init() {
+        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+    }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         guard let bundleID = Bundle.main.bundleIdentifier else { return }
@@ -15,7 +21,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         guard !others.isEmpty else { return }
 
-        // Bring the existing instance to the front
         others.first?.activate(options: .activateIgnoringOtherApps)
 
         let alert = NSAlert()
@@ -29,7 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func checkForUpdates() {
-        UpdateChecker.shared.checkForUpdates()
+        updaterController.checkForUpdates(nil)
     }
 
     @objc func showAboutWindow() {

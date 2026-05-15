@@ -685,6 +685,17 @@ final class GRPCManager {
         if !reply.error.isEmpty { throw GRPCManagerError.operationFailed(reply.error) }
     }
 
+    // MARK: - Delete Subscription
+
+    func deleteSubscription(topicName: String, subscriptionName: String) async throws {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_DeleteSubscriptionRequest()
+        req.topicName = topicName
+        req.subscriptionName = subscriptionName
+        let reply: Buskit_DeleteSubscriptionReply = try await buskit.deleteSubscription(req)
+        if !reply.error.isEmpty { throw GRPCManagerError.operationFailed(reply.error) }
+    }
+
 
 
     func addRule(topicName: String, subscriptionName: String, ruleName: String, sqlFilter: String) async throws {

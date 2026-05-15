@@ -103,6 +103,11 @@ private final class SidebarModel {
     var showCreateSubscriptionSheet = false
     var createSubscriptionTopic: TopicItem? = nil
 
+    // Delete Subscription state
+    var deleteSubscriptionTarget: SubscriptionItem? = nil
+    var showDeleteSubscriptionConfirm = false
+    var isDeletingSubscription = false
+
     // Delete Topic state
     var deleteTopicTarget: TopicItem? = nil
     var showDeleteTopicConfirm = false
@@ -369,6 +374,21 @@ struct SidebarView: View {
         } message: {
             if let t = model.deleteTopicTarget {
                 Text("Topic \"\(t.name)\" and all its subscriptions will be permanently deleted. This cannot be undone.")
+            }
+        }
+        // ── Delete Subscription confirm ───────────────────────────
+        .confirmationDialog(
+            "Delete Subscription?",
+            isPresented: $model.showDeleteSubscriptionConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                Task { await performDeleteSubscription() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            if let sub = model.deleteSubscriptionTarget {
+                Text("Subscription \"\(sub.name)\" and all its messages will be permanently deleted. This cannot be undone.")
             }
         }
         .navigationTitle("BusKit")
@@ -656,6 +676,24 @@ struct SidebarView: View {
         }
     }
 
+    private func performDeleteSubscription() async {
+        guard let sub = model.deleteSubscriptionTarget else { return }
+        model.isDeletingSubscription = true
+        defer { model.isDeletingSubscription = false }
+        do {
+            try await grpc.deleteSubscription(topicName: sub.topicName, subscriptionName: sub.name)
+            if case .loaded(let subs) = model.subscriptions[sub.topicName] {
+                model.subscriptions[sub.topicName] = .loaded(subs.filter { $0.id != sub.id })
+            }
+            activityLog.log(action: .deleteSubscription, messageId: sub.name,
+                            result: .success("Subscription \"\(sub.name)\" deleted from topic \"\(sub.topicName)\""))
+        } catch {
+            activityLog.log(action: .deleteSubscription, messageId: sub.name,
+                            result: .failure(error.localizedDescription),
+                            hint: "The subscription may still have active messages or sessions.")
+        }
+    }
+
     // MARK: - Data loading
 
     private func load() async {
@@ -733,6 +771,11 @@ private struct TopicRow: View {
                 Task { await loadSubscriptions() }
             }
         }
+        .onChange(of: model.subscriptions[topic.name]) { _, newValue in
+            if newValue == nil, isExpanded {
+                Task { await loadSubscriptions() }
+            }
+        }
     }
 
     private func loadSubscriptions() async {
@@ -807,6 +850,12 @@ private struct SubscriptionRow: View {
                 model.showPurgeAlert = true
             }
             .disabled(!hasData)
+            Divider()
+            Button("Delete Subscription", role: .destructive) {
+                model.deleteSubscriptionTarget  = sub
+                model.showDeleteSubscriptionConfirm = true
+            }
+            .disabled(!grpc.capabilityMap.createResources)
             if !hasData {
                 Divider()
                 Text("Message operations require the Azure Service Bus Data Owner role.")

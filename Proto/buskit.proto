@@ -26,6 +26,7 @@ service BusKitService {
   rpc CreateTopic (CreateTopicRequest) returns (CreateTopicReply);
   rpc DeleteTopic (DeleteTopicRequest) returns (DeleteTopicReply);
   rpc CreateSubscription (CreateSubscriptionRequest) returns (CreateSubscriptionReply);
+  rpc DeleteSubscription (DeleteSubscriptionRequest) returns (DeleteSubscriptionReply);
   rpc GetQueueProperties (GetQueuePropertiesRequest) returns (GetQueuePropertiesReply);
   rpc GetSubscriptionProperties (GetSubscriptionPropertiesRequest) returns (GetSubscriptionPropertiesReply);
   rpc UpdateSubscriptionTtl (UpdateSubscriptionTtlRequest) returns (UpdateSubscriptionTtlReply);
@@ -309,6 +310,17 @@ message CreateSubscriptionRequest {
 }
 
 message CreateSubscriptionReply {
+  string error = 1;
+}
+
+// ─── Delete Subscription ──────────────────────────────
+
+message DeleteSubscriptionRequest {
+  string topic_name = 1;
+  string subscription_name = 2;
+}
+
+message DeleteSubscriptionReply {
   string error = 1;
 }
 

@@ -33,6 +33,24 @@ struct AboutView: View {
 
             Divider()
 
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Acknowledgments")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                HStack(spacing: 4) {
+                    Link("Sparkle", destination: URL(string: "https://sparkle-project.org/")!)
+                        .font(.caption)
+                    Text("is by Sparkle Project.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Divider()
+
             Text("© 2026 Peter Karda")
                 .font(.caption)
                 .foregroundStyle(.tertiary)

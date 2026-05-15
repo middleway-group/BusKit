@@ -784,6 +784,31 @@ public struct Buskit_CreateSubscriptionReply: Sendable {
   public init() {}
 }
 
+public struct Buskit_DeleteSubscriptionRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var topicName: String = String()
+  public var subscriptionName: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Buskit_DeleteSubscriptionReply: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var error: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
 public struct Buskit_GetQueuePropertiesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -2829,6 +2854,65 @@ extension Buskit_CreateSubscriptionReply: SwiftProtobuf.Message, SwiftProtobuf._
   }
 
   public static func ==(lhs: Buskit_CreateSubscriptionReply, rhs: Buskit_CreateSubscriptionReply) -> Bool {
+    if lhs.error != rhs.error {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_DeleteSubscriptionRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DeleteSubscriptionRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0\u{3}subscription_name\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.topicName) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.subscriptionName) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.topicName.isEmpty {
+      try visitor.visitSingularStringField(value: self.topicName, fieldNumber: 1)
+    }
+    if !self.subscriptionName.isEmpty {
+      try visitor.visitSingularStringField(value: self.subscriptionName, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_DeleteSubscriptionRequest, rhs: Buskit_DeleteSubscriptionRequest) -> Bool {
+    if lhs.topicName != rhs.topicName {return false}
+    if lhs.subscriptionName != rhs.subscriptionName {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Buskit_DeleteSubscriptionReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DeleteSubscriptionReply"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.error) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.error.isEmpty {
+      try visitor.visitSingularStringField(value: self.error, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_DeleteSubscriptionReply, rhs: Buskit_DeleteSubscriptionReply) -> Bool {
     if lhs.error != rhs.error {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

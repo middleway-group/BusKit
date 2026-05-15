@@ -760,6 +760,31 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         return reply;
     }
 
+    // ── Delete Subscription ───────────────────────────────
+
+    public override async Task<DeleteSubscriptionReply> DeleteSubscription(
+        DeleteSubscriptionRequest request, ServerCallContext context)
+    {
+        var reply = new DeleteSubscriptionReply();
+
+        if (_adminClient == null)
+        {
+            reply.Error = "Not connected";
+            return reply;
+        }
+
+        try
+        {
+            await _adminClient.DeleteSubscriptionAsync(request.TopicName, request.SubscriptionName);
+        }
+        catch (Exception ex)
+        {
+            reply.Error = ex.Message;
+        }
+
+        return reply;
+    }
+
     // ── Get Queue Properties ─────────────────────────────
 
     public override async Task<GetQueuePropertiesReply> GetQueueProperties(

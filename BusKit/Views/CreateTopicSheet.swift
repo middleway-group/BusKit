@@ -23,10 +23,10 @@ struct CreateTopicSheet: View {
     @State private var messageTtl = DurationComponents(days: 14, hours: 0, minutes: 0, seconds: 0)
 
     // Options
-    @State private var autoDeleteOnIdle      = false
-    @State private var duplicateDetection    = false
-    @State private var enablePartitioning    = false
-    @State private var supportOrdering       = false
+    @State private var autoDeleteOnIdle   = false
+    @State private var duplicateDetection = false
+    @State private var enablePartitioning = false
+    @State private var supportOrdering    = false
 
     // State
     @State private var isCreating   = false
@@ -41,13 +41,10 @@ struct CreateTopicSheet: View {
             headerView
             Divider()
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    nameSection
-                    maxSizeSection
-                    messageTtlSection
-                    optionsSection
-                }
-                .padding(20)
+                formGrid
+                    .padding(.horizontal, 20)
+                    .padding(.top, 14)
+                    .padding(.bottom, 20)
             }
             if let err = errorMessage {
                 HStack {
@@ -66,8 +63,8 @@ struct CreateTopicSheet: View {
             Divider()
             footerView
         }
-        .frame(width: 480)
-        .frame(minHeight: 540)
+        .frame(width: 560)
+        .frame(minHeight: 520)
         .onAppear { nameFocused = true }
         .confirmationDialog(
             "Discard changes?",
@@ -98,98 +95,209 @@ struct CreateTopicSheet: View {
         .padding(.vertical, 14)
     }
 
-    // MARK: - Topic Name
+    // MARK: - Form Grid
+    //
+    // Center-equalized 2-column layout per Apple macOS layout guidelines:
+    // - Left column: right-aligned labels
+    // - Right column: left-aligned controls
+    // - 20 pt outer margins, 14 pt from titlebar to first control
+    // - 6 pt between controls, 12 pt padding above/below section separators
 
-    private var nameSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 4) {
-                Text("Name")
-                    .font(.system(size: 13))
-                Text("*")
-                    .foregroundStyle(.red)
-                    .font(.system(size: 13))
-            }
-            TextField("Enter topic name", text: $topicName)
-                .textFieldStyle(.roundedBorder)
-                .focused($nameFocused)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 5)
-                        .stroke(nameIsEmpty ? Color.red : Color.clear, lineWidth: 1.5)
-                )
-                .onChange(of: topicName) { _, _ in
-                    if nameIsEmpty && !topicName.trimmingCharacters(in: .whitespaces).isEmpty {
-                        nameIsEmpty = false
+    private var formGrid: some View {
+        Grid(alignment: .topLeading, horizontalSpacing: 8, verticalSpacing: 6) {
+
+            // MARK: General
+
+            GridRow {
+                HStack(spacing: 2) {
+                    Text("Name")
+                    Text("*").foregroundStyle(.red)
+                }
+                .font(.system(size: 13))
+                .gridColumnAlignment(.trailing)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    TextField("Enter topic name", text: $topicName)
+                        .textFieldStyle(.roundedBorder)
+                        .focused($nameFocused)
+                        .frame(maxWidth: .infinity)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 5)
+                                .stroke(nameIsEmpty ? Color.red : Color.clear, lineWidth: 1.5)
+                        )
+                        .onChange(of: topicName) { _, _ in
+                            if nameIsEmpty && !topicName.trimmingCharacters(in: .whitespaces).isEmpty {
+                                nameIsEmpty = false
+                            }
+                        }
+                        .accessibilityLabel("Topic name, required")
+                    if nameIsEmpty {
+                        Text("Name is required.")
+                            .font(.caption)
+                            .foregroundStyle(.red)
                     }
                 }
-                .accessibilityLabel("Topic name, required")
-            Text("Must be unique within the namespace.")
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-        }
-    }
+            }
 
-    // MARK: - Max Topic Size
+            GridRow {
+                emptyLabel
+                Text("Must be unique within the namespace.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
-    private var maxSizeSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HelpLabel(title: "Maximum Topic Size", info: "The maximum size of the topic in gigabytes.")
-            Picker("", selection: $maxSizeGbIndex) {
-                ForEach(maxSizeOptions.indices, id: \.self) { i in
-                    Text(maxSizeOptions[i].label).tag(i)
+            // MARK: Size & Retention
+
+            formSectionDivider
+            formSectionHeader("Size & Retention")
+
+            GridRow {
+                HStack(spacing: 4) {
+                    Text("Maximum size:")
+                        .font(.system(size: 13))
+                    HelpPopover(info: "The maximum size of the topic in gigabytes.")
+                }
+
+                Picker("", selection: $maxSizeGbIndex) {
+                    ForEach(maxSizeOptions.indices, id: \.self) { i in
+                        Text(maxSizeOptions[i].label).tag(i)
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .accessibilityLabel("Maximum topic size")
+            }
+
+            GridRow {
+                HStack(spacing: 4) {
+                    Text("Message time to live:")
+                        .font(.system(size: 13))
+                    HelpPopover(info: "The default duration for which a message is retained if not consumed.")
+                }
+
+                durationFields($messageTtl, maxDays: 36500, maxHours: 23, maxMinutes: 59)
+            }
+
+            // MARK: Options
+
+            formSectionDivider
+            formSectionHeader("Options")
+
+            GridRow {
+                emptyLabel
+                HStack(spacing: 8) {
+                    Toggle("Enable auto-delete on idle topic", isOn: $autoDeleteOnIdle)
+                        .toggleStyle(.checkbox)
+                        .font(.system(size: 13))
+                        .accessibilityLabel("Enable auto-delete on idle topic")
+                    HelpPopover(info: "Automatically deletes the topic when it has been idle (no subscriptions active) for the specified duration.")
+                    Spacer()
                 }
             }
-            .pickerStyle(.menu)
-            .labelsHidden()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityLabel("Maximum topic size")
+
+            GridRow {
+                emptyLabel
+                HStack(spacing: 8) {
+                    Toggle("Enable duplicate detection", isOn: $duplicateDetection)
+                        .toggleStyle(.checkbox)
+                        .font(.system(size: 13))
+                        .accessibilityLabel("Enable duplicate detection")
+                    HelpPopover(info: "Detects and discards duplicate messages published within the duplicate detection history window.")
+                    Spacer()
+                }
+            }
+
+            GridRow {
+                emptyLabel
+                HStack(spacing: 8) {
+                    Toggle("Enable partitioning", isOn: $enablePartitioning)
+                        .toggleStyle(.checkbox)
+                        .font(.system(size: 13))
+                        .accessibilityLabel("Enable partitioning")
+                    HelpPopover(info: "Partitions the topic across multiple message brokers and stores to increase throughput and availability.")
+                    Spacer()
+                }
+            }
+
+            GridRow {
+                emptyLabel
+                HStack(spacing: 8) {
+                    Toggle("Support ordering", isOn: $supportOrdering)
+                        .toggleStyle(.checkbox)
+                        .font(.system(size: 13))
+                        .accessibilityLabel("Support ordering")
+                    HelpPopover(info: "Ensures messages are delivered in the order they were published. Cannot be combined with partitioning.")
+                    Spacer()
+                }
+            }
         }
     }
 
-    // MARK: - Message TTL
+    // MARK: - Grid Helpers
 
-    private var messageTtlSection: some View {
-        TopicDurationRow(label: "Message Time to Live",
-                         info: "The default duration for which a message is retained if not consumed.",
-                         components: $messageTtl)
+    private var emptyLabel: some View {
+        Color.clear.gridCellUnsizedAxes([.horizontal, .vertical])
     }
 
-    // MARK: - Options
+    private var formSectionDivider: some View {
+        GridRow {
+            Divider()
+                .padding(.vertical, 12)
+                .gridCellColumns(2)
+        }
+    }
 
-    private var optionsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("OPTIONS")
-                .font(.system(size: 11, weight: .medium))
+    private func formSectionHeader(_ title: String) -> some View {
+        GridRow {
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
+                .accessibilityAddTraits(.isHeader)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .gridCellColumns(2)
+        }
+    }
 
-            VStack(alignment: .leading, spacing: 8) {
-                TopicOptionRow(
-                    title: "Enable auto-delete on idle topic",
-                    info: "Automatically deletes the topic when it has been idle (no subscriptions active) for the specified duration.",
-                    isOn: $autoDeleteOnIdle
-                )
-                TopicOptionRow(
-                    title: "Enable duplicate detection",
-                    info: "Detects and discards duplicate messages published within the duplicate detection history window.",
-                    isOn: $duplicateDetection
-                )
-                TopicOptionRow(
-                    title: "Enable partitioning",
-                    info: "Partitions the topic across multiple message brokers and stores to increase throughput and availability.",
-                    isOn: $enablePartitioning
-                )
-                TopicOptionRow(
-                    title: "Support ordering",
-                    info: "Ensures messages are delivered in the order they were published. Cannot be combined with partitioning.",
-                    isOn: $supportOrdering
-                )
+    private func durationFields(
+        _ components: Binding<DurationComponents>,
+        disabled: Bool = false,
+        maxDays: Int = 36500,
+        maxHours: Int = 23,
+        maxMinutes: Int = 59
+    ) -> some View {
+        HStack(spacing: 5) {
+            if maxDays > 0 {
+                durationField("Days", value: components.days, range: 0...maxDays)
             }
-            .padding(12)
-            .background(Color(nsColor: .controlBackgroundColor))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
-            )
+            if maxHours > 0 || maxDays > 0 {
+                durationField("Hours", value: components.hours, range: 0...maxHours)
+            }
+            durationField("Minutes", value: components.minutes, range: 0...maxMinutes)
+            durationField("Seconds", value: components.seconds, range: 0...59)
+        }
+        .disabled(disabled)
+        .opacity(disabled ? 0.4 : 1.0)
+    }
+
+    private func durationField(_ label: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
+        VStack(alignment: .center, spacing: 2) {
+            HStack(spacing: 3) {
+                TextField("", value: value, format: .number)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 46)
+                    .multilineTextAlignment(.trailing)
+                    .onChange(of: value.wrappedValue) { _, v in
+                        value.wrappedValue = max(range.lowerBound, min(range.upperBound, v))
+                    }
+                    .accessibilityLabel(label)
+                Stepper("", value: value, in: range)
+                    .labelsHidden()
+            }
+            Text(label)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize()
         }
     }
 
@@ -277,8 +385,6 @@ struct CreateTopicSheet: View {
 
 // MARK: - Helpers
 
-// Reuse the DurationComponents type from CreateQueueSheet via a local private alias.
-// (DurationComponents is defined privately in CreateQueueSheet.swift; we re-declare here.)
 private struct DurationComponents {
     var days: Int = 0
     var hours: Int = 0
@@ -291,110 +397,25 @@ private struct DurationComponents {
 }
 
 @available(macOS 15.0, *)
-private struct TopicDurationRow: View {
-    let label: String
+private struct HelpPopover: View {
     let info: String
-    @Binding var components: DurationComponents
+    @State private var showPopover = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HelpLabel(title: label, info: info)
-
-            HStack(spacing: 12) {
-                durationField(label: "Days",    value: $components.days,    range: 0...36500)
-                durationField(label: "Hours",   value: $components.hours,   range: 0...23)
-                durationField(label: "Minutes", value: $components.minutes, range: 0...59)
-                durationField(label: "Seconds", value: $components.seconds, range: 0...59)
-            }
-        }
-    }
-
-    private func durationField(label: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
-        VStack(spacing: 3) {
-            HStack(spacing: 2) {
-                TextField("", value: value, format: .number)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 58)
-                    .multilineTextAlignment(.trailing)
-                    .onChange(of: value.wrappedValue) { _, v in
-                        value.wrappedValue = max(range.lowerBound, min(range.upperBound, v))
-                    }
-                Stepper("", value: value, in: range)
-                    .labelsHidden()
-                    .frame(width: 18)
-            }
-            Text(label)
-                .font(.system(size: 10))
+        Button { showPopover.toggle() } label: {
+            Image(systemName: "info.circle")
                 .foregroundStyle(.secondary)
+                .imageScale(.small)
         }
-    }
-}
-
-@available(macOS 15.0, *)
-private struct TopicOptionRow: View {
-    let title: String
-    let info: String
-    @Binding var isOn: Bool
-
-    @State private var showPopover = false
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Toggle(isOn: $isOn) {
-                Text(title)
-                    .font(.system(size: 13))
-            }
-            .toggleStyle(.checkbox)
-
-            Button {
-                showPopover.toggle()
-            } label: {
-                Image(systemName: "info.circle")
-                    .foregroundStyle(.secondary)
-                    .imageScale(.small)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Info for \(title)")
-            .popover(isPresented: $showPopover, arrowEdge: .trailing) {
-                Text(info)
-                    .font(.system(size: 12))
-                    .padding(12)
-                    .frame(maxWidth: 280)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer()
-        }
-        .accessibilityElement(children: .contain)
-    }
-}
-
-@available(macOS 15.0, *)
-private struct HelpLabel: View {
-    let title: String
-    let info: String
-    @State private var showPopover = false
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Text(title)
-                .font(.system(size: 13))
-            Button {
-                showPopover.toggle()
-            } label: {
-                Image(systemName: "info.circle")
-                    .foregroundStyle(.secondary)
-                    .imageScale(.small)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Info for \(title)")
-            .popover(isPresented: $showPopover, arrowEdge: .trailing) {
-                Text(info)
-                    .font(.system(size: 12))
-                    .padding(12)
-                    .frame(maxWidth: 280)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+        .buttonStyle(.plain)
+        .accessibilityLabel("More information")
+        .accessibilityHint(info)
+        .popover(isPresented: $showPopover, arrowEdge: .trailing) {
+            Text(info)
+                .font(.system(size: 12))
+                .padding(12)
+                .frame(maxWidth: 280)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

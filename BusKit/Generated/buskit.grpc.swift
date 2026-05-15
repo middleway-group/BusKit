@@ -248,6 +248,18 @@ internal enum Buskit_BusKitService: Sendable {
                 method: "CreateSubscription"
             )
         }
+        /// Namespace for "DeleteSubscription" metadata.
+        internal enum DeleteSubscription: Sendable {
+            /// Request type for "DeleteSubscription".
+            internal typealias Input = Buskit_DeleteSubscriptionRequest
+            /// Response type for "DeleteSubscription".
+            internal typealias Output = Buskit_DeleteSubscriptionReply
+            /// Descriptor for "DeleteSubscription".
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "DeleteSubscription"
+            )
+        }
         /// Namespace for "GetQueueProperties" metadata.
         internal enum GetQueueProperties: Sendable {
             /// Request type for "GetQueueProperties".
@@ -377,6 +389,7 @@ internal enum Buskit_BusKitService: Sendable {
             CreateTopic.descriptor,
             DeleteTopic.descriptor,
             CreateSubscription.descriptor,
+            DeleteSubscription.descriptor,
             GetQueueProperties.descriptor,
             GetSubscriptionProperties.descriptor,
             UpdateSubscriptionTtl.descriptor,
@@ -764,6 +777,25 @@ extension Buskit_BusKitService {
             deserializer: some GRPCCore.MessageDeserializer<Buskit_CreateSubscriptionReply>,
             options: GRPCCore.CallOptions,
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_CreateSubscriptionReply>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "DeleteSubscription" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_DeleteSubscriptionRequest` message.
+        ///   - serializer: A serializer for `Buskit_DeleteSubscriptionRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_DeleteSubscriptionReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func deleteSubscription<Result>(
+            request: GRPCCore.ClientRequest<Buskit_DeleteSubscriptionRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_DeleteSubscriptionRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_DeleteSubscriptionReply>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteSubscriptionReply>) async throws -> Result
         ) async throws -> Result where Result: Sendable
 
         /// Call the "GetQueueProperties" method.
@@ -1524,6 +1556,36 @@ extension Buskit_BusKitService {
             )
         }
 
+        /// Call the "DeleteSubscription" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_DeleteSubscriptionRequest` message.
+        ///   - serializer: A serializer for `Buskit_DeleteSubscriptionRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_DeleteSubscriptionReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        internal func deleteSubscription<Result>(
+            request: GRPCCore.ClientRequest<Buskit_DeleteSubscriptionRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_DeleteSubscriptionRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_DeleteSubscriptionReply>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteSubscriptionReply>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Buskit_BusKitService.Method.DeleteSubscription.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
         /// Call the "GetQueueProperties" method.
         ///
         /// - Parameters:
@@ -2267,6 +2329,31 @@ extension Buskit_BusKitService.ClientProtocol {
             request: request,
             serializer: GRPCProtobuf.ProtobufSerializer<Buskit_CreateSubscriptionRequest>(),
             deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_CreateSubscriptionReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DeleteSubscription" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_DeleteSubscriptionRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func deleteSubscription<Result>(
+        request: GRPCCore.ClientRequest<Buskit_DeleteSubscriptionRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteSubscriptionReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.deleteSubscription(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_DeleteSubscriptionRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_DeleteSubscriptionReply>(),
             options: options,
             onResponse: handleResponse
         )
@@ -3044,6 +3131,35 @@ extension Buskit_BusKitService.ClientProtocol {
             metadata: metadata
         )
         return try await self.createSubscription(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DeleteSubscription" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func deleteSubscription<Result>(
+        _ message: Buskit_DeleteSubscriptionRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteSubscriptionReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Buskit_DeleteSubscriptionRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.deleteSubscription(
             request: request,
             options: options,
             onResponse: handleResponse

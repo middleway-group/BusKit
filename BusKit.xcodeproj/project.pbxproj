@@ -10,6 +10,7 @@
 		4FC8893F2F5AC17000DC035E /* GRPCCore in Frameworks */ = {isa = PBXBuildFile; productRef = 4FC8893E2F5AC17000DC035E /* GRPCCore */; };
 		4FC889422F5AC1C900DC035E /* GRPCProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 4FC889412F5AC1C900DC035E /* GRPCProtobuf */; };
 		4FC889452F5AC22300DC035E /* GRPCNIOTransportHTTP2 in Frameworks */ = {isa = PBXBuildFile; productRef = 4FC889442F5AC22300DC035E /* GRPCNIOTransportHTTP2 */; };
+		AABB00022222333344445555 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = AABB00032222333344445555 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +33,7 @@
 				4FC889452F5AC22300DC035E /* GRPCNIOTransportHTTP2 in Frameworks */,
 				4FC8893F2F5AC17000DC035E /* GRPCCore in Frameworks */,
 				4FC889422F5AC1C900DC035E /* GRPCProtobuf in Frameworks */,
+				AABB00022222333344445555 /* Sparkle in Frameworks */,
 			);
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -76,6 +78,7 @@
 				4FC8893E2F5AC17000DC035E /* GRPCCore */,
 				4FC889412F5AC1C900DC035E /* GRPCProtobuf */,
 				4FC889442F5AC22300DC035E /* GRPCNIOTransportHTTP2 */,
+				AABB00032222333344445555 /* Sparkle */,
 			);
 			productName = BusKit;
 			productReference = 4FC8890E2F59C09700DC035E /* BusKit.app */;
@@ -110,6 +113,7 @@
 				4FC8893D2F5AC17000DC035E /* XCRemoteSwiftPackageReference "grpc-swift-2" */,
 				4FC889402F5AC1C900DC035E /* XCRemoteSwiftPackageReference "grpc-swift-protobuf" */,
 				4FC889432F5AC22300DC035E /* XCRemoteSwiftPackageReference "grpc-swift-nio-transport" */,
+				AABB00012222333344445555 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 4FC8890F2F59C09700DC035E /* Products */;
@@ -209,6 +213,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_SUPublicEDKey = Sfr2nhzdwRKRDA2pvhBFbkMqgYJVhM7Hun7KCqdvLRo;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
@@ -266,6 +271,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_SUPublicEDKey = Sfr2nhzdwRKRDA2pvhBFbkMqgYJVhM7Hun7KCqdvLRo;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MTL_ENABLE_DEBUG_INFO = NO;
@@ -292,6 +298,8 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Peter Karda";
 				"INFOPLIST_KEY_NSHumanReadableCopyright[sdk=*]" = "Peter Karda";
+				INFOPLIST_KEY_SUFeedURL = "https://raw.githubusercontent.com/pkarda/BusKit-releases/main/appcast.xml";
+				INFOPLIST_KEY_SUPublicEDKey = "Sfr2nhzdwRKRDA2pvhBFbkMqgYJVhM7Hun7KCqdvLRo=";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -331,6 +339,8 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Peter Karda";
 				"INFOPLIST_KEY_NSHumanReadableCopyright[sdk=*]" = "Peter Karda";
+				INFOPLIST_KEY_SUFeedURL = "https://raw.githubusercontent.com/pkarda/BusKit-releases/main/appcast.xml";
+				INFOPLIST_KEY_SUPublicEDKey = "Sfr2nhzdwRKRDA2pvhBFbkMqgYJVhM7Hun7KCqdvLRo=";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -399,6 +409,14 @@
 				version = 2.4.5;
 			};
 		};
+		AABB00012222333344445555 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -416,6 +434,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4FC889432F5AC22300DC035E /* XCRemoteSwiftPackageReference "grpc-swift-nio-transport" */;
 			productName = GRPCNIOTransportHTTP2;
+		};
+		AABB00032222333344445555 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AABB00012222333344445555 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
