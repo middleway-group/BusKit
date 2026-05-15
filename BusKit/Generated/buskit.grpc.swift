@@ -200,6 +200,18 @@ internal enum Buskit_BusKitService: Sendable {
                 method: "CreateQueue"
             )
         }
+        /// Namespace for "DeleteQueue" metadata.
+        internal enum DeleteQueue: Sendable {
+            /// Request type for "DeleteQueue".
+            internal typealias Input = Buskit_DeleteQueueRequest
+            /// Response type for "DeleteQueue".
+            internal typealias Output = Buskit_DeleteQueueReply
+            /// Descriptor for "DeleteQueue".
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "DeleteQueue"
+            )
+        }
         /// Namespace for "GetQueueProperties" metadata.
         internal enum GetQueueProperties: Sendable {
             /// Request type for "GetQueueProperties".
@@ -325,6 +337,7 @@ internal enum Buskit_BusKitService: Sendable {
             UpdateRule.descriptor,
             DeleteRule.descriptor,
             CreateQueue.descriptor,
+            DeleteQueue.descriptor,
             GetQueueProperties.descriptor,
             GetSubscriptionProperties.descriptor,
             UpdateSubscriptionTtl.descriptor,
@@ -636,6 +649,25 @@ extension Buskit_BusKitService {
             deserializer: some GRPCCore.MessageDeserializer<Buskit_CreateQueueReply>,
             options: GRPCCore.CallOptions,
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_CreateQueueReply>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "DeleteQueue" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_DeleteQueueRequest` message.
+        ///   - serializer: A serializer for `Buskit_DeleteQueueRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_DeleteQueueReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func deleteQueue<Result>(
+            request: GRPCCore.ClientRequest<Buskit_DeleteQueueRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_DeleteQueueRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_DeleteQueueReply>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteQueueReply>) async throws -> Result
         ) async throws -> Result where Result: Sendable
 
         /// Call the "GetQueueProperties" method.
@@ -1269,6 +1301,36 @@ extension Buskit_BusKitService {
             try await self.client.unary(
                 request: request,
                 descriptor: Buskit_BusKitService.Method.CreateQueue.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "DeleteQueue" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_DeleteQueueRequest` message.
+        ///   - serializer: A serializer for `Buskit_DeleteQueueRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_DeleteQueueReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        internal func deleteQueue<Result>(
+            request: GRPCCore.ClientRequest<Buskit_DeleteQueueRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_DeleteQueueRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_DeleteQueueReply>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteQueueReply>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Buskit_BusKitService.Method.DeleteQueue.descriptor,
                 serializer: serializer,
                 deserializer: deserializer,
                 options: options,
@@ -1919,6 +1981,31 @@ extension Buskit_BusKitService.ClientProtocol {
             request: request,
             serializer: GRPCProtobuf.ProtobufSerializer<Buskit_CreateQueueRequest>(),
             deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_CreateQueueReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DeleteQueue" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_DeleteQueueRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func deleteQueue<Result>(
+        request: GRPCCore.ClientRequest<Buskit_DeleteQueueRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteQueueReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.deleteQueue(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_DeleteQueueRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_DeleteQueueReply>(),
             options: options,
             onResponse: handleResponse
         )
@@ -2580,6 +2667,35 @@ extension Buskit_BusKitService.ClientProtocol {
             metadata: metadata
         )
         return try await self.createQueue(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DeleteQueue" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func deleteQueue<Result>(
+        _ message: Buskit_DeleteQueueRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteQueueReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Buskit_DeleteQueueRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.deleteQueue(
             request: request,
             options: options,
             onResponse: handleResponse

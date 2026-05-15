@@ -90,6 +90,11 @@ private final class SidebarModel {
 
     // Create Queue state
     var showCreateQueueSheet = false
+
+    // Delete Queue state
+    var deleteQueueTarget: QueueItem? = nil
+    var showDeleteQueueConfirm = false
+    var isDeletingQueue = false
 }
 
 // MARK: - Receive Count Dialog
@@ -194,12 +199,12 @@ struct SidebarView: View {
                         }
                     } label: {
                         Label("Queues", systemImage: "tray.full")
-                    }
-                    .contextMenu {
-                        Button("Create Queue") {
-                            model.showCreateQueueSheet = true
-                        }
-                        .disabled(!grpc.capabilityMap.createResources)
+                            .contextMenu {
+                                Button("Create Queue") {
+                                    model.showCreateQueueSheet = true
+                                }
+                                .disabled(!grpc.capabilityMap.createResources)
+                            }
                     }
 
                     // ── Topics ──────────────────────────────────────
@@ -300,6 +305,21 @@ struct SidebarView: View {
                 Text("Rule \"\(target.rule.name)\" will be permanently deleted from \(target.sub.topicName)/\(target.sub.name).")
             }
         }
+        // ── Delete Queue confirm ──────────────────────────────────
+        .confirmationDialog(
+            "Delete Queue?",
+            isPresented: $model.showDeleteQueueConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                Task { await performDeleteQueue() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            if let q = model.deleteQueueTarget {
+                Text("Queue \"\(q.name)\" and all its messages will be permanently deleted. This cannot be undone.")
+            }
+        }
         .navigationTitle("BusKit")
         .toolbar {
             ToolbarItem {
@@ -377,6 +397,12 @@ struct SidebarView: View {
             Text("Message operations require the Azure Service Bus Data Owner role.")
                 .foregroundStyle(.secondary)
         }
+        Divider()
+        Button("Delete Queue", role: .destructive) {
+            model.deleteQueueTarget = queue
+            model.showDeleteQueueConfirm = true
+        }
+        .disabled(!grpc.capabilityMap.createResources)
     }
 
     // MARK: - Dialog helpers
@@ -538,6 +564,27 @@ struct SidebarView: View {
             activityLog.log(action: .editRule, messageId: model.addRuleName,
                             result: .failure(error.localizedDescription),
                             hint: "Check the rule name and SQL filter syntax.")
+        }
+    }
+
+    // MARK: - Data loading
+
+    private func performDeleteQueue() async {
+        guard let queue = model.deleteQueueTarget else { return }
+        model.isDeletingQueue = true
+        defer { model.isDeletingQueue = false }
+        do {
+            try await grpc.deleteQueue(name: queue.name)
+            if case .queue(let q) = selection, q.id == queue.id {
+                selection = nil
+            }
+            model.queues.removeAll { $0.id == queue.id }
+            activityLog.log(action: .deleteQueue, messageId: queue.name,
+                            result: .success("Queue \"\(queue.name)\" deleted"))
+        } catch {
+            activityLog.log(action: .deleteQueue, messageId: queue.name,
+                            result: .failure(error.localizedDescription),
+                            hint: "The queue may still have active messages or sessions.")
         }
     }
 

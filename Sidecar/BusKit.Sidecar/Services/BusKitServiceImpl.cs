@@ -631,6 +631,28 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         return reply;
     }
 
+    // ── Delete Queue ─────────────────────────────────────
+
+    public override async Task<DeleteQueueReply> DeleteQueue(
+        DeleteQueueRequest request, ServerCallContext context)
+    {
+        var reply = new DeleteQueueReply();
+        try
+        {
+            if (_adminClient == null)
+            {
+                reply.Error = "Not connected to Service Bus.";
+                return reply;
+            }
+            await _adminClient.DeleteQueueAsync(request.QueueName);
+        }
+        catch (Exception ex)
+        {
+            reply.Error = ex.Message;
+        }
+        return reply;
+    }
+
     // ── Get Queue Properties ─────────────────────────────
 
     public override async Task<GetQueuePropertiesReply> GetQueueProperties(

@@ -607,6 +607,16 @@ final class GRPCManager {
         if !reply.error.isEmpty { throw GRPCManagerError.operationFailed(reply.error) }
     }
 
+    // MARK: - Delete Queue
+
+    func deleteQueue(name: String) async throws {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_DeleteQueueRequest()
+        req.queueName = name
+        let reply: Buskit_DeleteQueueReply = try await buskit.deleteQueue(req)
+        if !reply.error.isEmpty { throw GRPCManagerError.operationFailed(reply.error) }
+    }
+
     // MARK: - Add Rule
 
     func addRule(topicName: String, subscriptionName: String, ruleName: String, sqlFilter: String) async throws {

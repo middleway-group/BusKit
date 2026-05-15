@@ -22,6 +22,7 @@ service BusKitService {
   rpc UpdateRule (UpdateRuleRequest) returns (UpdateRuleReply);
   rpc DeleteRule (DeleteRuleRequest) returns (DeleteRuleReply);
   rpc CreateQueue (CreateQueueRequest) returns (CreateQueueReply);
+  rpc DeleteQueue (DeleteQueueRequest) returns (DeleteQueueReply);
   rpc GetQueueProperties (GetQueuePropertiesRequest) returns (GetQueuePropertiesReply);
   rpc GetSubscriptionProperties (GetSubscriptionPropertiesRequest) returns (GetSubscriptionPropertiesReply);
   rpc UpdateSubscriptionTtl (UpdateSubscriptionTtlRequest) returns (UpdateSubscriptionTtlReply);
@@ -252,6 +253,14 @@ message CreateQueueRequest {
 }
 
 message CreateQueueReply {
+  string error = 1;
+}
+
+message DeleteQueueRequest {
+  string queue_name = 1;
+}
+
+message DeleteQueueReply {
   string error = 1;
 }
 
