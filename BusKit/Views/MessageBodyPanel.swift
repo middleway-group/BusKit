@@ -12,57 +12,23 @@ struct MessageBodyPanel: View {
     @State private var searchText   = ""
     @FocusState private var searchFocused: Bool
 
-    // MARK: Derived
+    // MARK: Cached state (updated via onChange, not recomputed on every render)
+
+    /// Cached JSON highlight result for the current message body.
+    @State private var cachedJsonResult: JSONHighlighter.Result? = nil
+    /// Pre-built attributed string with syntax highlighting (no search marks).
+    @State private var cachedBaseAttributed: NSAttributedString = NSAttributedString()
+    /// Final attributed string shown in the text view (includes search highlights).
+    @State private var displayAttributed: NSAttributedString = NSAttributedString()
+    /// Number of matches for the current debounced search term.
+    @State private var matchCount: Int = 0
+    /// Debounced copy of searchText — expensive work only runs after typing pauses.
+    @State private var debouncedSearchText: String = ""
+    @State private var debounceTask: Task<Void, Never>? = nil
+
+    // MARK: Derived (cheap, computed inline)
 
     private var rawBody: String { message?.body ?? "" }
-
-    private var prettyBody: String {
-        jsonResult?.pretty ?? rawBody
-    }
-
-    private var jsonResult: JSONHighlighter.Result? {
-        guard !rawBody.isEmpty else { return nil }
-        return JSONHighlighter.highlight(rawBody)
-    }
-
-    private var matchCount: Int {
-        guard !searchText.isEmpty else { return 0 }
-        var count = 0
-        var range = prettyBody.startIndex..<prettyBody.endIndex
-        while let r = prettyBody.range(of: searchText, options: .caseInsensitive, range: range) {
-            count += 1
-            range = r.upperBound..<prettyBody.endIndex
-        }
-        return count
-    }
-
-    /// NSAttributedString with syntax highlighting + optional search highlights.
-    private var displayAttributed: NSAttributedString {
-        let base: NSMutableAttributedString
-        if let result = jsonResult {
-            base = JSONHighlighter.nsAttributed(result.pretty).mutableCopy()
-                as! NSMutableAttributedString
-        } else if !rawBody.isEmpty {
-            let mono = NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
-            base = NSMutableAttributedString(string: rawBody,
-                                             attributes: [.font: mono,
-                                                          .foregroundColor: NSColor.labelColor])
-        } else {
-            return NSAttributedString()
-        }
-
-        // Layer search highlights on top
-        guard !searchText.isEmpty else { return base }
-        let str = base.string
-        var range = str.startIndex..<str.endIndex
-        while let r = str.range(of: searchText, options: .caseInsensitive, range: range) {
-            base.addAttribute(.backgroundColor,
-                              value: NSColor.systemYellow.withAlphaComponent(0.5),
-                              range: NSRange(r, in: str))
-            range = r.upperBound..<str.endIndex
-        }
-        return base
-    }
 
     // MARK: Body
 
@@ -73,7 +39,7 @@ struct MessageBodyPanel: View {
             HStack(spacing: 6) {
                 Text("Body").font(.caption).foregroundStyle(.secondary)
 
-                if jsonResult != nil {
+                if cachedJsonResult != nil {
                     Text("JSON")
                         .font(.caption2).fontWeight(.medium)
                         .padding(.horizontal, 5).padding(.vertical, 2)
@@ -99,7 +65,7 @@ struct MessageBodyPanel: View {
                     // Copy button
                     Button {
                         NSPasteboard.general.clearContents()
-                        NSPasteboard.general.setString(prettyBody, forType: .string)
+                        NSPasteboard.general.setString(cachedBaseAttributed.string, forType: .string)
                         withAnimation { copied = true }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                             withAnimation { copied = false }
@@ -183,11 +149,80 @@ struct MessageBodyPanel: View {
             .keyboardShortcut("f", modifiers: .command)
             .opacity(0)
         }
-        // Reset find state when a different message is selected
+        // Reset find state when a different message is selected; rebuild cached attributed string.
         .onChange(of: message?.messageId) { _, _ in
-            searchText  = ""
-            showFindBar = false
+            searchText          = ""
+            debouncedSearchText = ""
+            showFindBar         = false
+            debounceTask?.cancel()
+            rebuildBaseAttributed()
         }
+        // Trigger on first appearance so cachedBaseAttributed is populated.
+        .onAppear {
+            rebuildBaseAttributed()
+        }
+        // Debounce search input: wait 150 ms after the last keystroke before applying highlights.
+        .onChange(of: searchText) { _, newValue in
+            debounceTask?.cancel()
+            debounceTask = Task {
+                try? await Task.sleep(for: .milliseconds(150))
+                guard !Task.isCancelled else { return }
+                debouncedSearchText = newValue
+                applySearchHighlights()
+            }
+        }
+    }
+
+    // MARK: - Cache helpers
+
+    /// Rebuilds the base attributed string (syntax highlighting only, no search marks).
+    /// Call whenever the message body changes.
+    private func rebuildBaseAttributed() {
+        guard !rawBody.isEmpty else {
+            cachedJsonResult      = nil
+            cachedBaseAttributed  = NSAttributedString()
+            displayAttributed     = NSAttributedString()
+            matchCount            = 0
+            return
+        }
+        let result = JSONHighlighter.highlight(rawBody)
+        cachedJsonResult = result
+        if let result {
+            cachedBaseAttributed = JSONHighlighter.nsAttributed(result.pretty)
+        } else {
+            let mono = NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
+            cachedBaseAttributed = NSAttributedString(
+                string: rawBody,
+                attributes: [.font: mono, .foregroundColor: NSColor.labelColor])
+        }
+        applySearchHighlights()
+    }
+
+    /// Overlays search-match highlights onto `cachedBaseAttributed` and updates `matchCount`.
+    /// Uses `debouncedSearchText` so it only runs after typing has paused.
+    private func applySearchHighlights() {
+        guard !debouncedSearchText.isEmpty else {
+            displayAttributed = cachedBaseAttributed
+            matchCount        = 0
+            return
+        }
+
+        let base   = cachedBaseAttributed.mutableCopy() as! NSMutableAttributedString
+        let str    = base.string
+        let query  = debouncedSearchText
+        var count  = 0
+        var range  = str.startIndex..<str.endIndex
+
+        while let r = str.range(of: query, options: .caseInsensitive, range: range) {
+            base.addAttribute(.backgroundColor,
+                              value: NSColor.systemYellow.withAlphaComponent(0.5),
+                              range: NSRange(r, in: str))
+            count += 1
+            range  = r.upperBound..<str.endIndex
+        }
+
+        displayAttributed = base
+        matchCount        = count
     }
 }
 
