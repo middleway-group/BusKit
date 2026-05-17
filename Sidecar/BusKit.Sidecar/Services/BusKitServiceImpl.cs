@@ -955,10 +955,6 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
                 remaining -= page.Count;
                 // Next page starts after the highest sequence number we received
                 fromSequenceNumber = page.Max(m => m.SequenceNumber) + 1;
-
-                // If the batch returned fewer than requested, there are no more messages
-                if (page.Count < batchSize)
-                    break;
             }
         }
         finally
