@@ -170,14 +170,9 @@ struct SidebarView: View {
     @State private var queuesExpanded    = true
     @State private var topicsExpanded    = true
 
-    // Queues sorted: active (any messages) first, then zero-count — each group alpha-sorted.
+    // Queues sorted alphabetically.
     private var sortedQueues: [QueueItem] {
-        model.queues.sorted { a, b in
-            let aHas = a.messageCount > 0 || a.deadLetterCount > 0
-            let bHas = b.messageCount > 0 || b.deadLetterCount > 0
-            if aHas != bHas { return aHas }
-            return a.name < b.name
-        }
+        model.queues.sorted { $0.name < $1.name }
     }
 
     var body: some View {
