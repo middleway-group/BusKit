@@ -726,15 +726,19 @@ private struct SubMessagesTab: View {
                 subToolbarDivider
             }
 
-            Button {
-                showRepairSheet = true
-            } label: {
-                Label("Repair & Resubmit", systemImage: "wrench.and.screwdriver")
-                    .padding(.horizontal, 8).padding(.vertical, 4)
+            if isDLQ {
+                Button {
+                    showRepairSheet = true
+                } label: {
+                    Label("Repair & Resubmit", systemImage: "wrench.and.screwdriver")
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                }
+                .buttonStyle(.borderless)
+                .disabled(selectedMessageIDs.count != 1)
+                .help("Repair and resubmit the selected message")
+
+                subToolbarDivider
             }
-            .buttonStyle(.borderless)
-            .disabled(selectedMessageIDs.count != 1)
-            .help("Repair and resubmit the selected message")
 
             subToolbarDivider
 
