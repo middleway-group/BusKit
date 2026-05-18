@@ -895,7 +895,7 @@ private struct SubMessagesTab: View {
         .onChange(of: trigger)           { _, _ in Task { await loadMessages() } }
         .sheet(isPresented: $showRepairSheet) {
             if let msg = selectedMessage {
-                RepairResubmitSheet(message: msg, queueOrTopic: subscription.topicName)
+                RepairResubmitSheet(message: msg, queueOrTopic: subscription.topicName, subscriptionName: subscription.name)
             }
         }
         .sheet(isPresented: $showBulkResubmitSheet, onDismiss: { Task { await loadMessages() } }) {

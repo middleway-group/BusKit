@@ -11,6 +11,8 @@ struct RepairResubmitSheet: View {
     @Environment(ActivityLogStore.self) var activityLog
 
     let message: MessageItem
+    let entityName: String
+    let subscriptionName: String?
 
     @State private var targetDestination: String
     @State private var messageBody: String
@@ -27,13 +29,15 @@ struct RepairResubmitSheet: View {
     @State private var availableTopics: [Buskit_TopicInfo] = []
     @State private var isLoadingDestinations = false
 
+    @State private var deleteAfterResubmit = false
+
     @State private var isSending = false
     @State private var sendError: String?
-    @State private var didSend = false
 
-
-    init(message: MessageItem, queueOrTopic: String) {
+    init(message: MessageItem, queueOrTopic: String, subscriptionName: String? = nil) {
         self.message = message
+        self.entityName = queueOrTopic
+        self.subscriptionName = subscriptionName
         _targetDestination = State(initialValue: queueOrTopic)
         _messageBody = State(initialValue: message.body)
         _contentType = State(initialValue: message.contentType)
@@ -58,7 +62,7 @@ struct RepairResubmitSheet: View {
                 rightPanel
             }
             .frame(maxHeight: .infinity)
-            if sendError != nil || didSend {
+            if sendError != nil {
                 Divider()
                 statusSection
                     .padding(.horizontal, 16)
@@ -333,25 +337,18 @@ struct RepairResubmitSheet: View {
             .background(Color.red.opacity(0.08))
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
-        if didSend {
-            HStack(spacing: 6) {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-                Text("Message resubmitted successfully.")
-                    .font(.caption)
-                    .foregroundStyle(.green)
-            }
-            .padding(10)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.green.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-        }
     }
 
     // MARK: - Footer
 
     private var footerView: some View {
         HStack(spacing: 8) {
+            Toggle(isOn: $deleteAfterResubmit) {
+                Text("Delete from dead-letter after resubmit")
+                    .font(.body)
+            }
+            .disabled(isSending)
+
             Spacer()
 
             if isSending { ProgressView().controlSize(.small) }
@@ -403,7 +400,6 @@ struct RepairResubmitSheet: View {
     private func send() async {
         isSending = true
         sendError = nil
-        didSend = false
         defer {
             isSending = false
         }
@@ -425,19 +421,41 @@ struct RepairResubmitSheet: View {
                 partitionKey: partitionKey,
                 properties: propsDict
             )
-            didSend = true
             let dest = targetDestination.trimmingCharacters(in: .whitespacesAndNewlines)
             activityLog.log(action: .resubmit, messageId: message.messageId,
                             result: .success("Resubmitted to \(dest)"))
+            if deleteAfterResubmit {
+                try await deleteFromDLQ()
+            }
             if availableQueues.contains(where: { $0.name == dest }) {
                 actionStore.requestRefresh(.queue(dest))
             }
+            dismiss()
         } catch {
             sendError = error.localizedDescription
             activityLog.log(action: .resubmit, messageId: message.messageId,
                             result: .failure(error.localizedDescription),
                             hint: "Verify the target destination exists and you have sender permissions.")
         }
+    }
+
+    private func deleteFromDLQ() async throws {
+        if let sub = subscriptionName {
+            try await grpc.deleteMessage(
+                topicName:        entityName,
+                subscriptionName: sub,
+                isDLQ:            true,
+                sequenceNumber:   message.sequenceNumber
+            )
+        } else {
+            try await grpc.deleteMessage(
+                queueName:      entityName,
+                isDLQ:          true,
+                sequenceNumber: message.sequenceNumber
+            )
+        }
+        activityLog.log(action: .delete, messageId: message.messageId,
+                        result: .success("Deleted from dead-letter after resubmit"))
     }
 }
 
