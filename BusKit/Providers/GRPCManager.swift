@@ -172,7 +172,7 @@ final class GRPCManager {
     private func setupGRPCClient(host: String, port: Int) {
         do {
             let transport = try HTTP2ClientTransport.Posix(
-                target: .ipv4(host: host, port: port),
+                target: .ipv4(address: host, port: port),
                 transportSecurity: .plaintext
             )
             let client = GRPCClient(transport: transport)
