@@ -425,13 +425,18 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         if (_adminClient == null)
             return reply;
 
+        var statusMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        await foreach (var q in _adminClient.GetQueuesAsync())
+            statusMap[q.Name] = q.Status.ToString();
+
         await foreach (var queue in _adminClient.GetQueuesRuntimePropertiesAsync())
         {
             reply.Queues.Add(new QueueInfo
             {
                 Name = queue.Name,
                 MessageCount = queue.ActiveMessageCount,
-                DeadLetterCount = queue.DeadLetterMessageCount
+                DeadLetterCount = queue.DeadLetterMessageCount,
+                Status = statusMap.TryGetValue(queue.Name, out var s) ? s : "Active"
             });
         }
 
@@ -645,6 +650,40 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
                 return reply;
             }
             await _adminClient.DeleteQueueAsync(request.QueueName);
+        }
+        catch (Exception ex)
+        {
+            reply.Error = ex.Message;
+        }
+        return reply;
+    }
+
+    // ── Set Queue Status ──────────────────────────────────
+
+    public override async Task<SetQueueStatusReply> SetQueueStatus(
+        SetQueueStatusRequest request, ServerCallContext context)
+    {
+        var reply = new SetQueueStatusReply();
+        try
+        {
+            if (_adminClient == null)
+            {
+                reply.Error = "Not connected to Service Bus.";
+                return reply;
+            }
+
+            var props = await _adminClient.GetQueueAsync(request.QueueName);
+
+            props.Value.Status = request.Status switch
+            {
+                "Active"          => EntityStatus.Active,
+                "Disabled"        => EntityStatus.Disabled,
+                "SendDisabled"    => EntityStatus.SendDisabled,
+                "ReceiveDisabled" => EntityStatus.ReceiveDisabled,
+                _ => throw new ArgumentException($"Unknown status: {request.Status}")
+            };
+
+            await _adminClient.UpdateQueueAsync(props.Value);
         }
         catch (Exception ex)
         {

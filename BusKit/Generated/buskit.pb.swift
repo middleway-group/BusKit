@@ -15,12 +15,12 @@ import SwiftProtobuf
 // incompatible with the version of SwiftProtobuf to which you are linking.
 // Please ensure that you are building against the same version of the API
 // that was used to generate this file.
-fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAPIVersionCheck {
+fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAPIVersionCheck {
   struct _2: SwiftProtobuf.ProtobufAPIVersion_2 {}
   typealias Version = _2
 }
 
-public enum Buskit_AccessTier: SwiftProtobuf.Enum, Swift.CaseIterable {
+public nonisolated enum Buskit_AccessTier: SwiftProtobuf.Enum, Swift.CaseIterable {
   public typealias RawValue = Int
   case noAccess // = 0
   case readOnly // = 1
@@ -66,7 +66,7 @@ public enum Buskit_AccessTier: SwiftProtobuf.Enum, Swift.CaseIterable {
 
 }
 
-public struct Buskit_ConnectRequest: Sendable {
+public nonisolated struct Buskit_ConnectRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -78,7 +78,7 @@ public struct Buskit_ConnectRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_ConnectWithAzureADRequest: Sendable {
+public nonisolated struct Buskit_ConnectWithAzureADRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -90,7 +90,7 @@ public struct Buskit_ConnectWithAzureADRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_ConnectReply: Sendable {
+public nonisolated struct Buskit_ConnectReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -104,7 +104,7 @@ public struct Buskit_ConnectReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_DisconnectRequest: Sendable {
+public nonisolated struct Buskit_DisconnectRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -114,7 +114,7 @@ public struct Buskit_DisconnectRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_DisconnectReply: Sendable {
+public nonisolated struct Buskit_DisconnectReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -126,7 +126,7 @@ public struct Buskit_DisconnectReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_ListAzureSubscriptionsRequest: Sendable {
+public nonisolated struct Buskit_ListAzureSubscriptionsRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -136,7 +136,7 @@ public struct Buskit_ListAzureSubscriptionsRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_ListAzureSubscriptionsReply: Sendable {
+public nonisolated struct Buskit_ListAzureSubscriptionsReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -152,7 +152,7 @@ public struct Buskit_ListAzureSubscriptionsReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_AzureSubscriptionInfo: Sendable {
+public nonisolated struct Buskit_AzureSubscriptionInfo: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -166,7 +166,7 @@ public struct Buskit_AzureSubscriptionInfo: Sendable {
   public init() {}
 }
 
-public struct Buskit_AzureTenantInfo: Sendable {
+public nonisolated struct Buskit_AzureTenantInfo: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -180,7 +180,7 @@ public struct Buskit_AzureTenantInfo: Sendable {
   public init() {}
 }
 
-public struct Buskit_SelectAzureTenantRequest: Sendable {
+public nonisolated struct Buskit_SelectAzureTenantRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -192,7 +192,7 @@ public struct Buskit_SelectAzureTenantRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_SelectAzureTenantReply: Sendable {
+public nonisolated struct Buskit_SelectAzureTenantReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -206,7 +206,7 @@ public struct Buskit_SelectAzureTenantReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_ListServiceBusNamespacesRequest: Sendable {
+public nonisolated struct Buskit_ListServiceBusNamespacesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -218,7 +218,7 @@ public struct Buskit_ListServiceBusNamespacesRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_ListServiceBusNamespacesReply: Sendable {
+public nonisolated struct Buskit_ListServiceBusNamespacesReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -232,7 +232,7 @@ public struct Buskit_ListServiceBusNamespacesReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_ServiceBusNamespaceInfo: Sendable {
+public nonisolated struct Buskit_ServiceBusNamespaceInfo: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -248,7 +248,7 @@ public struct Buskit_ServiceBusNamespaceInfo: Sendable {
   public init() {}
 }
 
-public struct Buskit_CheckRbacPermissionsRequest: Sendable {
+public nonisolated struct Buskit_CheckRbacPermissionsRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -264,7 +264,7 @@ public struct Buskit_CheckRbacPermissionsRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_CheckRbacPermissionsReply: @unchecked Sendable {
+public nonisolated struct Buskit_CheckRbacPermissionsReply: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -381,7 +381,7 @@ public struct Buskit_CheckRbacPermissionsReply: @unchecked Sendable {
   fileprivate var _storage = _StorageClass.defaultInstance
 }
 
-public struct Buskit_ListQueuesRequest: Sendable {
+public nonisolated struct Buskit_ListQueuesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -391,7 +391,7 @@ public struct Buskit_ListQueuesRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_ListQueuesReply: Sendable {
+public nonisolated struct Buskit_ListQueuesReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -403,7 +403,7 @@ public struct Buskit_ListQueuesReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_QueueInfo: Sendable {
+public nonisolated struct Buskit_QueueInfo: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -414,12 +414,14 @@ public struct Buskit_QueueInfo: Sendable {
 
   public var deadLetterCount: Int64 = 0
 
+  public var status: String = String()
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 }
 
-public struct Buskit_ListTopicsRequest: Sendable {
+public nonisolated struct Buskit_ListTopicsRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -429,7 +431,7 @@ public struct Buskit_ListTopicsRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_ListTopicsReply: Sendable {
+public nonisolated struct Buskit_ListTopicsReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -441,7 +443,7 @@ public struct Buskit_ListTopicsReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_TopicInfo: Sendable {
+public nonisolated struct Buskit_TopicInfo: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -453,7 +455,7 @@ public struct Buskit_TopicInfo: Sendable {
   public init() {}
 }
 
-public struct Buskit_ListSubscriptionsRequest: Sendable {
+public nonisolated struct Buskit_ListSubscriptionsRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -465,7 +467,7 @@ public struct Buskit_ListSubscriptionsRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_ListSubscriptionsReply: Sendable {
+public nonisolated struct Buskit_ListSubscriptionsReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -477,7 +479,7 @@ public struct Buskit_ListSubscriptionsReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_SubscriptionInfo: Sendable {
+public nonisolated struct Buskit_SubscriptionInfo: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -493,7 +495,7 @@ public struct Buskit_SubscriptionInfo: Sendable {
   public init() {}
 }
 
-public struct Buskit_ListRulesRequest: Sendable {
+public nonisolated struct Buskit_ListRulesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -507,7 +509,7 @@ public struct Buskit_ListRulesRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_ListRulesReply: Sendable {
+public nonisolated struct Buskit_ListRulesReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -519,7 +521,7 @@ public struct Buskit_ListRulesReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_RuleInfo: Sendable {
+public nonisolated struct Buskit_RuleInfo: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -533,7 +535,7 @@ public struct Buskit_RuleInfo: Sendable {
   public init() {}
 }
 
-public struct Buskit_UpdateRuleRequest: Sendable {
+public nonisolated struct Buskit_UpdateRuleRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -551,7 +553,7 @@ public struct Buskit_UpdateRuleRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_UpdateRuleReply: Sendable {
+public nonisolated struct Buskit_UpdateRuleReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -563,7 +565,7 @@ public struct Buskit_UpdateRuleReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_AddRuleRequest: Sendable {
+public nonisolated struct Buskit_AddRuleRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -581,7 +583,7 @@ public struct Buskit_AddRuleRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_AddRuleReply: Sendable {
+public nonisolated struct Buskit_AddRuleReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -593,7 +595,7 @@ public struct Buskit_AddRuleReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_DeleteRuleRequest: Sendable {
+public nonisolated struct Buskit_DeleteRuleRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -609,7 +611,7 @@ public struct Buskit_DeleteRuleRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_DeleteRuleReply: Sendable {
+public nonisolated struct Buskit_DeleteRuleReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -621,7 +623,7 @@ public struct Buskit_DeleteRuleReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_CreateQueueRequest: Sendable {
+public nonisolated struct Buskit_CreateQueueRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -653,7 +655,7 @@ public struct Buskit_CreateQueueRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_CreateQueueReply: Sendable {
+public nonisolated struct Buskit_CreateQueueReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -665,7 +667,7 @@ public struct Buskit_CreateQueueReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_DeleteQueueRequest: Sendable {
+public nonisolated struct Buskit_DeleteQueueRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -677,7 +679,7 @@ public struct Buskit_DeleteQueueRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_DeleteQueueReply: Sendable {
+public nonisolated struct Buskit_DeleteQueueReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -689,7 +691,33 @@ public struct Buskit_DeleteQueueReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_CreateTopicRequest: Sendable {
+public nonisolated struct Buskit_SetQueueStatusRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var queueName: String = String()
+
+  public var status: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Buskit_SetQueueStatusReply: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var error: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Buskit_CreateTopicRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -713,7 +741,7 @@ public struct Buskit_CreateTopicRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_CreateTopicReply: Sendable {
+public nonisolated struct Buskit_CreateTopicReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -725,7 +753,7 @@ public struct Buskit_CreateTopicReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_DeleteTopicRequest: Sendable {
+public nonisolated struct Buskit_DeleteTopicRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -737,7 +765,7 @@ public struct Buskit_DeleteTopicRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_DeleteTopicReply: Sendable {
+public nonisolated struct Buskit_DeleteTopicReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -749,22 +777,33 @@ public struct Buskit_DeleteTopicReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_CreateSubscriptionRequest: Sendable {
+public nonisolated struct Buskit_CreateSubscriptionRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   public var topicName: String = String()
+
   public var subscriptionName: String = String()
+
   public var maxDeliveryCount: Int32 = 0
+
   public var defaultMessageTtlSeconds: Int64 = 0
+
   public var lockDurationSeconds: Int64 = 0
+
   public var autoDeleteOnIdleSeconds: Int64 = 0
+
   public var neverAutoDelete: Bool = false
+
   public var enableSessions: Bool = false
+
   public var deadLetteringOnExpiration: Bool = false
+
   public var deadLetteringOnFilterEvaluation: Bool = false
+
   public var forwardMessages: Bool = false
+
   public var forwardTo: String = String()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -772,7 +811,7 @@ public struct Buskit_CreateSubscriptionRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_CreateSubscriptionReply: Sendable {
+public nonisolated struct Buskit_CreateSubscriptionReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -784,12 +823,13 @@ public struct Buskit_CreateSubscriptionReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_DeleteSubscriptionRequest: Sendable {
+public nonisolated struct Buskit_DeleteSubscriptionRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   public var topicName: String = String()
+
   public var subscriptionName: String = String()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -797,7 +837,7 @@ public struct Buskit_DeleteSubscriptionRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_DeleteSubscriptionReply: Sendable {
+public nonisolated struct Buskit_DeleteSubscriptionReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -809,7 +849,7 @@ public struct Buskit_DeleteSubscriptionReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_GetQueuePropertiesRequest: Sendable {
+public nonisolated struct Buskit_GetQueuePropertiesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -821,7 +861,7 @@ public struct Buskit_GetQueuePropertiesRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_GetQueuePropertiesReply: Sendable {
+public nonisolated struct Buskit_GetQueuePropertiesReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -842,7 +882,7 @@ public struct Buskit_GetQueuePropertiesReply: Sendable {
   fileprivate var _properties: Buskit_QueueDetails? = nil
 }
 
-public struct Buskit_QueueDetails: Sendable {
+public nonisolated struct Buskit_QueueDetails: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -884,7 +924,7 @@ public struct Buskit_QueueDetails: Sendable {
   public init() {}
 }
 
-public struct Buskit_GetSubscriptionPropertiesRequest: Sendable {
+public nonisolated struct Buskit_GetSubscriptionPropertiesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -898,7 +938,7 @@ public struct Buskit_GetSubscriptionPropertiesRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_GetSubscriptionPropertiesReply: Sendable {
+public nonisolated struct Buskit_GetSubscriptionPropertiesReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -919,7 +959,7 @@ public struct Buskit_GetSubscriptionPropertiesReply: Sendable {
   fileprivate var _properties: Buskit_SubscriptionDetails? = nil
 }
 
-public struct Buskit_SubscriptionDetails: Sendable {
+public nonisolated struct Buskit_SubscriptionDetails: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -957,7 +997,7 @@ public struct Buskit_SubscriptionDetails: Sendable {
   public init() {}
 }
 
-public struct Buskit_UpdateSubscriptionTtlRequest: Sendable {
+public nonisolated struct Buskit_UpdateSubscriptionTtlRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -973,7 +1013,7 @@ public struct Buskit_UpdateSubscriptionTtlRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_UpdateSubscriptionTtlReply: Sendable {
+public nonisolated struct Buskit_UpdateSubscriptionTtlReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -985,7 +1025,7 @@ public struct Buskit_UpdateSubscriptionTtlReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_PeekMessagesRequest: Sendable {
+public nonisolated struct Buskit_PeekMessagesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -1005,7 +1045,7 @@ public struct Buskit_PeekMessagesRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_PeekMessagesReply: Sendable {
+public nonisolated struct Buskit_PeekMessagesReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -1017,7 +1057,7 @@ public struct Buskit_PeekMessagesReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_SendMessageRequest: Sendable {
+public nonisolated struct Buskit_SendMessageRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -1035,7 +1075,7 @@ public struct Buskit_SendMessageRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_SendMessageReply: Sendable {
+public nonisolated struct Buskit_SendMessageReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -1051,7 +1091,7 @@ public struct Buskit_SendMessageReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_SubscribeRequest: Sendable {
+public nonisolated struct Buskit_SubscribeRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -1063,7 +1103,7 @@ public struct Buskit_SubscribeRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_PurgeMessagesRequest: Sendable {
+public nonisolated struct Buskit_PurgeMessagesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -1081,7 +1121,7 @@ public struct Buskit_PurgeMessagesRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_PurgeMessagesReply: Sendable {
+public nonisolated struct Buskit_PurgeMessagesReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -1093,7 +1133,7 @@ public struct Buskit_PurgeMessagesReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_DeleteMessageRequest: Sendable {
+public nonisolated struct Buskit_DeleteMessageRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -1113,7 +1153,7 @@ public struct Buskit_DeleteMessageRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_DeleteMessageReply: Sendable {
+public nonisolated struct Buskit_DeleteMessageReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -1127,7 +1167,7 @@ public struct Buskit_DeleteMessageReply: Sendable {
   public init() {}
 }
 
-public struct Buskit_SendMessageExtendedRequest: Sendable {
+public nonisolated struct Buskit_SendMessageExtendedRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -1157,7 +1197,7 @@ public struct Buskit_SendMessageExtendedRequest: Sendable {
   public init() {}
 }
 
-public struct Buskit_BusMessage: Sendable {
+public nonisolated struct Buskit_BusMessage: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -1197,13 +1237,13 @@ public struct Buskit_BusMessage: Sendable {
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
-fileprivate let _protobuf_package = "buskit"
+fileprivate nonisolated let _protobuf_package = "buskit"
 
-extension Buskit_AccessTier: SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_AccessTier: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0ACCESS_TIER_NO_ACCESS\0\u{1}ACCESS_TIER_READ_ONLY\0\u{1}ACCESS_TIER_MESSAGE_READER\0\u{1}ACCESS_TIER_MESSAGE_OPERATOR\0\u{1}ACCESS_TIER_FULL_ACCESS\0")
 }
 
-extension Buskit_ConnectRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_ConnectRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ConnectRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}connection_string\0")
 
@@ -1233,7 +1273,7 @@ extension Buskit_ConnectRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
   }
 }
 
-extension Buskit_ConnectWithAzureADRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_ConnectWithAzureADRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ConnectWithAzureADRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}fully_qualified_namespace\0")
 
@@ -1263,7 +1303,7 @@ extension Buskit_ConnectWithAzureADRequest: SwiftProtobuf.Message, SwiftProtobuf
   }
 }
 
-extension Buskit_ConnectReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_ConnectReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ConnectReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}success\0\u{1}error\0")
 
@@ -1298,7 +1338,7 @@ extension Buskit_ConnectReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
   }
 }
 
-extension Buskit_DisconnectRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_DisconnectRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".DisconnectRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
@@ -1317,7 +1357,7 @@ extension Buskit_DisconnectRequest: SwiftProtobuf.Message, SwiftProtobuf._Messag
   }
 }
 
-extension Buskit_DisconnectReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_DisconnectReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".DisconnectReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}success\0")
 
@@ -1347,7 +1387,7 @@ extension Buskit_DisconnectReply: SwiftProtobuf.Message, SwiftProtobuf._MessageI
   }
 }
 
-extension Buskit_ListAzureSubscriptionsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_ListAzureSubscriptionsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ListAzureSubscriptionsRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
@@ -1366,7 +1406,7 @@ extension Buskit_ListAzureSubscriptionsRequest: SwiftProtobuf.Message, SwiftProt
   }
 }
 
-extension Buskit_ListAzureSubscriptionsReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_ListAzureSubscriptionsReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ListAzureSubscriptionsReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}subscriptions\0\u{1}error\0\u{1}tenants\0")
 
@@ -1406,7 +1446,7 @@ extension Buskit_ListAzureSubscriptionsReply: SwiftProtobuf.Message, SwiftProtob
   }
 }
 
-extension Buskit_AzureSubscriptionInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_AzureSubscriptionInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".AzureSubscriptionInfo"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}subscription_id\0\u{3}display_name\0")
 
@@ -1441,7 +1481,7 @@ extension Buskit_AzureSubscriptionInfo: SwiftProtobuf.Message, SwiftProtobuf._Me
   }
 }
 
-extension Buskit_AzureTenantInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_AzureTenantInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".AzureTenantInfo"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}tenant_id\0\u{3}display_name\0")
 
@@ -1476,7 +1516,7 @@ extension Buskit_AzureTenantInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageI
   }
 }
 
-extension Buskit_SelectAzureTenantRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_SelectAzureTenantRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".SelectAzureTenantRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}tenant_id\0")
 
@@ -1506,7 +1546,7 @@ extension Buskit_SelectAzureTenantRequest: SwiftProtobuf.Message, SwiftProtobuf.
   }
 }
 
-extension Buskit_SelectAzureTenantReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_SelectAzureTenantReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".SelectAzureTenantReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}subscriptions\0\u{1}error\0")
 
@@ -1541,7 +1581,7 @@ extension Buskit_SelectAzureTenantReply: SwiftProtobuf.Message, SwiftProtobuf._M
   }
 }
 
-extension Buskit_ListServiceBusNamespacesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_ListServiceBusNamespacesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ListServiceBusNamespacesRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}subscription_id\0")
 
@@ -1571,7 +1611,7 @@ extension Buskit_ListServiceBusNamespacesRequest: SwiftProtobuf.Message, SwiftPr
   }
 }
 
-extension Buskit_ListServiceBusNamespacesReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_ListServiceBusNamespacesReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ListServiceBusNamespacesReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}namespaces\0\u{1}error\0")
 
@@ -1606,7 +1646,7 @@ extension Buskit_ListServiceBusNamespacesReply: SwiftProtobuf.Message, SwiftProt
   }
 }
 
-extension Buskit_ServiceBusNamespaceInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_ServiceBusNamespaceInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ServiceBusNamespaceInfo"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{3}fully_qualified_namespace\0\u{3}resource_group\0")
 
@@ -1646,7 +1686,7 @@ extension Buskit_ServiceBusNamespaceInfo: SwiftProtobuf.Message, SwiftProtobuf._
   }
 }
 
-extension Buskit_CheckRbacPermissionsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_CheckRbacPermissionsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".CheckRbacPermissionsRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}subscription_id\0\u{3}resource_group\0\u{3}namespace_name\0")
 
@@ -1686,7 +1726,7 @@ extension Buskit_CheckRbacPermissionsRequest: SwiftProtobuf.Message, SwiftProtob
   }
 }
 
-extension Buskit_CheckRbacPermissionsReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_CheckRbacPermissionsReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".CheckRbacPermissionsReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}has_data_owner_role\0\u{3}has_contributor_role\0\u{1}error\0\u{3}check_failed\0\u{3}access_tier\0\u{3}is_partial_access\0\u{3}tier_label\0\u{3}can_browse_entities\0\u{3}can_view_properties\0\u{3}can_peek_fetch\0\u{3}can_purge\0\u{3}can_resubmit_dlq\0\u{3}can_create_resources\0\u{3}can_manage_filters\0\u{3}recommended_role_name\0\u{3}recommended_role_id\0\u{3}recommended_role_description\0\u{3}recommended_target_tier\0\u{3}evaluated_at_unix_ms\0\u{3}expires_at_unix_ms\0")
 
@@ -1885,7 +1925,7 @@ extension Buskit_CheckRbacPermissionsReply: SwiftProtobuf.Message, SwiftProtobuf
   }
 }
 
-extension Buskit_ListQueuesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_ListQueuesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ListQueuesRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
@@ -1904,7 +1944,7 @@ extension Buskit_ListQueuesRequest: SwiftProtobuf.Message, SwiftProtobuf._Messag
   }
 }
 
-extension Buskit_ListQueuesReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_ListQueuesReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ListQueuesReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}queues\0")
 
@@ -1934,9 +1974,9 @@ extension Buskit_ListQueuesReply: SwiftProtobuf.Message, SwiftProtobuf._MessageI
   }
 }
 
-extension Buskit_QueueInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_QueueInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".QueueInfo"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{3}message_count\0\u{3}dead_letter_count\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{3}message_count\0\u{3}dead_letter_count\0\u{1}status\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1947,6 +1987,7 @@ extension Buskit_QueueInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
       case 1: try { try decoder.decodeSingularStringField(value: &self.name) }()
       case 2: try { try decoder.decodeSingularInt64Field(value: &self.messageCount) }()
       case 3: try { try decoder.decodeSingularInt64Field(value: &self.deadLetterCount) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.status) }()
       default: break
       }
     }
@@ -1962,6 +2003,9 @@ extension Buskit_QueueInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     if self.deadLetterCount != 0 {
       try visitor.visitSingularInt64Field(value: self.deadLetterCount, fieldNumber: 3)
     }
+    if !self.status.isEmpty {
+      try visitor.visitSingularStringField(value: self.status, fieldNumber: 4)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -1969,12 +2013,13 @@ extension Buskit_QueueInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     if lhs.name != rhs.name {return false}
     if lhs.messageCount != rhs.messageCount {return false}
     if lhs.deadLetterCount != rhs.deadLetterCount {return false}
+    if lhs.status != rhs.status {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension Buskit_ListTopicsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_ListTopicsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ListTopicsRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
@@ -1993,7 +2038,7 @@ extension Buskit_ListTopicsRequest: SwiftProtobuf.Message, SwiftProtobuf._Messag
   }
 }
 
-extension Buskit_ListTopicsReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_ListTopicsReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ListTopicsReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}topics\0")
 
@@ -2023,7 +2068,7 @@ extension Buskit_ListTopicsReply: SwiftProtobuf.Message, SwiftProtobuf._MessageI
   }
 }
 
-extension Buskit_TopicInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_TopicInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TopicInfo"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0")
 
@@ -2053,7 +2098,7 @@ extension Buskit_TopicInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
   }
 }
 
-extension Buskit_ListSubscriptionsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_ListSubscriptionsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ListSubscriptionsRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0")
 
@@ -2083,7 +2128,7 @@ extension Buskit_ListSubscriptionsRequest: SwiftProtobuf.Message, SwiftProtobuf.
   }
 }
 
-extension Buskit_ListSubscriptionsReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_ListSubscriptionsReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ListSubscriptionsReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}subscriptions\0")
 
@@ -2113,7 +2158,7 @@ extension Buskit_ListSubscriptionsReply: SwiftProtobuf.Message, SwiftProtobuf._M
   }
 }
 
-extension Buskit_SubscriptionInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_SubscriptionInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".SubscriptionInfo"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{3}active_message_count\0\u{3}dead_letter_count\0")
 
@@ -2153,7 +2198,7 @@ extension Buskit_SubscriptionInfo: SwiftProtobuf.Message, SwiftProtobuf._Message
   }
 }
 
-extension Buskit_ListRulesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_ListRulesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ListRulesRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0\u{3}subscription_name\0")
 
@@ -2188,7 +2233,7 @@ extension Buskit_ListRulesRequest: SwiftProtobuf.Message, SwiftProtobuf._Message
   }
 }
 
-extension Buskit_ListRulesReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_ListRulesReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ListRulesReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}rules\0")
 
@@ -2218,7 +2263,7 @@ extension Buskit_ListRulesReply: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
   }
 }
 
-extension Buskit_RuleInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_RuleInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".RuleInfo"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{1}filter\0")
 
@@ -2253,7 +2298,7 @@ extension Buskit_RuleInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplemen
   }
 }
 
-extension Buskit_UpdateRuleRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_UpdateRuleRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".UpdateRuleRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0\u{3}subscription_name\0\u{3}rule_name\0\u{3}sql_filter\0")
 
@@ -2298,7 +2343,7 @@ extension Buskit_UpdateRuleRequest: SwiftProtobuf.Message, SwiftProtobuf._Messag
   }
 }
 
-extension Buskit_UpdateRuleReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_UpdateRuleReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".UpdateRuleReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
 
@@ -2328,7 +2373,7 @@ extension Buskit_UpdateRuleReply: SwiftProtobuf.Message, SwiftProtobuf._MessageI
   }
 }
 
-extension Buskit_AddRuleRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_AddRuleRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".AddRuleRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0\u{3}subscription_name\0\u{3}rule_name\0\u{3}sql_filter\0")
 
@@ -2373,7 +2418,7 @@ extension Buskit_AddRuleRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
   }
 }
 
-extension Buskit_AddRuleReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_AddRuleReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".AddRuleReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
 
@@ -2403,7 +2448,7 @@ extension Buskit_AddRuleReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
   }
 }
 
-extension Buskit_DeleteRuleRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_DeleteRuleRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".DeleteRuleRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0\u{3}subscription_name\0\u{3}rule_name\0")
 
@@ -2443,7 +2488,7 @@ extension Buskit_DeleteRuleRequest: SwiftProtobuf.Message, SwiftProtobuf._Messag
   }
 }
 
-extension Buskit_DeleteRuleReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_DeleteRuleReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".DeleteRuleReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
 
@@ -2473,7 +2518,7 @@ extension Buskit_DeleteRuleReply: SwiftProtobuf.Message, SwiftProtobuf._MessageI
   }
 }
 
-extension Buskit_CreateQueueRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_CreateQueueRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".CreateQueueRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}queue_name\0\u{3}max_size_mb\0\u{3}max_delivery_count\0\u{3}default_message_ttl_seconds\0\u{3}lock_duration_seconds\0\u{3}requires_duplicate_detection\0\u{3}requires_session\0\u{3}dead_lettering_on_expiration\0\u{3}enable_partitioning\0\u{3}forward_to\0\u{3}auto_delete_on_idle_seconds\0")
 
@@ -2483,15 +2528,15 @@ extension Buskit_CreateQueueRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1:  try { try decoder.decodeSingularStringField(value: &self.queueName) }()
-      case 2:  try { try decoder.decodeSingularInt64Field(value: &self.maxSizeMb) }()
-      case 3:  try { try decoder.decodeSingularInt32Field(value: &self.maxDeliveryCount) }()
-      case 4:  try { try decoder.decodeSingularInt64Field(value: &self.defaultMessageTtlSeconds) }()
-      case 5:  try { try decoder.decodeSingularInt64Field(value: &self.lockDurationSeconds) }()
-      case 6:  try { try decoder.decodeSingularBoolField(value: &self.requiresDuplicateDetection) }()
-      case 7:  try { try decoder.decodeSingularBoolField(value: &self.requiresSession) }()
-      case 8:  try { try decoder.decodeSingularBoolField(value: &self.deadLetteringOnExpiration) }()
-      case 9:  try { try decoder.decodeSingularBoolField(value: &self.enablePartitioning) }()
+      case 1: try { try decoder.decodeSingularStringField(value: &self.queueName) }()
+      case 2: try { try decoder.decodeSingularInt64Field(value: &self.maxSizeMb) }()
+      case 3: try { try decoder.decodeSingularInt32Field(value: &self.maxDeliveryCount) }()
+      case 4: try { try decoder.decodeSingularInt64Field(value: &self.defaultMessageTtlSeconds) }()
+      case 5: try { try decoder.decodeSingularInt64Field(value: &self.lockDurationSeconds) }()
+      case 6: try { try decoder.decodeSingularBoolField(value: &self.requiresDuplicateDetection) }()
+      case 7: try { try decoder.decodeSingularBoolField(value: &self.requiresSession) }()
+      case 8: try { try decoder.decodeSingularBoolField(value: &self.deadLetteringOnExpiration) }()
+      case 9: try { try decoder.decodeSingularBoolField(value: &self.enablePartitioning) }()
       case 10: try { try decoder.decodeSingularStringField(value: &self.forwardTo) }()
       case 11: try { try decoder.decodeSingularInt64Field(value: &self.autoDeleteOnIdleSeconds) }()
       default: break
@@ -2553,7 +2598,7 @@ extension Buskit_CreateQueueRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
   }
 }
 
-extension Buskit_CreateQueueReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_CreateQueueReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".CreateQueueReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
 
@@ -2583,12 +2628,15 @@ extension Buskit_CreateQueueReply: SwiftProtobuf.Message, SwiftProtobuf._Message
   }
 }
 
-extension Buskit_DeleteQueueRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_DeleteQueueRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".DeleteQueueRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}queue_name\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.queueName) }()
       default: break
@@ -2610,12 +2658,15 @@ extension Buskit_DeleteQueueRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
   }
 }
 
-extension Buskit_DeleteQueueReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_DeleteQueueReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".DeleteQueueReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.error) }()
       default: break
@@ -2637,12 +2688,80 @@ extension Buskit_DeleteQueueReply: SwiftProtobuf.Message, SwiftProtobuf._Message
   }
 }
 
-extension Buskit_CreateTopicRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_SetQueueStatusRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".SetQueueStatusRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}queue_name\0\u{1}status\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.queueName) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.status) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.queueName.isEmpty {
+      try visitor.visitSingularStringField(value: self.queueName, fieldNumber: 1)
+    }
+    if !self.status.isEmpty {
+      try visitor.visitSingularStringField(value: self.status, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_SetQueueStatusRequest, rhs: Buskit_SetQueueStatusRequest) -> Bool {
+    if lhs.queueName != rhs.queueName {return false}
+    if lhs.status != rhs.status {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Buskit_SetQueueStatusReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".SetQueueStatusReply"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.error) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.error.isEmpty {
+      try visitor.visitSingularStringField(value: self.error, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Buskit_SetQueueStatusReply, rhs: Buskit_SetQueueStatusReply) -> Bool {
+    if lhs.error != rhs.error {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Buskit_CreateTopicRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".CreateTopicRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0\u{3}max_size_mb\0\u{3}default_message_ttl_seconds\0\u{3}requires_duplicate_detection\0\u{3}enable_partitioning\0\u{3}support_ordering\0\u{3}auto_delete_on_idle_seconds\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.topicName) }()
       case 2: try { try decoder.decodeSingularInt64Field(value: &self.maxSizeMb) }()
@@ -2694,12 +2813,15 @@ extension Buskit_CreateTopicRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
   }
 }
 
-extension Buskit_CreateTopicReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_CreateTopicReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".CreateTopicReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.error) }()
       default: break
@@ -2721,12 +2843,15 @@ extension Buskit_CreateTopicReply: SwiftProtobuf.Message, SwiftProtobuf._Message
   }
 }
 
-extension Buskit_DeleteTopicRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_DeleteTopicRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".DeleteTopicRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.topicName) }()
       default: break
@@ -2748,12 +2873,15 @@ extension Buskit_DeleteTopicRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
   }
 }
 
-extension Buskit_DeleteTopicReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_DeleteTopicReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".DeleteTopicReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.error) }()
       default: break
@@ -2775,12 +2903,15 @@ extension Buskit_DeleteTopicReply: SwiftProtobuf.Message, SwiftProtobuf._Message
   }
 }
 
-extension Buskit_CreateSubscriptionRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_CreateSubscriptionRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".CreateSubscriptionRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0\u{3}subscription_name\0\u{3}max_delivery_count\0\u{3}default_message_ttl_seconds\0\u{3}lock_duration_seconds\0\u{3}auto_delete_on_idle_seconds\0\u{3}never_auto_delete\0\u{3}enable_sessions\0\u{3}dead_lettering_on_expiration\0\u{3}dead_lettering_on_filter_evaluation\0\u{3}forward_messages\0\u{3}forward_to\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.topicName) }()
       case 2: try { try decoder.decodeSingularStringField(value: &self.subscriptionName) }()
@@ -2800,18 +2931,42 @@ extension Buskit_CreateSubscriptionRequest: SwiftProtobuf.Message, SwiftProtobuf
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if !self.topicName.isEmpty { try visitor.visitSingularStringField(value: self.topicName, fieldNumber: 1) }
-    if !self.subscriptionName.isEmpty { try visitor.visitSingularStringField(value: self.subscriptionName, fieldNumber: 2) }
-    if self.maxDeliveryCount != 0 { try visitor.visitSingularInt32Field(value: self.maxDeliveryCount, fieldNumber: 3) }
-    if self.defaultMessageTtlSeconds != 0 { try visitor.visitSingularInt64Field(value: self.defaultMessageTtlSeconds, fieldNumber: 4) }
-    if self.lockDurationSeconds != 0 { try visitor.visitSingularInt64Field(value: self.lockDurationSeconds, fieldNumber: 5) }
-    if self.autoDeleteOnIdleSeconds != 0 { try visitor.visitSingularInt64Field(value: self.autoDeleteOnIdleSeconds, fieldNumber: 6) }
-    if self.neverAutoDelete != false { try visitor.visitSingularBoolField(value: self.neverAutoDelete, fieldNumber: 7) }
-    if self.enableSessions != false { try visitor.visitSingularBoolField(value: self.enableSessions, fieldNumber: 8) }
-    if self.deadLetteringOnExpiration != false { try visitor.visitSingularBoolField(value: self.deadLetteringOnExpiration, fieldNumber: 9) }
-    if self.deadLetteringOnFilterEvaluation != false { try visitor.visitSingularBoolField(value: self.deadLetteringOnFilterEvaluation, fieldNumber: 10) }
-    if self.forwardMessages != false { try visitor.visitSingularBoolField(value: self.forwardMessages, fieldNumber: 11) }
-    if !self.forwardTo.isEmpty { try visitor.visitSingularStringField(value: self.forwardTo, fieldNumber: 12) }
+    if !self.topicName.isEmpty {
+      try visitor.visitSingularStringField(value: self.topicName, fieldNumber: 1)
+    }
+    if !self.subscriptionName.isEmpty {
+      try visitor.visitSingularStringField(value: self.subscriptionName, fieldNumber: 2)
+    }
+    if self.maxDeliveryCount != 0 {
+      try visitor.visitSingularInt32Field(value: self.maxDeliveryCount, fieldNumber: 3)
+    }
+    if self.defaultMessageTtlSeconds != 0 {
+      try visitor.visitSingularInt64Field(value: self.defaultMessageTtlSeconds, fieldNumber: 4)
+    }
+    if self.lockDurationSeconds != 0 {
+      try visitor.visitSingularInt64Field(value: self.lockDurationSeconds, fieldNumber: 5)
+    }
+    if self.autoDeleteOnIdleSeconds != 0 {
+      try visitor.visitSingularInt64Field(value: self.autoDeleteOnIdleSeconds, fieldNumber: 6)
+    }
+    if self.neverAutoDelete != false {
+      try visitor.visitSingularBoolField(value: self.neverAutoDelete, fieldNumber: 7)
+    }
+    if self.enableSessions != false {
+      try visitor.visitSingularBoolField(value: self.enableSessions, fieldNumber: 8)
+    }
+    if self.deadLetteringOnExpiration != false {
+      try visitor.visitSingularBoolField(value: self.deadLetteringOnExpiration, fieldNumber: 9)
+    }
+    if self.deadLetteringOnFilterEvaluation != false {
+      try visitor.visitSingularBoolField(value: self.deadLetteringOnFilterEvaluation, fieldNumber: 10)
+    }
+    if self.forwardMessages != false {
+      try visitor.visitSingularBoolField(value: self.forwardMessages, fieldNumber: 11)
+    }
+    if !self.forwardTo.isEmpty {
+      try visitor.visitSingularStringField(value: self.forwardTo, fieldNumber: 12)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -2833,12 +2988,15 @@ extension Buskit_CreateSubscriptionRequest: SwiftProtobuf.Message, SwiftProtobuf
   }
 }
 
-extension Buskit_CreateSubscriptionReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_CreateSubscriptionReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".CreateSubscriptionReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.error) }()
       default: break
@@ -2860,12 +3018,15 @@ extension Buskit_CreateSubscriptionReply: SwiftProtobuf.Message, SwiftProtobuf._
   }
 }
 
-extension Buskit_DeleteSubscriptionRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_DeleteSubscriptionRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".DeleteSubscriptionRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0\u{3}subscription_name\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.topicName) }()
       case 2: try { try decoder.decodeSingularStringField(value: &self.subscriptionName) }()
@@ -2892,12 +3053,15 @@ extension Buskit_DeleteSubscriptionRequest: SwiftProtobuf.Message, SwiftProtobuf
   }
 }
 
-extension Buskit_DeleteSubscriptionReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_DeleteSubscriptionReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".DeleteSubscriptionReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.error) }()
       default: break
@@ -2919,7 +3083,7 @@ extension Buskit_DeleteSubscriptionReply: SwiftProtobuf.Message, SwiftProtobuf._
   }
 }
 
-extension Buskit_GetQueuePropertiesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_GetQueuePropertiesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".GetQueuePropertiesRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0")
 
@@ -2949,7 +3113,7 @@ extension Buskit_GetQueuePropertiesRequest: SwiftProtobuf.Message, SwiftProtobuf
   }
 }
 
-extension Buskit_GetQueuePropertiesReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_GetQueuePropertiesReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".GetQueuePropertiesReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}properties\0")
 
@@ -2983,7 +3147,7 @@ extension Buskit_GetQueuePropertiesReply: SwiftProtobuf.Message, SwiftProtobuf._
   }
 }
 
-extension Buskit_QueueDetails: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_QueueDetails: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".QueueDetails"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{3}max_size_mb\0\u{3}default_message_ttl_seconds\0\u{3}lock_duration_seconds\0\u{3}requires_duplicate_detection\0\u{3}requires_session\0\u{3}max_delivery_count\0\u{3}dead_lettering_on_expiration\0\u{1}status\0\u{3}created_at_unix\0\u{3}updated_at_unix\0\u{3}active_message_count\0\u{3}dead_letter_count\0\u{3}size_bytes\0\u{3}forward_to\0\u{3}auto_delete_on_idle_seconds\0")
 
@@ -3088,7 +3252,7 @@ extension Buskit_QueueDetails: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
   }
 }
 
-extension Buskit_GetSubscriptionPropertiesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_GetSubscriptionPropertiesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".GetSubscriptionPropertiesRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0\u{3}subscription_name\0")
 
@@ -3123,7 +3287,7 @@ extension Buskit_GetSubscriptionPropertiesRequest: SwiftProtobuf.Message, SwiftP
   }
 }
 
-extension Buskit_GetSubscriptionPropertiesReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_GetSubscriptionPropertiesReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".GetSubscriptionPropertiesReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}properties\0")
 
@@ -3157,7 +3321,7 @@ extension Buskit_GetSubscriptionPropertiesReply: SwiftProtobuf.Message, SwiftPro
   }
 }
 
-extension Buskit_SubscriptionDetails: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_SubscriptionDetails: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".SubscriptionDetails"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0\u{1}name\0\u{3}default_message_ttl_seconds\0\u{3}lock_duration_seconds\0\u{3}max_delivery_count\0\u{3}dead_lettering_on_expiration\0\u{3}dead_lettering_on_filter_evaluation\0\u{1}status\0\u{3}created_at_unix\0\u{3}updated_at_unix\0\u{3}active_message_count\0\u{3}dead_letter_count\0\u{3}forward_to\0\u{3}auto_delete_on_idle_seconds\0")
 
@@ -3252,7 +3416,7 @@ extension Buskit_SubscriptionDetails: SwiftProtobuf.Message, SwiftProtobuf._Mess
   }
 }
 
-extension Buskit_UpdateSubscriptionTtlRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_UpdateSubscriptionTtlRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".UpdateSubscriptionTtlRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}topic_name\0\u{3}subscription_name\0\u{3}default_message_ttl_seconds\0")
 
@@ -3292,7 +3456,7 @@ extension Buskit_UpdateSubscriptionTtlRequest: SwiftProtobuf.Message, SwiftProto
   }
 }
 
-extension Buskit_UpdateSubscriptionTtlReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_UpdateSubscriptionTtlReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".UpdateSubscriptionTtlReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}error\0")
 
@@ -3322,7 +3486,7 @@ extension Buskit_UpdateSubscriptionTtlReply: SwiftProtobuf.Message, SwiftProtobu
   }
 }
 
-extension Buskit_PeekMessagesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_PeekMessagesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".PeekMessagesRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}queue_name\0\u{3}max_messages\0\u{3}topic_name\0\u{3}subscription_name\0\u{3}dead_letter\0")
 
@@ -3372,7 +3536,7 @@ extension Buskit_PeekMessagesRequest: SwiftProtobuf.Message, SwiftProtobuf._Mess
   }
 }
 
-extension Buskit_PeekMessagesReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_PeekMessagesReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".PeekMessagesReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}messages\0")
 
@@ -3402,7 +3566,7 @@ extension Buskit_PeekMessagesReply: SwiftProtobuf.Message, SwiftProtobuf._Messag
   }
 }
 
-extension Buskit_SendMessageRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_SendMessageRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".SendMessageRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}queue_name\0\u{1}body\0\u{3}content_type\0\u{1}properties\0")
 
@@ -3447,7 +3611,7 @@ extension Buskit_SendMessageRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
   }
 }
 
-extension Buskit_SendMessageReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_SendMessageReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".SendMessageReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}success\0\u{3}message_id\0\u{1}error\0")
 
@@ -3487,7 +3651,7 @@ extension Buskit_SendMessageReply: SwiftProtobuf.Message, SwiftProtobuf._Message
   }
 }
 
-extension Buskit_SubscribeRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_SubscribeRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".SubscribeRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}queue_name\0")
 
@@ -3517,7 +3681,7 @@ extension Buskit_SubscribeRequest: SwiftProtobuf.Message, SwiftProtobuf._Message
   }
 }
 
-extension Buskit_PurgeMessagesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_PurgeMessagesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".PurgeMessagesRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}queue_name\0\u{3}topic_name\0\u{3}subscription_name\0\u{3}dead_letter\0")
 
@@ -3562,7 +3726,7 @@ extension Buskit_PurgeMessagesRequest: SwiftProtobuf.Message, SwiftProtobuf._Mes
   }
 }
 
-extension Buskit_PurgeMessagesReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_PurgeMessagesReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".PurgeMessagesReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}purged_count\0")
 
@@ -3592,7 +3756,7 @@ extension Buskit_PurgeMessagesReply: SwiftProtobuf.Message, SwiftProtobuf._Messa
   }
 }
 
-extension Buskit_DeleteMessageRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_DeleteMessageRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".DeleteMessageRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}queue_name\0\u{3}topic_name\0\u{3}subscription_name\0\u{3}dead_letter\0\u{3}sequence_number\0")
 
@@ -3642,7 +3806,7 @@ extension Buskit_DeleteMessageRequest: SwiftProtobuf.Message, SwiftProtobuf._Mes
   }
 }
 
-extension Buskit_DeleteMessageReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_DeleteMessageReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".DeleteMessageReply"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}success\0\u{1}error\0")
 
@@ -3677,7 +3841,7 @@ extension Buskit_DeleteMessageReply: SwiftProtobuf.Message, SwiftProtobuf._Messa
   }
 }
 
-extension Buskit_SendMessageExtendedRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_SendMessageExtendedRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".SendMessageExtendedRequest"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}queue_or_topic\0\u{1}body\0\u{3}content_type\0\u{1}properties\0\u{1}subject\0\u{3}correlation_id\0\u{3}reply_to\0\u{3}to_address\0\u{3}session_id\0\u{3}partition_key\0")
 
@@ -3752,7 +3916,7 @@ extension Buskit_SendMessageExtendedRequest: SwiftProtobuf.Message, SwiftProtobu
   }
 }
 
-extension Buskit_BusMessage: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Buskit_BusMessage: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".BusMessage"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}message_id\0\u{1}body\0\u{3}content_type\0\u{3}enqueued_time_unix\0\u{1}properties\0\u{3}sequence_number\0\u{3}delivery_count\0\u{3}expires_at_unix\0\u{1}subject\0\u{3}correlation_id\0\u{3}reply_to\0\u{3}to_address\0\u{3}session_id\0\u{3}partition_key\0")
 

@@ -1019,7 +1019,7 @@ struct DataAccessRestrictedView: View {
 @available(macOS 15.0, *)
 #Preview {
     NavigationStack {
-        QueueDetailView(queue: QueueItem(name: "preview-queue", messageCount: 5, deadLetterCount: 2))
+        QueueDetailView(queue: QueueItem(name: "preview-queue", messageCount: 5, deadLetterCount: 2, status: "Active"))
             .environment(GRPCManager())
             .environment(EntityActionStore())
     }

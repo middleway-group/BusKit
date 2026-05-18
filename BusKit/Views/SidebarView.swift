@@ -194,7 +194,6 @@ struct SidebarView: View {
                                 .foregroundStyle(.secondary).font(.caption)
                         } else {
                             ForEach(sortedQueues) { queue in
-                                let isInactive = queue.messageCount == 0 && queue.deadLetterCount == 0
                                 HStack {
                                     Label(queue.name, systemImage: "tray")
                                     Spacer()
@@ -202,7 +201,7 @@ struct SidebarView: View {
                                         active: queue.messageCount,
                                         deadLetter: queue.deadLetterCount)
                                 }
-                                .opacity(isInactive ? 0.4 : 1.0)
+                                .opacity(queue.status == "Active" || queue.status.isEmpty ? 1.0 : 0.4)
                                 .tag(SidebarSelection.queue(queue))
                                 .contextMenu {
                                     queueContextMenu(for: queue)
@@ -432,7 +431,8 @@ struct SidebarView: View {
 
     @ViewBuilder
     private func queueContextMenu(for queue: QueueItem) -> some View {
-        let hasData = grpc.rbacAccessLevel.hasDataAccess
+        let hasData    = grpc.rbacAccessLevel.hasDataAccess
+        let canManage  = grpc.capabilityMap.createResources
         Button("Receive Messages") {
             model.contextTarget  = .queue(queue)
             model.receiveIsDLQ   = false
@@ -464,11 +464,32 @@ struct SidebarView: View {
                 .foregroundStyle(.secondary)
         }
         Divider()
+        Menu("Set Status") {
+            Button("Active") {
+                Task { await performSetQueueStatus(queue: queue, status: "Active") }
+            }
+            .disabled(queue.status == "Active")
+            Divider()
+            Button("Disabled") {
+                Task { await performSetQueueStatus(queue: queue, status: "Disabled") }
+            }
+            .disabled(queue.status == "Disabled")
+            Button("Send Disabled") {
+                Task { await performSetQueueStatus(queue: queue, status: "SendDisabled") }
+            }
+            .disabled(queue.status == "SendDisabled")
+            Button("Receive Disabled") {
+                Task { await performSetQueueStatus(queue: queue, status: "ReceiveDisabled") }
+            }
+            .disabled(queue.status == "ReceiveDisabled")
+        }
+        .disabled(!canManage)
+        Divider()
         Button("Delete Queue", role: .destructive) {
             model.deleteQueueTarget = queue
             model.showDeleteQueueConfirm = true
         }
-        .disabled(!grpc.capabilityMap.createResources)
+        .disabled(!canManage)
     }
 
     // MARK: - Dialog helpers
@@ -535,7 +556,8 @@ struct SidebarView: View {
         else { return }
         model.queues[idx] = QueueItem(name: info.name,
                                       messageCount: info.messageCount,
-                                      deadLetterCount: info.deadLetterCount)
+                                      deadLetterCount: info.deadLetterCount,
+                                      status: info.status)
     }
 
     private func refreshSubscriptionCounts(topicName: String, subName: String) async {
@@ -654,6 +676,24 @@ struct SidebarView: View {
         }
     }
 
+    private func performSetQueueStatus(queue: QueueItem, status: String) async {
+        do {
+            try await grpc.setQueueStatus(name: queue.name, status: status)
+            if let idx = model.queues.firstIndex(where: { $0.id == queue.id }) {
+                model.queues[idx] = QueueItem(name: queue.name,
+                                              messageCount: queue.messageCount,
+                                              deadLetterCount: queue.deadLetterCount,
+                                              status: status)
+            }
+            activityLog.log(action: .setQueueStatus, messageId: queue.name,
+                            result: .success("Queue \"\(queue.name)\" status set to \(status)"))
+        } catch {
+            activityLog.log(action: .setQueueStatus, messageId: queue.name,
+                            result: .failure(error.localizedDescription),
+                            hint: "Check that you have Contributor role on the namespace.")
+        }
+    }
+
     private func performDeleteTopic() async {
         guard let topic = model.deleteTopicTarget else { return }
         model.isDeletingTopic = true
@@ -703,7 +743,7 @@ struct SidebarView: View {
             let (queueInfos, topicInfos) = try await (q, t)
             model.queues  = queueInfos.map {
                 QueueItem(name: $0.name, messageCount: $0.messageCount,
-                          deadLetterCount: $0.deadLetterCount)
+                          deadLetterCount: $0.deadLetterCount, status: $0.status)
             }
             model.topics = topicInfos.map { TopicItem(name: $0.name) }
         } catch { }
@@ -817,7 +857,6 @@ private struct SubscriptionRow: View {
                 deadLetter: sub.deadLetterCount)
         }
         .contentShape(Rectangle())
-        .opacity(sub.activeMessageCount == 0 && sub.deadLetterCount == 0 ? 0.4 : 1.0)
         .tag(SidebarSelection.subscription(sub))
         .contextMenu {
             Button("Receive Messages") {

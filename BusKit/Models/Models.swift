@@ -252,6 +252,7 @@ struct QueueItem: Identifiable, Hashable {
     let name: String
     let messageCount: Int64
     let deadLetterCount: Int64
+    let status: String
 }
 
 struct QueueDetailsItem {

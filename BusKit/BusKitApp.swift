@@ -38,6 +38,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func showAboutWindow() {
+        let parent = NSApp.mainWindow ?? NSApp.keyWindow
         if aboutWindow == nil {
             let controller = NSHostingController(rootView: AboutView())
             let window = NSWindow(contentViewController: controller)
@@ -46,9 +47,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             window.isReleasedWhenClosed = false
             aboutWindow = window
         }
-        aboutWindow?.center()
+        // Hide until positioned so the window doesn't flash in the wrong place.
+        aboutWindow?.alphaValue = 0
         aboutWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        // Wait for the NavigationSplitView sidebar animation (~250 ms on first
+        // launch) to finish so we read the parent's settled frame.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+            guard let window = self?.aboutWindow else { return }
+            if let pf = parent?.frame {
+                let wf = window.frame
+                window.setFrameOrigin(NSPoint(
+                    x: pf.midX - wf.width / 2,
+                    y: pf.midY - wf.height / 2
+                ))
+            }
+            window.alphaValue = 1
+        }
     }
 }
 
