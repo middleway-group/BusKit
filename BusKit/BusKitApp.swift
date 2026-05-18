@@ -21,7 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         guard !others.isEmpty else { return }
 
-        others.first?.activate(options: .activateIgnoringOtherApps)
+        others.first?.activate(options: [])
 
         let alert = NSAlert()
         alert.messageText = "BusKit is already running"

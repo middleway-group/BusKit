@@ -219,14 +219,10 @@ struct CreateSubscriptionSheet: View {
 
             GridRow {
                 emptyLabel
-                (
-                    Text("Sessions enable ordered, lock-based processing of related messages using a session identifier. Only one consumer processes messages per session at a time.  ")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                    + Text("[Learn more](https://learn.microsoft.com/azure/service-bus-messaging/message-sessions)")
-                        .font(.system(size: 12))
-                )
-                .fixedSize(horizontal: false, vertical: true)
+                Text("Sessions enable ordered, lock-based processing of related messages using a session identifier. Only one consumer processes messages per session at a time.  \n[Learn more](https://learn.microsoft.com/azure/service-bus-messaging/message-sessions)")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             GridRow {
@@ -486,3 +482,4 @@ private struct SubHelpPopover: View {
         }
     }
 }
+
