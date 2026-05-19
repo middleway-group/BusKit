@@ -224,6 +224,18 @@ internal enum Buskit_BusKitService: Sendable {
                 method: "SetQueueStatus"
             )
         }
+        /// Namespace for "SetTopicStatus" metadata.
+        internal enum SetTopicStatus: Sendable {
+            /// Request type for "SetTopicStatus".
+            internal typealias Input = Buskit_SetTopicStatusRequest
+            /// Response type for "SetTopicStatus".
+            internal typealias Output = Buskit_SetTopicStatusReply
+            /// Descriptor for "SetTopicStatus".
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "SetTopicStatus"
+            )
+        }
         /// Namespace for "CreateTopic" metadata.
         internal enum CreateTopic: Sendable {
             /// Request type for "CreateTopic".
@@ -752,6 +764,25 @@ extension Buskit_BusKitService {
             deserializer: some GRPCCore.MessageDeserializer<Buskit_SetQueueStatusReply>,
             options: GRPCCore.CallOptions,
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_SetQueueStatusReply>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "SetTopicStatus" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_SetTopicStatusRequest` message.
+        ///   - serializer: A serializer for `Buskit_SetTopicStatusRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_SetTopicStatusReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func setTopicStatus<Result>(
+            request: GRPCCore.ClientRequest<Buskit_SetTopicStatusRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_SetTopicStatusRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_SetTopicStatusReply>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_SetTopicStatusReply>) async throws -> Result
         ) async throws -> Result where Result: Sendable
 
         /// Call the "CreateTopic" method.
@@ -1521,6 +1552,36 @@ extension Buskit_BusKitService {
             try await self.client.unary(
                 request: request,
                 descriptor: Buskit_BusKitService.Method.SetQueueStatus.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "SetTopicStatus" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_SetTopicStatusRequest` message.
+        ///   - serializer: A serializer for `Buskit_SetTopicStatusRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_SetTopicStatusReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        internal func setTopicStatus<Result>(
+            request: GRPCCore.ClientRequest<Buskit_SetTopicStatusRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_SetTopicStatusRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_SetTopicStatusReply>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_SetTopicStatusReply>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Buskit_BusKitService.Method.SetTopicStatus.descriptor,
                 serializer: serializer,
                 deserializer: deserializer,
                 options: options,
@@ -2346,6 +2407,31 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
+    /// Call the "SetTopicStatus" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_SetTopicStatusRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func setTopicStatus<Result>(
+        request: GRPCCore.ClientRequest<Buskit_SetTopicStatusRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_SetTopicStatusReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.setTopicStatus(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_SetTopicStatusRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_SetTopicStatusReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
     /// Call the "CreateTopic" method.
     ///
     /// - Parameters:
@@ -3160,6 +3246,35 @@ extension Buskit_BusKitService.ClientProtocol {
             metadata: metadata
         )
         return try await self.setQueueStatus(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "SetTopicStatus" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func setTopicStatus<Result>(
+        _ message: Buskit_SetTopicStatusRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_SetTopicStatusReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Buskit_SetTopicStatusRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.setTopicStatus(
             request: request,
             options: options,
             onResponse: handleResponse

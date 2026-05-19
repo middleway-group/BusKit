@@ -455,7 +455,7 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
 
         await foreach (var topic in _adminClient.GetTopicsAsync())
         {
-            reply.Topics.Add(new TopicInfo { Name = topic.Name });
+            reply.Topics.Add(new TopicInfo { Name = topic.Name, Status = topic.Status.ToString() });
         }
 
         return reply;
@@ -684,6 +684,40 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
             };
 
             await _adminClient.UpdateQueueAsync(props.Value);
+        }
+        catch (Exception ex)
+        {
+            reply.Error = ex.Message;
+        }
+        return reply;
+    }
+
+    // ── Set Topic Status ──────────────────────────────────
+
+    public override async Task<SetTopicStatusReply> SetTopicStatus(
+        SetTopicStatusRequest request, ServerCallContext context)
+    {
+        var reply = new SetTopicStatusReply();
+        try
+        {
+            if (_adminClient == null)
+            {
+                reply.Error = "Not connected to Service Bus.";
+                return reply;
+            }
+
+            var props = await _adminClient.GetTopicAsync(request.TopicName);
+
+            props.Value.Status = request.Status switch
+            {
+                "Active"          => EntityStatus.Active,
+                "Disabled"        => EntityStatus.Disabled,
+                "SendDisabled"    => EntityStatus.SendDisabled,
+                "ReceiveDisabled" => EntityStatus.ReceiveDisabled,
+                _ => throw new ArgumentException($"Unknown status: {request.Status}")
+            };
+
+            await _adminClient.UpdateTopicAsync(props.Value);
         }
         catch (Exception ex)
         {

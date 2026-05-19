@@ -628,6 +628,17 @@ final class GRPCManager {
         if !reply.error.isEmpty { throw GRPCManagerError.operationFailed(reply.error) }
     }
 
+    // MARK: - Set Topic Status
+
+    func setTopicStatus(name: String, status: String) async throws {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_SetTopicStatusRequest()
+        req.topicName = name
+        req.status = status
+        let reply: Buskit_SetTopicStatusReply = try await buskit.setTopicStatus(req)
+        if !reply.error.isEmpty { throw GRPCManagerError.operationFailed(reply.error) }
+    }
+
     // MARK: - Create Topic
 
     func createTopic(

@@ -296,6 +296,7 @@ struct SubscriptionDetailsItem {
 struct TopicItem: Identifiable, Hashable {
     let id = UUID()
     let name: String
+    let status: String
 }
 
 struct SubscriptionItem: Identifiable, Hashable {

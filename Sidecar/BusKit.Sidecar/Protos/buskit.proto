@@ -24,6 +24,7 @@ service BusKitService {
   rpc CreateQueue (CreateQueueRequest) returns (CreateQueueReply);
   rpc DeleteQueue (DeleteQueueRequest) returns (DeleteQueueReply);
   rpc SetQueueStatus (SetQueueStatusRequest) returns (SetQueueStatusReply);
+  rpc SetTopicStatus (SetTopicStatusRequest) returns (SetTopicStatusReply);
   rpc CreateTopic (CreateTopicRequest) returns (CreateTopicReply);
   rpc DeleteTopic (DeleteTopicRequest) returns (DeleteTopicReply);
   rpc CreateSubscription (CreateSubscriptionRequest) returns (CreateSubscriptionReply);
@@ -176,6 +177,7 @@ message ListTopicsReply {
 
 message TopicInfo {
   string name = 1;
+  string status = 2;
 }
 
 // ─── Subscriptions ───────────────────────────────────
@@ -276,6 +278,15 @@ message SetQueueStatusRequest {
 }
 
 message SetQueueStatusReply {
+  string error = 1;
+}
+
+message SetTopicStatusRequest {
+  string topic_name = 1;
+  string status = 2;
+}
+
+message SetTopicStatusReply {
   string error = 1;
 }
 

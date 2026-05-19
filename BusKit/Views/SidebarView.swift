@@ -112,6 +112,11 @@ private final class SidebarModel {
     var deleteTopicTarget: TopicItem? = nil
     var showDeleteTopicConfirm = false
     var isDeletingTopic = false
+
+    // Disable/Enable Topic state
+    var disableTopicTarget: TopicItem? = nil
+    var showDisableTopicConfirm = false
+    var isSettingTopicStatus = false
 }
 
 // MARK: - Receive Count Dialog
@@ -368,6 +373,21 @@ struct SidebarView: View {
         } message: {
             if let t = model.deleteTopicTarget {
                 Text("Topic \"\(t.name)\" and all its subscriptions will be permanently deleted. This cannot be undone.")
+            }
+        }
+        // ── Disable Topic confirm ─────────────────────────────────
+        .confirmationDialog(
+            "Disable Topic?",
+            isPresented: $model.showDisableTopicConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Disable Topic", role: .destructive) {
+                Task { await performSetTopicStatus(status: "Disabled") }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            if let t = model.disableTopicTarget {
+                Text("Topic \"\(t.name)\" will be disabled. Publishers will no longer be able to send messages to this topic. You can re-enable it at any time.")
             }
         }
         // ── Delete Subscription confirm ───────────────────────────
@@ -711,6 +731,24 @@ struct SidebarView: View {
         }
     }
 
+    private func performSetTopicStatus(status: String) async {
+        guard let topic = model.disableTopicTarget else { return }
+        model.isSettingTopicStatus = true
+        defer { model.isSettingTopicStatus = false }
+        do {
+            try await grpc.setTopicStatus(name: topic.name, status: status)
+            if let idx = model.topics.firstIndex(where: { $0.id == topic.id }) {
+                model.topics[idx] = TopicItem(name: topic.name, status: status)
+            }
+            activityLog.log(action: .setTopicStatus, messageId: topic.name,
+                            result: .success("Topic \"\(topic.name)\" status set to \(status)"))
+        } catch {
+            activityLog.log(action: .setTopicStatus, messageId: topic.name,
+                            result: .failure(error.localizedDescription),
+                            hint: "Check that you have Contributor role on the namespace.")
+        }
+    }
+
     private func performDeleteSubscription() async {
         guard let sub = model.deleteSubscriptionTarget else { return }
         model.isDeletingSubscription = true
@@ -745,7 +783,7 @@ struct SidebarView: View {
                 QueueItem(name: $0.name, messageCount: $0.messageCount,
                           deadLetterCount: $0.deadLetterCount, status: $0.status)
             }
-            model.topics = topicInfos.map { TopicItem(name: $0.name) }
+            model.topics = topicInfos.map { TopicItem(name: $0.name, status: $0.status) }
         } catch { }
     }
 }
@@ -758,6 +796,7 @@ private struct TopicRow: View {
     let model: SidebarModel
     let grpc: GRPCManager
 
+    @Environment(ActivityLogStore.self) var activityLog
     @State private var isExpanded = false
 
     var body: some View {
@@ -786,13 +825,36 @@ private struct TopicRow: View {
                 }
             }
         } label: {
-            Label(topic.name, systemImage: "bubble.left.and.bubble.right")
-                .contextMenu {
+            HStack {
+                Label(topic.name, systemImage: "bubble.left.and.bubble.right")
+                    .foregroundStyle(topic.status == "Disabled" ? .secondary : .primary)
+                if topic.status == "Disabled" {
+                    Image(systemName: "pause.circle.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.orange)
+                }
+            }
+            .contentShape(Rectangle())
+            .contextMenu {
                     Button("Create Subscription") {
                         model.createSubscriptionTopic = topic
                         model.showCreateSubscriptionSheet = true
                     }
                     .disabled(!grpc.capabilityMap.createResources)
+                    Divider()
+                    if topic.status == "Disabled" {
+                        Button("Enable Topic") {
+                            model.disableTopicTarget = topic
+                            Task { await performEnableTopic() }
+                        }
+                        .disabled(!grpc.capabilityMap.createResources)
+                    } else {
+                        Button("Disable Topic") {
+                            model.disableTopicTarget = topic
+                            model.showDisableTopicConfirm = true
+                        }
+                        .disabled(!grpc.capabilityMap.createResources)
+                    }
                     Divider()
                     Button("Delete Topic", role: .destructive) {
                         model.deleteTopicTarget = topic
@@ -825,6 +887,23 @@ private struct TopicRow: View {
             model.subscriptions[topic.name] = .loaded(subs)
         } catch {
             model.subscriptions[topic.name] = .failed(error.localizedDescription)
+        }
+    }
+
+    private func performEnableTopic() async {
+        model.isSettingTopicStatus = true
+        defer { model.isSettingTopicStatus = false }
+        do {
+            try await grpc.setTopicStatus(name: topic.name, status: "Active")
+            if let idx = model.topics.firstIndex(where: { $0.id == topic.id }) {
+                model.topics[idx] = TopicItem(name: topic.name, status: "Active")
+            }
+            activityLog.log(action: .setTopicStatus, messageId: topic.name,
+                            result: .success("Topic \"\(topic.name)\" enabled"))
+        } catch {
+            activityLog.log(action: .setTopicStatus, messageId: topic.name,
+                            result: .failure(error.localizedDescription),
+                            hint: "Check that you have Contributor role on the namespace.")
         }
     }
 }
