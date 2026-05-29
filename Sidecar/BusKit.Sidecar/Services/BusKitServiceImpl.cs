@@ -896,6 +896,42 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         };
     }
 
+    // ── Get Topic Properties ──────────────────────────────
+
+    public override async Task<GetTopicPropertiesReply> GetTopicProperties(
+        GetTopicPropertiesRequest request, ServerCallContext context)
+    {
+        if (_adminClient == null)
+            return new GetTopicPropertiesReply();
+
+        var props   = await _adminClient.GetTopicAsync(request.Name);
+        var runtime = await _adminClient.GetTopicRuntimePropertiesAsync(request.Name);
+
+        var t = props.Value;
+        var r = runtime.Value;
+
+        return new GetTopicPropertiesReply
+        {
+            Properties = new TopicDetails
+            {
+                Name                        = t.Name,
+                MaxSizeMb                   = t.MaxSizeInMegabytes,
+                DefaultMessageTtlSeconds    = (long)t.DefaultMessageTimeToLive.TotalSeconds,
+                RequiresDuplicateDetection  = t.RequiresDuplicateDetection,
+                SupportOrdering             = t.SupportOrdering,
+                EnablePartitioning          = t.EnablePartitioning,
+                Status                      = t.Status.ToString(),
+                CreatedAtUnix               = r.CreatedAt.ToUnixTimeSeconds(),
+                UpdatedAtUnix               = r.UpdatedAt.ToUnixTimeSeconds(),
+                ScheduledMessageCount       = r.ScheduledMessageCount,
+                SizeBytes                   = r.SizeInBytes,
+                MaxMessageSizeBytes         = (t.MaxMessageSizeInKilobytes ?? 0) * 1024,
+                AutoDeleteOnIdleSeconds     = (long)t.AutoDeleteOnIdle.TotalSeconds,
+                UserMetadata                = t.UserMetadata ?? "",
+            }
+        };
+    }
+
     // ── Get Subscription Properties ──────────────────────
 
     public override async Task<GetSubscriptionPropertiesReply> GetSubscriptionProperties(
