@@ -590,13 +590,19 @@ private struct MetricChartCard: View {
                     ForEach(samples.filter { $0.series == s.key }) { point in
                         LineMark(
                             x: .value("Time", point.timestamp),
-                            y: .value(s.label, point.value)
+                            y: .value("Value", point.value)
                         )
-                        .foregroundStyle(s.color)
+                        .foregroundStyle(by: .value("Series", s.label))
                         .interpolationMethod(.catmullRom)
+                        .lineStyle(StrokeStyle(lineWidth: 2))
                     }
                 }
             }
+            .chartForegroundStyleScale(
+                domain: series.map(\.label),
+                range: series.map(\.color)
+            )
+            .chartLegend(.hidden)
             .chartXAxis {
                 AxisMarks(values: .automatic) {
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
