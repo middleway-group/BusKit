@@ -26,6 +26,8 @@ struct ContentView: View {
                     switch selection {
                     case .queue(let queue):
                         QueueDetailView(queue: queue)
+                    case .topic(let topic):
+                        TopicDetailView(topic: topic)
                     case .subscription(let sub):
                         SubscriptionDetailView(subscription: sub)
                             .id(sub.id)

@@ -195,6 +195,7 @@ private struct MessagesTab: View {
     @State private var selectedMessageIDs: Set<UUID> = []
     @State private var showRepairSheet = false
     @State private var showBulkResubmitSheet = false
+    @State private var bulkResubmitDidSubmit = false
     @State private var showDeleteConfirm = false
     @State private var isDeleting = false
 
@@ -400,8 +401,13 @@ private struct MessagesTab: View {
                 RepairResubmitSheet(message: msg, queueOrTopic: queue.name)
             }
         }
-        .sheet(isPresented: $showBulkResubmitSheet, onDismiss: { Task { await loadMessages() } }) {
-            BulkResubmitSheet(messages: selectedMessages, queueOrTopic: queue.name)
+        .sheet(isPresented: $showBulkResubmitSheet, onDismiss: {
+            if bulkResubmitDidSubmit {
+                Task { await loadMessages() }
+                bulkResubmitDidSubmit = false
+            }
+        }) {
+            BulkResubmitSheet(messages: selectedMessages, queueOrTopic: queue.name, didResubmit: $bulkResubmitDidSubmit)
         }
         .confirmationDialog(
             selectedMessageIDs.count == 1 ? "Delete Message?" : "Delete \(selectedMessageIDs.count) Messages?",

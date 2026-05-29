@@ -497,6 +497,32 @@ final class GRPCManager {
         )
     }
 
+    // MARK: - Get Topic Properties
+
+    func getTopicProperties(name: String) async throws -> TopicDetailsItem {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_GetTopicPropertiesRequest()
+        req.name = name
+        let reply: Buskit_GetTopicPropertiesReply = try await buskit.getTopicProperties(req)
+        let p = reply.properties
+        return TopicDetailsItem(
+            name: p.name,
+            maxSizeMb: p.maxSizeMb,
+            defaultMessageTtlSeconds: p.defaultMessageTtlSeconds,
+            requiresDuplicateDetection: p.requiresDuplicateDetection,
+            supportOrdering: p.supportOrdering,
+            enablePartitioning: p.enablePartitioning,
+            status: p.status,
+            createdAt: Date(timeIntervalSince1970: TimeInterval(p.createdAtUnix)),
+            updatedAt: Date(timeIntervalSince1970: TimeInterval(p.updatedAtUnix)),
+            scheduledMessageCount: p.scheduledMessageCount,
+            sizeBytes: p.sizeBytes,
+            maxMessageSizeBytes: p.maxMessageSizeBytes,
+            autoDeleteOnIdleSeconds: p.autoDeleteOnIdleSeconds,
+            userMetadata: p.userMetadata
+        )
+    }
+
     // MARK: - Get Subscription Properties
 
     func getSubscriptionProperties(topicName: String, subscriptionName: String) async throws -> SubscriptionDetailsItem {

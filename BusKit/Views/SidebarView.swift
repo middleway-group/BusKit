@@ -519,6 +519,7 @@ struct SidebarView: View {
         let name: String
         switch target {
         case .queue(let q):         name = q.name
+        case .topic:                return ""
         case .subscription(let s):  name = "\(s.topicName)/\(s.name)"
         case .rulesGroup, .rule:    return ""
         }
@@ -533,6 +534,8 @@ struct SidebarView: View {
         case .queue(let q):
             key = EntityActionStore.queueKey(q.name)
             selection = .queue(q)
+        case .topic:
+            return
         case .subscription(let s):
             key = EntityActionStore.subscriptionKey(topic: s.topicName, sub: s.name)
             selection = .subscription(s)
@@ -555,6 +558,8 @@ struct SidebarView: View {
                 count = try await grpc.purgeMessages(
                     topicName: s.topicName, subscriptionName: s.name, isDLQ: isDLQ)
                 await refreshSubscriptionCounts(topicName: s.topicName, subName: s.name)
+            case .topic:
+                return
             case .rule:
                 return
             case .rulesGroup:
@@ -835,6 +840,7 @@ private struct TopicRow: View {
                 }
             }
             .contentShape(Rectangle())
+            .tag(SidebarSelection.topic(topic))
             .contextMenu {
                     Button("Create Subscription") {
                         model.createSubscriptionTopic = topic

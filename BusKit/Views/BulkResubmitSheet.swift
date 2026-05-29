@@ -24,6 +24,8 @@ struct BulkResubmitSheet: View {
     let entityName: String
     /// Non-nil when the source is a topic subscription (used for delete-after-resubmit).
     let subscriptionName: String?
+    /// Set to `true` when the user confirms a resubmit (not on cancel).
+    @Binding var didResubmit: Bool
 
     @State private var targetDestination: String
     @State private var propertiesToStrip: Set<String> = Set(dlqStripCandidates)
@@ -35,10 +37,11 @@ struct BulkResubmitSheet: View {
     @State private var isSending = false
     @State private var sentCount  = 0
 
-    init(messages: [MessageItem], queueOrTopic: String, subscriptionName: String? = nil) {
+    init(messages: [MessageItem], queueOrTopic: String, subscriptionName: String? = nil, didResubmit: Binding<Bool> = .constant(false)) {
         self.messages         = messages
         self.entityName       = queueOrTopic
         self.subscriptionName = subscriptionName
+        _didResubmit          = didResubmit
         _targetDestination    = State(initialValue: queueOrTopic)
     }
 
@@ -287,6 +290,7 @@ struct BulkResubmitSheet: View {
             actionStore.requestRefresh(.queue(entityName))
         }
 
+        didResubmit = true
         dismiss()
     }
 

@@ -240,6 +240,7 @@ enum RbacAccessLevel: Equatable {
 
 enum SidebarSelection: Hashable {
     case queue(QueueItem)
+    case topic(TopicItem)
     case subscription(SubscriptionItem)
     case rulesGroup(SubscriptionItem)
     case rule(RuleItem, SubscriptionItem)
@@ -297,6 +298,23 @@ struct TopicItem: Identifiable, Hashable {
     let id = UUID()
     let name: String
     let status: String
+}
+
+struct TopicDetailsItem {
+    let name: String
+    let maxSizeMb: Int64
+    let defaultMessageTtlSeconds: Int64
+    let requiresDuplicateDetection: Bool
+    let supportOrdering: Bool
+    let enablePartitioning: Bool
+    let status: String
+    let createdAt: Date
+    let updatedAt: Date
+    let scheduledMessageCount: Int64
+    let sizeBytes: Int64
+    let maxMessageSizeBytes: Int64
+    let autoDeleteOnIdleSeconds: Int64
+    let userMetadata: String
 }
 
 struct SubscriptionItem: Identifiable, Hashable {

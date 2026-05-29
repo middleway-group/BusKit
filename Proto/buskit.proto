@@ -30,6 +30,7 @@ service BusKitService {
   rpc CreateSubscription (CreateSubscriptionRequest) returns (CreateSubscriptionReply);
   rpc DeleteSubscription (DeleteSubscriptionRequest) returns (DeleteSubscriptionReply);
   rpc GetQueueProperties (GetQueuePropertiesRequest) returns (GetQueuePropertiesReply);
+  rpc GetTopicProperties (GetTopicPropertiesRequest) returns (GetTopicPropertiesReply);
   rpc GetSubscriptionProperties (GetSubscriptionPropertiesRequest) returns (GetSubscriptionPropertiesReply);
   rpc UpdateSubscriptionTtl (UpdateSubscriptionTtlRequest) returns (UpdateSubscriptionTtlReply);
   rpc PurgeMessages (PurgeMessagesRequest) returns (PurgeMessagesReply);
@@ -373,6 +374,33 @@ message QueueDetails {
   int64 size_bytes = 14;
   string forward_to = 15;
   int64 auto_delete_on_idle_seconds = 16;
+}
+
+// ─── Topic Properties ────────────────────────────────
+
+message GetTopicPropertiesRequest {
+  string name = 1;
+}
+
+message GetTopicPropertiesReply {
+  TopicDetails properties = 1;
+}
+
+message TopicDetails {
+  string name = 1;
+  int64 max_size_mb = 2;
+  int64 default_message_ttl_seconds = 3;
+  bool requires_duplicate_detection = 4;
+  bool support_ordering = 5;
+  bool enable_partitioning = 6;
+  string status = 7;
+  int64 created_at_unix = 8;
+  int64 updated_at_unix = 9;
+  int64 scheduled_message_count = 10;
+  int64 size_bytes = 11;
+  int64 max_message_size_bytes = 12;
+  int64 auto_delete_on_idle_seconds = 13;
+  string user_metadata = 14;
 }
 
 // ─── Subscription Properties ─────────────────────────
