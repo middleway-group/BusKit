@@ -305,6 +305,15 @@ internal enum Buskit_BusKitService: Sendable {
                 method: "GetTopicProperties"
             )
         }
+        /// Namespace for "GetTopicMetrics" metadata.
+        internal enum GetTopicMetrics: Sendable {
+            internal typealias Input = Buskit_GetTopicMetricsRequest
+            internal typealias Output = Buskit_GetTopicMetricsReply
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "GetTopicMetrics"
+            )
+        }
         /// Namespace for "GetSubscriptionProperties" metadata.
         internal enum GetSubscriptionProperties: Sendable {
             /// Request type for "GetSubscriptionProperties".
@@ -426,6 +435,7 @@ internal enum Buskit_BusKitService: Sendable {
             DeleteSubscription.descriptor,
             GetQueueProperties.descriptor,
             GetTopicProperties.descriptor,
+            GetTopicMetrics.descriptor,
             GetSubscriptionProperties.descriptor,
             UpdateSubscriptionTtl.descriptor,
             PurgeMessages.descriptor,
@@ -897,6 +907,15 @@ extension Buskit_BusKitService {
             deserializer: some GRPCCore.MessageDeserializer<Buskit_GetTopicPropertiesReply>,
             options: GRPCCore.CallOptions,
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_GetTopicPropertiesReply>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "GetTopicMetrics" method.
+        func getTopicMetrics<Result>(
+            request: GRPCCore.ClientRequest<Buskit_GetTopicMetricsRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_GetTopicMetricsRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_GetTopicMetricsReply>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_GetTopicMetricsReply>) async throws -> Result
         ) async throws -> Result where Result: Sendable
 
         /// Call the "GetSubscriptionProperties" method.
@@ -1777,6 +1796,25 @@ extension Buskit_BusKitService {
             )
         }
 
+        internal func getTopicMetrics<Result>(
+            request: GRPCCore.ClientRequest<Buskit_GetTopicMetricsRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_GetTopicMetricsRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_GetTopicMetricsReply>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_GetTopicMetricsReply>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Buskit_BusKitService.Method.GetTopicMetrics.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
         /// Call the "GetSubscriptionProperties" method.
         ///
         /// - Parameters:
@@ -2611,7 +2649,21 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
-    /// Call the "GetSubscriptionProperties" method.
+    internal func getTopicMetrics<Result>(
+        request: GRPCCore.ClientRequest<Buskit_GetTopicMetricsRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_GetTopicMetricsReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.getTopicMetrics(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_GetTopicMetricsRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_GetTopicMetricsReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
     ///
     /// - Parameters:
     ///   - request: A request containing a single `Buskit_GetSubscriptionPropertiesRequest` message.
@@ -3499,7 +3551,24 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
-    /// Call the "GetSubscriptionProperties" method.
+    internal func getTopicMetrics<Result>(
+        _ message: Buskit_GetTopicMetricsRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_GetTopicMetricsReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Buskit_GetTopicMetricsRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.getTopicMetrics(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
     ///
     /// - Parameters:
     ///   - message: request message to send.

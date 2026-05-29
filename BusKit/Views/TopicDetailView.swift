@@ -454,8 +454,12 @@ private struct MetricsSection: View {
     let timeRangeOptions: [String]
     let topicName: String
 
+    @Environment(GRPCManager.self) var grpc
+
     @State private var requestSamples: [MetricSample] = []
     @State private var messageSamples: [MetricSample] = []
+    @State private var isLoading = false
+    @State private var metricsError: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -471,61 +475,83 @@ private struct MetricsSection: View {
                 }
                 .pickerStyle(.segmented)
                 .frame(maxWidth: 480)
-                .onChange(of: selectedTimeRange) { _, _ in refreshChartData() }
+                .onChange(of: selectedTimeRange) { _, _ in Task { await refreshChartData() } }
+                if isLoading {
+                    ProgressView().scaleEffect(0.7)
+                }
             }
 
-            // Charts
-            HStack(alignment: .top, spacing: 16) {
-                MetricChartCard(
-                    title: "Requests",
-                    series: requestSeriesDefs,
-                    samples: requestSamples
-                )
-                MetricChartCard(
-                    title: "Messages",
-                    series: messageSeriesDefs,
-                    samples: messageSamples
-                )
+            if let err = metricsError {
+                Text(err)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 40)
+            } else {
+                // Charts
+                HStack(alignment: .top, spacing: 16) {
+                    MetricChartCard(
+                        title: "Requests",
+                        series: requestSeriesDefs,
+                        samples: requestSamples
+                    )
+                    MetricChartCard(
+                        title: "Messages",
+                        series: messageSeriesDefs,
+                        samples: messageSamples
+                    )
+                }
             }
         }
-        .onAppear { refreshChartData() }
+        .onAppear { Task { await refreshChartData() } }
     }
 
     private var requestSeriesDefs: [SeriesDef] {[
-        SeriesDef(key: "incoming",  label: "Incoming Req.",    color: .blue),
-        SeriesDef(key: "success",   label: "Successful Req.",  color: .pink),
-        SeriesDef(key: "serverErr", label: "Server Errors",    color: .teal),
-        SeriesDef(key: "userErr",   label: "User Errors",      color: .purple),
-        SeriesDef(key: "throttled", label: "Throttled Req.",   color: .green),
+        SeriesDef(key: "IncomingRequests",  label: "Incoming Req.",    color: .blue),
+        SeriesDef(key: "SuccessfulRequests",label: "Successful Req.",  color: .pink),
+        SeriesDef(key: "ServerErrors",      label: "Server Errors",    color: .teal),
+        SeriesDef(key: "UserErrors",        label: "User Errors",      color: .purple),
+        SeriesDef(key: "ThrottledRequests", label: "Throttled Req.",   color: .green),
     ]}
 
     private var messageSeriesDefs: [SeriesDef] {[
-        SeriesDef(key: "inMsg",  label: "Incoming Msg.",  color: .blue),
-        SeriesDef(key: "outMsg", label: "Outgoing Msg.",  color: .pink),
+        SeriesDef(key: "IncomingMessages", label: "Incoming Msg.",  color: .blue),
+        SeriesDef(key: "OutgoingMessages", label: "Outgoing Msg.",  color: .pink),
     ]}
 
-    private func refreshChartData() {
-        requestSamples = generatePlaceholderSamples(seriesKeys: requestSeriesDefs.map(\.key),
-                                                    hours: hoursForRange(selectedTimeRange))
-        messageSamples = generatePlaceholderSamples(seriesKeys: messageSeriesDefs.map(\.key),
-                                                    hours: hoursForRange(selectedTimeRange))
+    private func refreshChartData() async {
+        isLoading = true
+        metricsError = nil
+        let hours = hoursForRange(selectedTimeRange)
+        do {
+            let allSeries = try await grpc.getTopicMetrics(topicName: topicName, hours: hours)
+            let seriesMap = Dictionary(uniqueKeysWithValues: allSeries.map { ($0.name, $0) })
+            requestSamples = buildSamples(defs: requestSeriesDefs, seriesMap: seriesMap)
+            messageSamples = buildSamples(defs: messageSeriesDefs, seriesMap: seriesMap)
+        } catch {
+            metricsError = error.localizedDescription
+        }
+        isLoading = false
+    }
+
+    private func buildSamples(defs: [SeriesDef], seriesMap: [String: Buskit_MetricSeries]) -> [MetricSample] {
+        var samples: [MetricSample] = []
+        for def in defs {
+            if let series = seriesMap[def.key] {
+                for pt in series.points {
+                    samples.append(MetricSample(
+                        series: def.key,
+                        timestamp: Date(timeIntervalSince1970: TimeInterval(pt.timestampUnix)),
+                        value: pt.value
+                    ))
+                }
+            }
+        }
+        return samples
     }
 
     private func hoursForRange(_ idx: Int) -> Int {
         [1, 6, 12, 24, 168, 720][idx]
-    }
-
-    private func generatePlaceholderSamples(seriesKeys: [String], hours: Int) -> [MetricSample] {
-        var samples: [MetricSample] = []
-        let now = Date()
-        let interval = TimeInterval(hours) * 3600 / 12
-        for i in 0...12 {
-            let t = now.addingTimeInterval(-TimeInterval(12 - i) * interval)
-            for key in seriesKeys {
-                samples.append(MetricSample(series: key, timestamp: t, value: 0))
-            }
-        }
-        return samples
     }
 }
 

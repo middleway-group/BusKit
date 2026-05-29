@@ -1,6 +1,8 @@
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
+using Azure.Monitor.Query;
+using Azure.Monitor.Query.Models;
 using Azure.ResourceManager;
 using Azure.ResourceManager.ServiceBus;
 using BusKit.Sidecar.Grpc;
@@ -20,6 +22,11 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
     private string? _userObjectId;
     private IPublicClientApplication? _msalApp;
     private IAccount? _msalAccount;
+
+    // Stored for Azure Monitor queries (set when CheckRbacPermissions is called)
+    private string? _subscriptionId;
+    private string? _resourceGroup;
+    private string? _namespaceName;
 
     private readonly PermissionEvaluationEngine _permissionEngine;
 
@@ -344,6 +351,11 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
             var tokenCtx = new Azure.Core.TokenRequestContext(
                 new[] { "https://management.azure.com/.default" });
             var token = await _azureCredential.GetTokenAsync(tokenCtx, context.CancellationToken);
+
+            // Store for later Azure Monitor queries
+            _subscriptionId = request.SubscriptionId;
+            _resourceGroup  = request.ResourceGroup;
+            _namespaceName  = request.NamespaceName;
 
             var result = await _permissionEngine.EvaluateAsync(
                 request.SubscriptionId,
@@ -930,6 +942,88 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
                 UserMetadata                = t.UserMetadata ?? "",
             }
         };
+    }
+
+    // ── Get Topic Metrics (Azure Monitor) ────────────────
+
+    public override async Task<GetTopicMetricsReply> GetTopicMetrics(
+        GetTopicMetricsRequest request, ServerCallContext context)
+    {
+        var reply = new GetTopicMetricsReply();
+
+        if (_azureCredential == null || _subscriptionId == null ||
+            _resourceGroup == null || _namespaceName == null)
+        {
+            reply.Error = "Azure AD connection required for metrics.";
+            return reply;
+        }
+
+        try
+        {
+            var resourceId = $"/subscriptions/{_subscriptionId}/resourceGroups/{_resourceGroup}" +
+                             $"/providers/Microsoft.ServiceBus/namespaces/{_namespaceName}";
+
+            var hours = Math.Max(1, request.Hours);
+            var end   = DateTimeOffset.UtcNow;
+            var start = end.AddHours(-hours);
+
+            var granularity = hours switch
+            {
+                <= 1   => TimeSpan.FromMinutes(1),
+                <= 12  => TimeSpan.FromMinutes(5),
+                <= 24  => TimeSpan.FromMinutes(15),
+                <= 168 => TimeSpan.FromHours(1),
+                _      => TimeSpan.FromHours(6),
+            };
+
+            var metricsClient = new MetricsQueryClient(_azureCredential);
+
+            var metricNames = new[]
+            {
+                "IncomingRequests", "SuccessfulRequests", "ServerErrors",
+                "UserErrors", "ThrottledRequests",
+                "IncomingMessages", "OutgoingMessages",
+            };
+
+            var options = new MetricsQueryOptions
+            {
+                Granularity       = granularity,
+                Filter            = $"EntityName eq '{request.TopicName}'",
+                TimeRange         = new QueryTimeRange(start, end),
+            };
+            options.MetricNamespace = "Microsoft.ServiceBus/namespaces";
+
+            var response = await metricsClient.QueryResourceAsync(
+                resourceId,
+                metricNames,
+                options,
+                context.CancellationToken);
+
+            foreach (var metric in response.Value.Metrics)
+            {
+                var series = new MetricSeries { Name = metric.Name };
+                foreach (var ts in metric.TimeSeries)
+                {
+                    foreach (var dp in ts.Values)
+                    {
+                        if (dp.TimeStamp == default) continue;
+                        var val = dp.Total ?? dp.Average ?? dp.Count ?? 0;
+                        series.Points.Add(new MetricDataPoint
+                        {
+                            TimestampUnix = dp.TimeStamp.ToUnixTimeSeconds(),
+                            Value         = val,
+                        });
+                    }
+                }
+                reply.Series.Add(series);
+            }
+        }
+        catch (Exception ex)
+        {
+            reply.Error = ex.Message;
+        }
+
+        return reply;
     }
 
     // ── Get Subscription Properties ──────────────────────

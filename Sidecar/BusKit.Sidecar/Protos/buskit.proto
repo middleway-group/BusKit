@@ -31,6 +31,7 @@ service BusKitService {
   rpc DeleteSubscription (DeleteSubscriptionRequest) returns (DeleteSubscriptionReply);
   rpc GetQueueProperties (GetQueuePropertiesRequest) returns (GetQueuePropertiesReply);
   rpc GetTopicProperties (GetTopicPropertiesRequest) returns (GetTopicPropertiesReply);
+  rpc GetTopicMetrics (GetTopicMetricsRequest) returns (GetTopicMetricsReply);
   rpc GetSubscriptionProperties (GetSubscriptionPropertiesRequest) returns (GetSubscriptionPropertiesReply);
   rpc UpdateSubscriptionTtl (UpdateSubscriptionTtlRequest) returns (UpdateSubscriptionTtlReply);
   rpc PurgeMessages (PurgeMessagesRequest) returns (PurgeMessagesReply);
@@ -401,6 +402,28 @@ message TopicDetails {
   int64 max_message_size_bytes = 12;
   int64 auto_delete_on_idle_seconds = 13;
   string user_metadata = 14;
+}
+
+// ─── Topic Metrics ───────────────────────────────────
+
+message GetTopicMetricsRequest {
+  string topic_name = 1;
+  int32 hours = 2;
+}
+
+message MetricDataPoint {
+  int64 timestamp_unix = 1;
+  double value = 2;
+}
+
+message MetricSeries {
+  string name = 1;
+  repeated MetricDataPoint points = 2;
+}
+
+message GetTopicMetricsReply {
+  repeated MetricSeries series = 1;
+  string error = 2;
 }
 
 // ─── Subscription Properties ─────────────────────────

@@ -523,6 +523,20 @@ final class GRPCManager {
         )
     }
 
+    // MARK: - Get Topic Metrics
+
+    func getTopicMetrics(topicName: String, hours: Int) async throws -> [Buskit_MetricSeries] {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_GetTopicMetricsRequest()
+        req.topicName = topicName
+        req.hours = Int32(hours)
+        let reply: Buskit_GetTopicMetricsReply = try await buskit.getTopicMetrics(req)
+        if !reply.error.isEmpty {
+            throw NSError(domain: "BusKit", code: 0, userInfo: [NSLocalizedDescriptionKey: reply.error])
+        }
+        return reply.series
+    }
+
     // MARK: - Get Subscription Properties
 
     func getSubscriptionProperties(topicName: String, subscriptionName: String) async throws -> SubscriptionDetailsItem {

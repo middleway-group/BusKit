@@ -928,6 +928,34 @@ public nonisolated struct Buskit_TopicDetails: Sendable {
   public init() {}
 }
 
+public nonisolated struct Buskit_GetTopicMetricsRequest: Sendable {
+  public var topicName: String = String()
+  public var hours: Int32 = 0
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  public init() {}
+}
+
+public nonisolated struct Buskit_MetricDataPoint: Sendable {
+  public var timestampUnix: Int64 = 0
+  public var value: Double = 0
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  public init() {}
+}
+
+public nonisolated struct Buskit_MetricSeries: Sendable {
+  public var name: String = String()
+  public var points: [Buskit_MetricDataPoint] = []
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  public init() {}
+}
+
+public nonisolated struct Buskit_GetTopicMetricsReply: Sendable {
+  public var series: [Buskit_MetricSeries] = []
+  public var error: String = String()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  public init() {}
+}
+
 public nonisolated struct Buskit_GetQueuePropertiesReply: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -4263,6 +4291,118 @@ nonisolated extension Buskit_TopicDetails: SwiftProtobuf.Message, SwiftProtobuf.
     if lhs.maxMessageSizeBytes != rhs.maxMessageSizeBytes {return false}
     if lhs.autoDeleteOnIdleSeconds != rhs.autoDeleteOnIdleSeconds {return false}
     if lhs.userMetadata != rhs.userMetadata {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Buskit_GetTopicMetricsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".GetTopicMetricsRequest"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "topic_name"),
+    2: .same(proto: "hours"),
+  ]
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNum = try decoder.nextFieldNumber() {
+      switch fieldNum {
+      case 1: try decoder.decodeSingularStringField(value: &self.topicName)
+      case 2: try decoder.decodeSingularInt32Field(value: &self.hours)
+      default: break
+      }
+    }
+  }
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.topicName.isEmpty { try visitor.visitSingularStringField(value: self.topicName, fieldNumber: 1) }
+    if self.hours != 0 { try visitor.visitSingularInt32Field(value: self.hours, fieldNumber: 2) }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+  public static func ==(lhs: Buskit_GetTopicMetricsRequest, rhs: Buskit_GetTopicMetricsRequest) -> Bool {
+    if lhs.topicName != rhs.topicName {return false}
+    if lhs.hours != rhs.hours {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Buskit_MetricDataPoint: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".MetricDataPoint"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "timestamp_unix"),
+    2: .same(proto: "value"),
+  ]
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNum = try decoder.nextFieldNumber() {
+      switch fieldNum {
+      case 1: try decoder.decodeSingularInt64Field(value: &self.timestampUnix)
+      case 2: try decoder.decodeSingularDoubleField(value: &self.value)
+      default: break
+      }
+    }
+  }
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.timestampUnix != 0 { try visitor.visitSingularInt64Field(value: self.timestampUnix, fieldNumber: 1) }
+    if self.value != 0 { try visitor.visitSingularDoubleField(value: self.value, fieldNumber: 2) }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+  public static func ==(lhs: Buskit_MetricDataPoint, rhs: Buskit_MetricDataPoint) -> Bool {
+    if lhs.timestampUnix != rhs.timestampUnix {return false}
+    if lhs.value != rhs.value {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Buskit_MetricSeries: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".MetricSeries"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "name"),
+    2: .same(proto: "points"),
+  ]
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNum = try decoder.nextFieldNumber() {
+      switch fieldNum {
+      case 1: try decoder.decodeSingularStringField(value: &self.name)
+      case 2: try decoder.decodeRepeatedMessageField(value: &self.points)
+      default: break
+      }
+    }
+  }
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.name.isEmpty { try visitor.visitSingularStringField(value: self.name, fieldNumber: 1) }
+    if !self.points.isEmpty { try visitor.visitRepeatedMessageField(value: self.points, fieldNumber: 2) }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+  public static func ==(lhs: Buskit_MetricSeries, rhs: Buskit_MetricSeries) -> Bool {
+    if lhs.name != rhs.name {return false}
+    if lhs.points != rhs.points {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Buskit_GetTopicMetricsReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".GetTopicMetricsReply"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "series"),
+    2: .same(proto: "error"),
+  ]
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNum = try decoder.nextFieldNumber() {
+      switch fieldNum {
+      case 1: try decoder.decodeRepeatedMessageField(value: &self.series)
+      case 2: try decoder.decodeSingularStringField(value: &self.error)
+      default: break
+      }
+    }
+  }
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.series.isEmpty { try visitor.visitRepeatedMessageField(value: self.series, fieldNumber: 1) }
+    if !self.error.isEmpty { try visitor.visitSingularStringField(value: self.error, fieldNumber: 2) }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+  public static func ==(lhs: Buskit_GetTopicMetricsReply, rhs: Buskit_GetTopicMetricsReply) -> Bool {
+    if lhs.series != rhs.series {return false}
+    if lhs.error != rhs.error {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
