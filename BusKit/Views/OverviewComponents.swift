@@ -179,12 +179,14 @@ struct MetricChartCard: View {
                 }
             }
             .frame(height: 220)
-            .overlay(alignment: .bottomTrailing) {
-                Text(timezoneLabel)
-                    .font(.system(size: 10))
-                    .foregroundStyle(Color(nsColor: .tertiaryLabelColor))
-                    .padding(.horizontal, 10)
-                    .padding(.bottom, 6)
+            .chartOverlay { proxy in
+                GeometryReader { geo in
+                    let frame = geo[proxy.plotAreaFrame]
+                    Text(timezoneLabel)
+                        .font(.system(size: 10))
+                        .foregroundStyle(Color(nsColor: .tertiaryLabelColor))
+                        .position(x: frame.maxX - 22, y: frame.maxY - 10)
+                }
             }
             .padding(.horizontal, 4)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
