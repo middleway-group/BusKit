@@ -179,16 +179,15 @@ struct MetricChartCard: View {
                 }
             }
             .frame(height: 220)
-            .padding(.horizontal, 4)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
-
-            HStack {
-                Spacer()
+            .overlay(alignment: .bottomTrailing) {
                 Text(timezoneLabel)
                     .font(.system(size: 10))
                     .foregroundStyle(Color(nsColor: .tertiaryLabelColor))
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, 10)
+                    .padding(.bottom, 6)
             }
+            .padding(.horizontal, 4)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
 
             ChartLegend(series: series, samples: samples)
         }
