@@ -935,6 +935,13 @@ public nonisolated struct Buskit_GetTopicMetricsRequest: Sendable {
   public init() {}
 }
 
+public nonisolated struct Buskit_GetQueueMetricsRequest: Sendable {
+  public var queueName: String = String()
+  public var hours: Int32 = 0
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  public init() {}
+}
+
 public nonisolated struct Buskit_MetricDataPoint: Sendable {
   public var timestampUnix: Int64 = 0
   public var value: Double = 0
@@ -950,6 +957,13 @@ public nonisolated struct Buskit_MetricSeries: Sendable {
 }
 
 public nonisolated struct Buskit_GetTopicMetricsReply: Sendable {
+  public var series: [Buskit_MetricSeries] = []
+  public var error: String = String()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  public init() {}
+}
+
+public nonisolated struct Buskit_GetQueueMetricsReply: Sendable {
   public var series: [Buskit_MetricSeries] = []
   public var error: String = String()
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -1013,6 +1027,20 @@ public nonisolated struct Buskit_QueueDetails: Sendable {
   public var forwardTo: String = String()
 
   public var autoDeleteOnIdleSeconds: Int64 = 0
+
+  public var scheduledMessageCount: Int64 = 0
+
+  public var transferMessageCount: Int64 = 0
+
+  public var transferDeadLetterCount: Int64 = 0
+
+  public var maxMessageSizeBytes: Int64 = 0
+
+  public var duplicateDetectionWindowSeconds: Int64 = 0
+
+  public var userMetadata: String = String()
+
+  public var enablePartitioning: Bool = false
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -3314,7 +3342,7 @@ nonisolated extension Buskit_GetQueuePropertiesReply: SwiftProtobuf.Message, Swi
 
 nonisolated extension Buskit_QueueDetails: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".QueueDetails"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{3}max_size_mb\0\u{3}default_message_ttl_seconds\0\u{3}lock_duration_seconds\0\u{3}requires_duplicate_detection\0\u{3}requires_session\0\u{3}max_delivery_count\0\u{3}dead_lettering_on_expiration\0\u{1}status\0\u{3}created_at_unix\0\u{3}updated_at_unix\0\u{3}active_message_count\0\u{3}dead_letter_count\0\u{3}size_bytes\0\u{3}forward_to\0\u{3}auto_delete_on_idle_seconds\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{3}max_size_mb\0\u{3}default_message_ttl_seconds\0\u{3}lock_duration_seconds\0\u{3}requires_duplicate_detection\0\u{3}requires_session\0\u{3}max_delivery_count\0\u{3}dead_lettering_on_expiration\0\u{1}status\0\u{3}created_at_unix\0\u{3}updated_at_unix\0\u{3}active_message_count\0\u{3}dead_letter_count\0\u{3}size_bytes\0\u{3}forward_to\0\u{3}auto_delete_on_idle_seconds\0\u{3}scheduled_message_count\0\u{3}transfer_message_count\0\u{3}transfer_dead_letter_count\0\u{3}max_message_size_bytes\0\u{3}duplicate_detection_window_seconds\0\u{3}user_metadata\0\u{3}enable_partitioning\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -3338,6 +3366,13 @@ nonisolated extension Buskit_QueueDetails: SwiftProtobuf.Message, SwiftProtobuf.
       case 14: try { try decoder.decodeSingularInt64Field(value: &self.sizeBytes) }()
       case 15: try { try decoder.decodeSingularStringField(value: &self.forwardTo) }()
       case 16: try { try decoder.decodeSingularInt64Field(value: &self.autoDeleteOnIdleSeconds) }()
+      case 17: try { try decoder.decodeSingularInt64Field(value: &self.scheduledMessageCount) }()
+      case 18: try { try decoder.decodeSingularInt64Field(value: &self.transferMessageCount) }()
+      case 19: try { try decoder.decodeSingularInt64Field(value: &self.transferDeadLetterCount) }()
+      case 20: try { try decoder.decodeSingularInt64Field(value: &self.maxMessageSizeBytes) }()
+      case 21: try { try decoder.decodeSingularInt64Field(value: &self.duplicateDetectionWindowSeconds) }()
+      case 22: try { try decoder.decodeSingularStringField(value: &self.userMetadata) }()
+      case 23: try { try decoder.decodeSingularBoolField(value: &self.enablePartitioning) }()
       default: break
       }
     }
@@ -3392,6 +3427,27 @@ nonisolated extension Buskit_QueueDetails: SwiftProtobuf.Message, SwiftProtobuf.
     if self.autoDeleteOnIdleSeconds != 0 {
       try visitor.visitSingularInt64Field(value: self.autoDeleteOnIdleSeconds, fieldNumber: 16)
     }
+    if self.scheduledMessageCount != 0 {
+      try visitor.visitSingularInt64Field(value: self.scheduledMessageCount, fieldNumber: 17)
+    }
+    if self.transferMessageCount != 0 {
+      try visitor.visitSingularInt64Field(value: self.transferMessageCount, fieldNumber: 18)
+    }
+    if self.transferDeadLetterCount != 0 {
+      try visitor.visitSingularInt64Field(value: self.transferDeadLetterCount, fieldNumber: 19)
+    }
+    if self.maxMessageSizeBytes != 0 {
+      try visitor.visitSingularInt64Field(value: self.maxMessageSizeBytes, fieldNumber: 20)
+    }
+    if self.duplicateDetectionWindowSeconds != 0 {
+      try visitor.visitSingularInt64Field(value: self.duplicateDetectionWindowSeconds, fieldNumber: 21)
+    }
+    if !self.userMetadata.isEmpty {
+      try visitor.visitSingularStringField(value: self.userMetadata, fieldNumber: 22)
+    }
+    if self.enablePartitioning != false {
+      try visitor.visitSingularBoolField(value: self.enablePartitioning, fieldNumber: 23)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -3412,6 +3468,13 @@ nonisolated extension Buskit_QueueDetails: SwiftProtobuf.Message, SwiftProtobuf.
     if lhs.sizeBytes != rhs.sizeBytes {return false}
     if lhs.forwardTo != rhs.forwardTo {return false}
     if lhs.autoDeleteOnIdleSeconds != rhs.autoDeleteOnIdleSeconds {return false}
+    if lhs.scheduledMessageCount != rhs.scheduledMessageCount {return false}
+    if lhs.transferMessageCount != rhs.transferMessageCount {return false}
+    if lhs.transferDeadLetterCount != rhs.transferDeadLetterCount {return false}
+    if lhs.maxMessageSizeBytes != rhs.maxMessageSizeBytes {return false}
+    if lhs.duplicateDetectionWindowSeconds != rhs.duplicateDetectionWindowSeconds {return false}
+    if lhs.userMetadata != rhs.userMetadata {return false}
+    if lhs.enablePartitioning != rhs.enablePartitioning {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -4324,6 +4387,34 @@ nonisolated extension Buskit_GetTopicMetricsRequest: SwiftProtobuf.Message, Swif
   }
 }
 
+nonisolated extension Buskit_GetQueueMetricsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".GetQueueMetricsRequest"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "queue_name"),
+    2: .same(proto: "hours"),
+  ]
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNum = try decoder.nextFieldNumber() {
+      switch fieldNum {
+      case 1: try decoder.decodeSingularStringField(value: &self.queueName)
+      case 2: try decoder.decodeSingularInt32Field(value: &self.hours)
+      default: break
+      }
+    }
+  }
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.queueName.isEmpty { try visitor.visitSingularStringField(value: self.queueName, fieldNumber: 1) }
+    if self.hours != 0 { try visitor.visitSingularInt32Field(value: self.hours, fieldNumber: 2) }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+  public static func ==(lhs: Buskit_GetQueueMetricsRequest, rhs: Buskit_GetQueueMetricsRequest) -> Bool {
+    if lhs.queueName != rhs.queueName {return false}
+    if lhs.hours != rhs.hours {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
 nonisolated extension Buskit_MetricDataPoint: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".MetricDataPoint"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
@@ -4401,6 +4492,34 @@ nonisolated extension Buskit_GetTopicMetricsReply: SwiftProtobuf.Message, SwiftP
     try unknownFields.traverse(visitor: &visitor)
   }
   public static func ==(lhs: Buskit_GetTopicMetricsReply, rhs: Buskit_GetTopicMetricsReply) -> Bool {
+    if lhs.series != rhs.series {return false}
+    if lhs.error != rhs.error {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Buskit_GetQueueMetricsReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".GetQueueMetricsReply"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "series"),
+    2: .same(proto: "error"),
+  ]
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNum = try decoder.nextFieldNumber() {
+      switch fieldNum {
+      case 1: try decoder.decodeRepeatedMessageField(value: &self.series)
+      case 2: try decoder.decodeSingularStringField(value: &self.error)
+      default: break
+      }
+    }
+  }
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.series.isEmpty { try visitor.visitRepeatedMessageField(value: self.series, fieldNumber: 1) }
+    if !self.error.isEmpty { try visitor.visitSingularStringField(value: self.error, fieldNumber: 2) }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+  public static func ==(lhs: Buskit_GetQueueMetricsReply, rhs: Buskit_GetQueueMetricsReply) -> Bool {
     if lhs.series != rhs.series {return false}
     if lhs.error != rhs.error {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}

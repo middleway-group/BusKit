@@ -904,6 +904,13 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
                 SizeBytes = r.SizeInBytes,
                 ForwardTo = q.ForwardTo ?? "",
                 AutoDeleteOnIdleSeconds = (long)q.AutoDeleteOnIdle.TotalSeconds,
+                ScheduledMessageCount = r.ScheduledMessageCount,
+                TransferMessageCount = r.TransferMessageCount,
+                TransferDeadLetterCount = r.TransferDeadLetterMessageCount,
+                MaxMessageSizeBytes = (q.MaxMessageSizeInKilobytes ?? 0) * 1024,
+                DuplicateDetectionWindowSeconds = (long)q.DuplicateDetectionHistoryTimeWindow.TotalSeconds,
+                UserMetadata = q.UserMetadata ?? "",
+                EnablePartitioning = q.EnablePartitioning,
             }
         };
     }
@@ -989,6 +996,86 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
             {
                 Granularity       = granularity,
                 Filter            = $"EntityName eq '{request.TopicName}'",
+                TimeRange         = new QueryTimeRange(start, end),
+            };
+            options.MetricNamespace = "Microsoft.ServiceBus/namespaces";
+
+            var response = await metricsClient.QueryResourceAsync(
+                resourceId,
+                metricNames,
+                options,
+                context.CancellationToken);
+
+            foreach (var metric in response.Value.Metrics)
+            {
+                var series = new MetricSeries { Name = metric.Name };
+                foreach (var ts in metric.TimeSeries)
+                {
+                    foreach (var dp in ts.Values)
+                    {
+                        if (dp.TimeStamp == default) continue;
+                        var val = dp.Total ?? dp.Average ?? dp.Count ?? 0;
+                        series.Points.Add(new MetricDataPoint
+                        {
+                            TimestampUnix = dp.TimeStamp.ToUnixTimeSeconds(),
+                            Value         = val,
+                        });
+                    }
+                }
+                reply.Series.Add(series);
+            }
+        }
+        catch (Exception ex)
+        {
+            reply.Error = ex.Message;
+        }
+
+        return reply;
+    }
+
+    public override async Task<GetQueueMetricsReply> GetQueueMetrics(
+        GetQueueMetricsRequest request, ServerCallContext context)
+    {
+        var reply = new GetQueueMetricsReply();
+
+        if (_azureCredential == null || _subscriptionId == null ||
+            _resourceGroup == null || _namespaceName == null)
+        {
+            reply.Error = "Azure AD connection required for metrics.";
+            return reply;
+        }
+
+        try
+        {
+            var resourceId = $"/subscriptions/{_subscriptionId}/resourceGroups/{_resourceGroup}" +
+                             $"/providers/Microsoft.ServiceBus/namespaces/{_namespaceName}";
+
+            var hours = Math.Max(1, request.Hours);
+            var end   = DateTimeOffset.UtcNow;
+            var start = end.AddHours(-hours);
+
+            var granularity = hours switch
+            {
+                <= 1   => TimeSpan.FromMinutes(1),
+                <= 12  => TimeSpan.FromMinutes(5),
+                <= 24  => TimeSpan.FromMinutes(15),
+                <= 168 => TimeSpan.FromHours(1),
+                _      => TimeSpan.FromHours(6),
+            };
+
+            var metricsClient = new MetricsQueryClient(_azureCredential);
+
+            var metricNames = new[]
+            {
+                "IncomingRequests", "SuccessfulRequests", "ServerErrors",
+                "UserErrors", "ThrottledRequests",
+                "IncomingMessages", "OutgoingMessages",
+            };
+
+            var options = new MetricsQueryOptions
+            {
+                Granularity       = granularity,
+                Filter            = $"EntityName eq '{request.QueueName}'",
                 TimeRange         = new QueryTimeRange(start, end),
             };
             options.MetricNamespace = "Microsoft.ServiceBus/namespaces";

@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -49,7 +50,7 @@ struct QueueDetailView: View {
                         DataAccessRestrictedView()
                     }
                 default:
-                    DescriptionTab(queue: queue)
+                    QueueOverviewTab(queue: queue)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -72,77 +73,86 @@ struct QueueDetailView: View {
     }
 }
 
-// MARK: - Description Tab
+// MARK: - Overview Tab
 
 @available(macOS 15.0, *)
-private struct DescriptionTab: View {
+private struct QueueOverviewTab: View {
     @Environment(GRPCManager.self) var grpc
     let queue: QueueItem
 
     @State private var details: QueueDetailsItem?
     @State private var isLoading = true
     @State private var errorMessage: String?
+    @State private var lastUpdated: Date?
+    @State private var metricsRefreshTrigger = UUID()
+
+    @State private var essentialsExpanded = true
+    @State private var settingsExpanded = true
+    @State private var messageCountExpanded = true
+    @State private var metricsExpanded = true
+
+    @State private var selectedTimeRange = 1
+    private let timeRangeOptions = ["1 hour", "6 hours", "12 hours", "1 day", "7 days", "30 days"]
 
     var body: some View {
         Group {
             if isLoading {
-                ProgressView("Loading properties…")
+                ProgressView("Loading overview…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = errorMessage {
+            } else if let errorMessage {
                 VStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle")
-                        .font(.largeTitle).foregroundStyle(.red)
-                    Text(error).foregroundStyle(.secondary).font(.caption)
+                        .font(.largeTitle)
+                        .foregroundStyle(.red)
+                    Text(errorMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let d = details {
-                ScrollView {
-                    Form {
-                        Section("Identity") {
-                            LabeledContent("Name", value: d.name)
-                            LabeledContent("Status", value: d.status)
-                        }
+            } else if let details {
+                ScrollView(.vertical) {
+                    VStack(alignment: .leading, spacing: 24) {
+                        HStack(spacing: 12) {
+                            Button {
+                                Task { await loadDetails() }
+                            } label: {
+                                Label("Refresh", systemImage: "arrow.clockwise")
+                                    .labelStyle(.iconOnly)
+                            }
+                            .buttonStyle(.borderless)
+                            .help("Refresh overview")
 
-                        Section("Configuration") {
-                            LabeledContent("Max Size", value: "\(d.maxSizeMb) MB")
-                            LabeledContent("Default TTL", value: formatDuration(d.defaultMessageTtlSeconds))
-                            LabeledContent("Lock Duration", value: formatDuration(d.lockDurationSeconds))
-                            LabeledContent("Max Delivery Count", value: "\(d.maxDeliveryCount)")
-                            LabeledContent("Auto Delete on Idle", value: formatDuration(d.autoDeleteOnIdleSeconds))
-                            LabeledContent("Requires Duplicate Detection") {
-                                Text(d.requiresDuplicateDetection ? "Yes" : "No")
-                                    .foregroundStyle(d.requiresDuplicateDetection ? .primary : .secondary)
-                            }
-                            LabeledContent("Requires Session") {
-                                Text(d.requiresSession ? "Yes" : "No")
-                                    .foregroundStyle(d.requiresSession ? .primary : .secondary)
-                            }
-                            LabeledContent("Dead Letter on Expiration") {
-                                Text(d.deadLetteringOnExpiration ? "Yes" : "No")
-                                    .foregroundStyle(d.deadLetteringOnExpiration ? .orange : .secondary)
-                            }
-                            if !d.forwardTo.isEmpty {
-                                LabeledContent("Forward To", value: d.forwardTo)
+                            Spacer()
+
+                            if let lastUpdated {
+                                Text("Updated \(lastUpdated, style: .relative) ago")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
                         }
 
-                        Section("Statistics") {
-                            LabeledContent("Active Messages") {
-                                Text("\(d.activeMessageCount)").foregroundStyle(.blue)
-                            }
-                            LabeledContent("Dead Letter") {
-                                Text("\(d.deadLetterCount)")
-                                    .foregroundStyle(d.deadLetterCount > 0 ? .red : .secondary)
-                            }
-                            LabeledContent("Size") {
-                                Text(ByteCountFormatter.string(fromByteCount: d.sizeBytes, countStyle: .file))
-                            }
-                            LabeledContent("Created", value: d.createdAt.formatted(date: .abbreviated, time: .shortened))
-                            LabeledContent("Updated", value: d.updatedAt.formatted(date: .abbreviated, time: .shortened))
+                        CollapsibleSection(title: "Essentials", isExpanded: $essentialsExpanded) {
+                            QueueEssentialsGrid(details: details)
+                        }
+
+                        CollapsibleSection(title: "Settings", isExpanded: $settingsExpanded) {
+                            QueueSettingsCards(details: details)
+                        }
+
+                        CollapsibleSection(title: "Message Counts", isExpanded: $messageCountExpanded) {
+                            QueueMessageCountCards(details: details)
+                        }
+
+                        CollapsibleSection(title: "Metrics", isExpanded: $metricsExpanded) {
+                            QueueMetricsSection(
+                                selectedTimeRange: $selectedTimeRange,
+                                timeRangeOptions: timeRangeOptions,
+                                queueName: details.name,
+                                refreshTrigger: metricsRefreshTrigger
+                            )
                         }
                     }
-                    .formStyle(.grouped)
-                    .padding(.bottom)
+                    .padding(20)
                 }
             }
         }
@@ -154,26 +164,425 @@ private struct DescriptionTab: View {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
+
         do {
             details = try await grpc.getQueueProperties(name: queue.name)
+            lastUpdated = .now
+            metricsRefreshTrigger = UUID()
         } catch {
+            details = nil
             errorMessage = error.localizedDescription
         }
     }
+}
 
-    private func formatDuration(_ seconds: Int64) -> String {
-        guard seconds > 0 else { return "—" }
-        let days    = seconds / 86_400
-        let hours   = (seconds % 86_400) / 3_600
-        let minutes = (seconds % 3_600) / 60
-        let secs    = seconds % 60
-        var parts: [String] = []
-        if days    > 0 { parts.append("\(days)d") }
-        if hours   > 0 { parts.append("\(hours)h") }
-        if minutes > 0 { parts.append("\(minutes)m") }
-        if secs    > 0 { parts.append("\(secs)s") }
-        return parts.joined(separator: " ")
+@available(macOS 15.0, *)
+private struct QueueEssentialsGrid: View {
+    @Environment(GRPCManager.self) var grpc
+    let details: QueueDetailsItem
+
+    private var namespace: String {
+        grpc.namespaceName ?? ""
     }
+
+    private var namespaceURL: String? {
+        namespace.isEmpty ? nil : "https://\(namespace)"
+    }
+
+    private var queueURL: String? {
+        namespace.isEmpty ? nil : "https://\(namespace)/\(details.name)"
+    }
+
+    private var deadLetterName: String {
+        "\(details.name)/$DeadLetterQueue"
+    }
+
+    var body: some View {
+        Grid(alignment: .leading, horizontalSpacing: 32, verticalSpacing: 10) {
+            GridRow {
+                infoField(label: "Namespace") {
+                    if let namespaceURL {
+                        QueueOverviewLink(text: namespace, urlString: namespaceURL)
+                    } else {
+                        Text("—")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                infoField(label: "Queue URL") {
+                    if let queueURL {
+                        QueueOverviewLink(text: queueURL, urlString: queueURL, lineLimit: 1, helpText: queueURL)
+                    } else {
+                        Text("—")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            GridRow {
+                infoField(label: "Status") {
+                    QueueStatusBadge(status: details.status)
+                }
+                infoField(label: "Created") {
+                    Text(queueFormatDate(details.createdAt))
+                        .font(.callout)
+                        .foregroundStyle(.primary)
+                }
+            }
+
+            GridRow {
+                infoField(label: "Partitioning") {
+                    QueueFeatureBadge(enabled: details.enablePartitioning)
+                }
+                infoField(label: "Updated") {
+                    Text(queueFormatDate(details.updatedAt))
+                        .font(.callout)
+                        .foregroundStyle(.primary)
+                }
+            }
+
+            GridRow {
+                infoField(label: "Duplicate Detection") {
+                    QueueFeatureBadge(enabled: details.requiresDuplicateDetection)
+                }
+                infoField(label: "Sessions") {
+                    QueueFeatureBadge(enabled: details.requiresSession)
+                }
+            }
+
+            GridRow {
+                infoField(label: "Dead Lettering") {
+                    Text(deadLetterName)
+                        .font(.callout)
+                        .foregroundStyle(.tint)
+                        .underline()
+                        .help(deadLetterName)
+                }
+                infoField(label: "Forward Messages") {
+                    if details.forwardTo.isEmpty {
+                        QueueFeatureBadge(enabled: false)
+                    } else {
+                        Text(details.forwardTo)
+                            .font(.callout)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .help(details.forwardTo)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func infoField<V: View>(label: String, @ViewBuilder value: () -> V) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(label)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .frame(width: 140, alignment: .trailing)
+            value()
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+@available(macOS 15.0, *)
+private struct QueueSettingsCards: View {
+    let details: QueueDetailsItem
+
+    private var currentSize: (value: String, unit: String) {
+        queueFormatSize(details.sizeBytes)
+    }
+
+    private var maxSize: (value: String, unit: String) {
+        details.maxSizeMb >= 1024
+            ? ("\(details.maxSizeMb / 1024)", "GB")
+            : ("\(details.maxSizeMb)", "MB")
+    }
+
+    private var ttl: (value: String, unit: String) {
+        queueFormatDurationCard(details.defaultMessageTtlSeconds)
+    }
+
+    private var autoDelete: (value: String, unit: String) {
+        details.autoDeleteOnIdleSeconds == 0
+            ? ("NEVER", "")
+            : queueFormatDurationCard(details.autoDeleteOnIdleSeconds)
+    }
+
+    private var duplicateWindow: (value: String, unit: String) {
+        details.duplicateDetectionWindowSeconds == 0
+            ? ("—", "")
+            : queueFormatDurationCard(details.duplicateDetectionWindowSeconds)
+    }
+
+    private var messageLock: (value: String, unit: String) {
+        queueFormatDurationCard(details.lockDurationSeconds)
+    }
+
+    private var freeSpace: (value: String, unit: String) {
+        let maxBytes = Double(details.maxSizeMb) * 1_024 * 1_024
+        guard maxBytes > 0 else { return ("0.0", "%") }
+        let percent = max(0, 100 * (1 - (Double(details.sizeBytes) / maxBytes)))
+        return (String(format: "%.1f", percent), "%")
+    }
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                MetricCard(label: "Max Delivery Count", value: "\(details.maxDeliveryCount)", unit: "", accentColor: .orange)
+                MetricCard(label: "Current Size", value: currentSize.value, unit: currentSize.unit, accentColor: .blue)
+                MetricCard(label: "Max Size", value: maxSize.value, unit: maxSize.unit, accentColor: .pink)
+                MetricCard(label: "Message TTL", value: ttl.value, unit: ttl.unit, accentColor: .green)
+                MetricCard(label: "Auto-delete", value: autoDelete.value, unit: autoDelete.unit, accentColor: .teal)
+                MetricCard(label: "Duplicate Det. Window", value: duplicateWindow.value, unit: duplicateWindow.unit, accentColor: .indigo)
+                MetricCard(label: "Message Lock", value: messageLock.value, unit: messageLock.unit, accentColor: .purple)
+                MetricCard(label: "Free Space", value: freeSpace.value, unit: freeSpace.unit, accentColor: .cyan)
+                MetricCard(label: "User Metadata", value: details.userMetadata.isEmpty ? "—" : details.userMetadata, unit: "", accentColor: .orange)
+            }
+            .padding(.vertical, 2)
+        }
+    }
+}
+
+@available(macOS 15.0, *)
+private struct QueueMessageCountCards: View {
+    let details: QueueDetailsItem
+
+    var body: some View {
+        HStack(spacing: 12) {
+            QueueMessageCountCard(label: "Active", value: details.activeMessageCount, accentColor: .purple)
+            QueueMessageCountCard(label: "Scheduled", value: details.scheduledMessageCount, accentColor: .green)
+            QueueMessageCountCard(
+                label: "Dead-letter",
+                value: details.deadLetterCount,
+                accentColor: details.deadLetterCount == 0 ? .pink : .orange,
+                showWarning: details.deadLetterCount > 0
+            )
+            QueueMessageCountCard(label: "Transfer", value: details.transferMessageCount, accentColor: .blue)
+            QueueMessageCountCard(
+                label: "Transfer Dead-letter",
+                value: details.transferDeadLetterCount,
+                accentColor: details.transferDeadLetterCount > 0 ? .red : .secondary,
+                showWarning: details.transferDeadLetterCount > 0
+            )
+        }
+    }
+}
+
+@available(macOS 15.0, *)
+private struct QueueMessageCountCard: View {
+    let label: String
+    let value: Int64
+    let accentColor: Color
+    var showWarning = false
+
+    var body: some View {
+        MetricCard(label: label, value: "\(value)", unit: "MESSAGES", accentColor: accentColor)
+            .overlay(alignment: .topTrailing) {
+                if showWarning {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(.orange)
+                        .padding(10)
+                }
+            }
+    }
+}
+
+@available(macOS 15.0, *)
+private struct QueueMetricsSection: View {
+    @Binding var selectedTimeRange: Int
+    let timeRangeOptions: [String]
+    let queueName: String
+    let refreshTrigger: UUID
+
+    @Environment(GRPCManager.self) var grpc
+
+    @State private var requestSamples: [MetricSample] = []
+    @State private var messageSamples: [MetricSample] = []
+    @State private var isLoading = false
+    @State private var metricsError: String?
+
+    private var requestSeriesDefs: [SeriesDef] {[
+        SeriesDef(key: "IncomingRequests", label: "Incoming Req.", color: .blue),
+        SeriesDef(key: "SuccessfulRequests", label: "Successful Req.", color: .pink),
+        SeriesDef(key: "ServerErrors", label: "Server Errors", color: .teal),
+        SeriesDef(key: "UserErrors", label: "User Errors", color: .purple),
+        SeriesDef(key: "ThrottledRequests", label: "Throttled Req.", color: .green),
+    ]}
+
+    private var messageSeriesDefs: [SeriesDef] {[
+        SeriesDef(key: "IncomingMessages", label: "Incoming Msg.", color: .blue),
+        SeriesDef(key: "OutgoingMessages", label: "Outgoing Msg.", color: .pink),
+    ]}
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 8) {
+                Text("Show data for the last:")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                Picker("", selection: $selectedTimeRange) {
+                    ForEach(0..<timeRangeOptions.count, id: \.self) { idx in
+                        Text(timeRangeOptions[idx]).tag(idx)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 480)
+                .onChange(of: selectedTimeRange) { _, _ in Task { await refreshChartData() } }
+
+                if isLoading {
+                    ProgressView()
+                        .scaleEffect(0.7)
+                }
+            }
+
+            if let metricsError {
+                Text(metricsError)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 40)
+            } else {
+                HStack(alignment: .top, spacing: 16) {
+                    MetricChartCard(title: "Requests", series: requestSeriesDefs, samples: requestSamples)
+                    MetricChartCard(title: "Messages", series: messageSeriesDefs, samples: messageSamples)
+                }
+            }
+        }
+        .onAppear { Task { await refreshChartData() } }
+        .onChange(of: refreshTrigger) { _, _ in Task { await refreshChartData() } }
+    }
+
+    private func refreshChartData() async {
+        isLoading = true
+        metricsError = nil
+        let hours = queueHoursForRange(selectedTimeRange)
+
+        do {
+            let allSeries = try await grpc.getQueueMetrics(queueName: queueName, hours: hours)
+            let seriesMap = Dictionary(uniqueKeysWithValues: allSeries.map { ($0.name, $0) })
+            requestSamples = queueBuildSamples(defs: requestSeriesDefs, seriesMap: seriesMap)
+            messageSamples = queueBuildSamples(defs: messageSeriesDefs, seriesMap: seriesMap)
+        } catch {
+            metricsError = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+}
+
+@available(macOS 15.0, *)
+private struct QueueStatusBadge: View {
+    let status: String
+
+    private var color: Color {
+        switch status.lowercased() {
+        case "active": return .green
+        case "disabled": return .orange
+        default: return .gray
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Circle()
+                .fill(color)
+                .frame(width: 8, height: 8)
+            Text(status.isEmpty ? "Unknown" : status)
+                .font(.callout)
+                .foregroundStyle(.primary)
+        }
+        .accessibilityLabel("Status: \(status)")
+    }
+}
+
+@available(macOS 15.0, *)
+private struct QueueFeatureBadge: View {
+    let enabled: Bool
+    var label: String? = nil
+
+    var body: some View {
+        Text(label ?? (enabled ? "Enabled" : "Disabled"))
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(enabled ? Color.blue : Color.gray)
+            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .accessibilityLabel(label ?? (enabled ? "Enabled" : "Disabled"))
+    }
+}
+
+@available(macOS 15.0, *)
+private struct QueueOverviewLink: View {
+    let text: String
+    let urlString: String
+    var lineLimit: Int? = nil
+    var helpText: String? = nil
+
+    var body: some View {
+        Button {
+            guard let url = URL(string: urlString) else { return }
+            NSWorkspace.shared.open(url)
+        } label: {
+            Text(text)
+                .font(.callout)
+                .foregroundStyle(.tint)
+                .underline()
+                .lineLimit(lineLimit)
+                .truncationMode(.middle)
+        }
+        .buttonStyle(.plain)
+        .help(helpText ?? text)
+    }
+}
+
+private func queueFormatDate(_ date: Date) -> String {
+    date.formatted(Date.FormatStyle().month(.abbreviated).day().year().hour().minute())
+}
+
+private func queueFormatSize(_ bytes: Int64) -> (value: String, unit: String) {
+    let gb: Double = 1_073_741_824
+    let mb: Double = 1_048_576
+    let kb: Double = 1_024
+    let value = Double(bytes)
+
+    if value >= gb { return (String(format: "%.1f", value / gb), "GB") }
+    if value >= mb { return (String(format: "%.1f", value / mb), "MB") }
+    if value >= kb { return (String(format: "%.1f", value / kb), "KB") }
+    return ("\(bytes)", "B")
+}
+
+private func queueFormatDurationCard(_ seconds: Int64) -> (value: String, unit: String) {
+    guard seconds > 0 else { return ("—", "") }
+    if seconds < 60 { return ("\(seconds)s", "") }
+    if seconds < 3_600 { return ("\(seconds / 60)", "MIN") }
+    if seconds < 86_400 { return ("\(seconds / 3_600)", "HRS") }
+    return ("\(seconds / 86_400)", "DAYS")
+}
+
+private func queueHoursForRange(_ index: Int) -> Int {
+    let options = [1, 6, 12, 24, 168, 720]
+    let safeIndex = min(max(index, 0), options.count - 1)
+    return options[safeIndex]
+}
+
+private func queueBuildSamples(defs: [SeriesDef], seriesMap: [String: Buskit_MetricSeries]) -> [MetricSample] {
+    var samples: [MetricSample] = []
+    for definition in defs {
+        guard let series = seriesMap[definition.key] else { continue }
+        for point in series.points {
+            samples.append(MetricSample(
+                series: definition.key,
+                timestamp: Date(timeIntervalSince1970: TimeInterval(point.timestampUnix)),
+                value: point.value
+            ))
+        }
+    }
+    return samples
 }
 
 // MARK: - Messages Tab (active & dead-letter)

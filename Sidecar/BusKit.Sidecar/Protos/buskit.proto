@@ -32,6 +32,7 @@ service BusKitService {
   rpc GetQueueProperties (GetQueuePropertiesRequest) returns (GetQueuePropertiesReply);
   rpc GetTopicProperties (GetTopicPropertiesRequest) returns (GetTopicPropertiesReply);
   rpc GetTopicMetrics (GetTopicMetricsRequest) returns (GetTopicMetricsReply);
+  rpc GetQueueMetrics (GetQueueMetricsRequest) returns (GetQueueMetricsReply);
   rpc GetSubscriptionProperties (GetSubscriptionPropertiesRequest) returns (GetSubscriptionPropertiesReply);
   rpc UpdateSubscriptionTtl (UpdateSubscriptionTtlRequest) returns (UpdateSubscriptionTtlReply);
   rpc PurgeMessages (PurgeMessagesRequest) returns (PurgeMessagesReply);
@@ -375,6 +376,13 @@ message QueueDetails {
   int64 size_bytes = 14;
   string forward_to = 15;
   int64 auto_delete_on_idle_seconds = 16;
+  int64 scheduled_message_count = 17;
+  int64 transfer_message_count = 18;
+  int64 transfer_dead_letter_count = 19;
+  int64 max_message_size_bytes = 20;
+  int64 duplicate_detection_window_seconds = 21;
+  string user_metadata = 22;
+  bool enable_partitioning = 23;
 }
 
 // ─── Topic Properties ────────────────────────────────
@@ -426,8 +434,17 @@ message GetTopicMetricsReply {
   string error = 2;
 }
 
-// ─── Subscription Properties ─────────────────────────
+message GetQueueMetricsRequest {
+  string queue_name = 1;
+  int32 hours = 2;
+}
 
+message GetQueueMetricsReply {
+  repeated MetricSeries series = 1;
+  string error = 2;
+}
+
+// ─── Subscription Properties ─────────────────────────
 message GetSubscriptionPropertiesRequest {
   string topic_name = 1;
   string subscription_name = 2;

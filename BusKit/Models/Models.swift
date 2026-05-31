@@ -273,6 +273,13 @@ struct QueueDetailsItem {
     let sizeBytes: Int64
     let forwardTo: String
     let autoDeleteOnIdleSeconds: Int64
+    let scheduledMessageCount: Int64
+    let transferMessageCount: Int64
+    let transferDeadLetterCount: Int64
+    let maxMessageSizeBytes: Int64
+    let duplicateDetectionWindowSeconds: Int64
+    let userMetadata: String
+    let enablePartitioning: Bool
 }
 
 // MARK: - Subscription models

@@ -493,7 +493,14 @@ final class GRPCManager {
             deadLetterCount: p.deadLetterCount,
             sizeBytes: p.sizeBytes,
             forwardTo: p.forwardTo,
-            autoDeleteOnIdleSeconds: p.autoDeleteOnIdleSeconds
+            autoDeleteOnIdleSeconds: p.autoDeleteOnIdleSeconds,
+            scheduledMessageCount: p.scheduledMessageCount,
+            transferMessageCount: p.transferMessageCount,
+            transferDeadLetterCount: p.transferDeadLetterCount,
+            maxMessageSizeBytes: p.maxMessageSizeBytes,
+            duplicateDetectionWindowSeconds: p.duplicateDetectionWindowSeconds,
+            userMetadata: p.userMetadata,
+            enablePartitioning: p.enablePartitioning
         )
     }
 
@@ -531,6 +538,18 @@ final class GRPCManager {
         req.topicName = topicName
         req.hours = Int32(hours)
         let reply: Buskit_GetTopicMetricsReply = try await buskit.getTopicMetrics(req)
+        if !reply.error.isEmpty {
+            throw NSError(domain: "BusKit", code: 0, userInfo: [NSLocalizedDescriptionKey: reply.error])
+        }
+        return reply.series
+    }
+
+    func getQueueMetrics(queueName: String, hours: Int) async throws -> [Buskit_MetricSeries] {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_GetQueueMetricsRequest()
+        req.queueName = queueName
+        req.hours = Int32(hours)
+        let reply: Buskit_GetQueueMetricsReply = try await buskit.getQueueMetrics(req)
         if !reply.error.isEmpty {
             throw NSError(domain: "BusKit", code: 0, userInfo: [NSLocalizedDescriptionKey: reply.error])
         }
