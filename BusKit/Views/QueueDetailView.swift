@@ -186,11 +186,17 @@ private struct QueueEssentialsGrid: View {
     }
 
     private var namespaceURL: String? {
-        namespace.isEmpty ? nil : "https://\(namespace)"
+        namespace.isEmpty ? nil : "https://\(fqns)"
+    }
+
+    private var fqns: String {
+        namespace.hasSuffix(".servicebus.windows.net")
+            ? namespace
+            : "\(namespace).servicebus.windows.net"
     }
 
     private var queueURL: String? {
-        namespace.isEmpty ? nil : "https://\(namespace)/\(details.name)"
+        namespace.isEmpty ? nil : "https://\(fqns)/\(details.name)"
     }
 
     private var deadLetterName: String {
@@ -211,7 +217,9 @@ private struct QueueEssentialsGrid: View {
                 }
                 infoField(label: "Queue URL") {
                     if let queueURL {
-                        QueueOverviewLink(text: queueURL, urlString: queueURL, lineLimit: 1, helpText: queueURL)
+                        QueueOverviewLink(text: queueURL, urlString: queueURL,
+                                          lineLimit: 1, helpText: queueURL,
+                                          copyValue: queueURL)
                     } else {
                         Text("—")
                             .font(.callout)
@@ -522,21 +530,46 @@ private struct QueueOverviewLink: View {
     let urlString: String
     var lineLimit: Int? = nil
     var helpText: String? = nil
+    var copyValue: String? = nil
+
+    @State private var isHovered = false
+    @State private var copied = false
 
     var body: some View {
-        Button {
-            guard let url = URL(string: urlString) else { return }
-            NSWorkspace.shared.open(url)
-        } label: {
-            Text(text)
-                .font(.callout)
-                .foregroundStyle(.tint)
-                .underline()
-                .lineLimit(lineLimit)
-                .truncationMode(.middle)
+        HStack(spacing: 4) {
+            Button {
+                guard let url = URL(string: urlString) else { return }
+                NSWorkspace.shared.open(url)
+            } label: {
+                Text(text)
+                    .font(.callout)
+                    .foregroundStyle(.tint)
+                    .underline()
+                    .lineLimit(lineLimit)
+                    .truncationMode(.middle)
+            }
+            .buttonStyle(.plain)
+            .help(helpText ?? text)
+
+            if let copyValue, isHovered {
+                Button {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(copyValue, forType: .string)
+                    withAnimation { copied = true }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        withAnimation { copied = false }
+                    }
+                } label: {
+                    Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                        .font(.caption)
+                        .foregroundStyle(copied ? .green : .secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Copy URL")
+                .transition(.opacity)
+            }
         }
-        .buttonStyle(.plain)
-        .help(helpText ?? text)
+        .onHover { isHovered = $0 }
     }
 }
 
