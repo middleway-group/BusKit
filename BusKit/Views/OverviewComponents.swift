@@ -124,6 +124,18 @@ struct MetricChartCard: View {
     let series: [SeriesDef]
     let samples: [MetricSample]
 
+    private var timezoneLabel: String {
+        let tz = TimeZone.current
+        let seconds = tz.secondsFromGMT()
+        let hours = seconds / 3600
+        let minutes = abs(seconds % 3600) / 60
+        let sign = hours >= 0 ? "+" : "-"
+        if minutes == 0 {
+            return "UTC\(sign)\(abs(hours))"
+        }
+        return String(format: "UTC%@%d:%02d", sign, abs(hours), minutes)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
@@ -169,6 +181,14 @@ struct MetricChartCard: View {
             .frame(height: 220)
             .padding(.horizontal, 4)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+
+            HStack {
+                Spacer()
+                Text(timezoneLabel)
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color(nsColor: .tertiaryLabelColor))
+                    .padding(.horizontal, 8)
+            }
 
             ChartLegend(series: series, samples: samples)
         }
