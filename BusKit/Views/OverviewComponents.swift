@@ -87,14 +87,14 @@ struct MetricCard: View {
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(label)
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
 
-                    Spacer(minLength: 2)
+                    Spacer(minLength: 1)
 
                     Text(value)
-                        .font(.title3.bold())
+                        .font(.callout.bold())
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
@@ -105,11 +105,11 @@ struct MetricCard: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 8)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 6)
             }
         }
-        .frame(minWidth: 110, maxWidth: 140, minHeight: 72, maxHeight: 72)
+        .frame(minWidth: 90, maxWidth: 120, minHeight: 58, maxHeight: 58)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(label): \(value) \(unit)")
         .onHover { inside in
