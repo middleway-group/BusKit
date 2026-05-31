@@ -1,6 +1,22 @@
 import SwiftUI
 import Charts
 
+// MARK: - Shared chart data models
+
+struct MetricSample: Identifiable {
+    let id = UUID()
+    let series: String
+    let timestamp: Date
+    let value: Double
+}
+
+struct SeriesDef: Identifiable {
+    let id = UUID()
+    let key: String
+    let label: String
+    let color: Color
+}
+
 @available(macOS 15.0, *)
 struct CollapsibleSection<Content: View>: View {
     let title: String
