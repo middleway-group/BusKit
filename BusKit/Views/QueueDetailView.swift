@@ -50,7 +50,7 @@ struct QueueDetailView: View {
                         DataAccessRestrictedView()
                     }
                 default:
-                    QueueOverviewTab(queue: queue)
+                    QueueOverviewTab(queue: queue, selectedTab: $selectedTab)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -79,6 +79,7 @@ struct QueueDetailView: View {
 private struct QueueOverviewTab: View {
     @Environment(GRPCManager.self) var grpc
     let queue: QueueItem
+    @Binding var selectedTab: Int
 
     @State private var details: QueueDetailsItem?
     @State private var isLoading = true
@@ -140,7 +141,7 @@ private struct QueueOverviewTab: View {
                         }
 
                         CollapsibleSection(title: "Message Counts", isExpanded: $messageCountExpanded) {
-                            QueueMessageCountCards(details: details)
+                            QueueMessageCountCards(details: details, onTabSelect: { selectedTab = $0 })
                         }
 
                         CollapsibleSection(title: "Metrics", isExpanded: $metricsExpanded) {
@@ -358,16 +359,18 @@ private struct QueueSettingsCards: View {
 @available(macOS 15.0, *)
 private struct QueueMessageCountCards: View {
     let details: QueueDetailsItem
+    var onTabSelect: ((Int) -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 12) {
-            QueueMessageCountCard(label: "Active", value: details.activeMessageCount, accentColor: .purple)
+            QueueMessageCountCard(label: "Active", value: details.activeMessageCount, accentColor: .purple, onTap: { onTabSelect?(1) })
             QueueMessageCountCard(label: "Scheduled", value: details.scheduledMessageCount, accentColor: .green)
             QueueMessageCountCard(
                 label: "Dead-letter",
                 value: details.deadLetterCount,
                 accentColor: details.deadLetterCount == 0 ? .pink : .orange,
-                showWarning: details.deadLetterCount > 0
+                showWarning: details.deadLetterCount > 0,
+                onTap: { onTabSelect?(2) }
             )
             QueueMessageCountCard(label: "Transfer", value: details.transferMessageCount, accentColor: .blue)
             QueueMessageCountCard(
@@ -386,9 +389,10 @@ private struct QueueMessageCountCard: View {
     let value: Int64
     let accentColor: Color
     var showWarning = false
+    var onTap: (() -> Void)? = nil
 
     var body: some View {
-        MetricCard(label: label, value: "\(value)", unit: "MESSAGES", accentColor: accentColor)
+        let card = MetricCard(label: label, value: "\(value)", unit: "MESSAGES", accentColor: accentColor)
             .overlay(alignment: .topTrailing) {
                 if showWarning {
                     Image(systemName: "exclamationmark.triangle")
@@ -396,6 +400,15 @@ private struct QueueMessageCountCard: View {
                         .padding(10)
                 }
             }
+
+        if let onTap {
+            Button(action: onTap) { card }
+                .buttonStyle(.plain)
+                .onHover { inside in inside ? NSCursor.pointingHand.set() : NSCursor.arrow.set() }
+                .help("Open \(label) tab")
+        } else {
+            card
+        }
     }
 }
 
@@ -532,7 +545,6 @@ private struct QueueOverviewLink: View {
     var helpText: String? = nil
     var copyValue: String? = nil
 
-    @State private var isHovered = false
     @State private var copied = false
 
     var body: some View {
@@ -551,7 +563,7 @@ private struct QueueOverviewLink: View {
             .buttonStyle(.plain)
             .help(helpText ?? text)
 
-            if let copyValue, isHovered {
+            if let copyValue {
                 Button {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(copyValue, forType: .string)
@@ -566,10 +578,8 @@ private struct QueueOverviewLink: View {
                 }
                 .buttonStyle(.plain)
                 .help("Copy URL")
-                .transition(.opacity)
             }
         }
-        .onHover { isHovered = $0 }
     }
 }
 
