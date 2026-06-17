@@ -117,6 +117,9 @@ private final class SidebarModel {
     var disableTopicTarget: TopicItem? = nil
     var showDisableTopicConfirm = false
     var isSettingTopicStatus = false
+
+    // Expanded topics state (keyed by topic name, persists across refreshes)
+    var expandedTopics: Set<String> = []
 }
 
 // MARK: - Receive Count Dialog
@@ -169,6 +172,7 @@ struct SidebarView: View {
     @Environment(GRPCManager.self) var grpc
     @Environment(EntityActionStore.self) var actionStore
     @Environment(ActivityLogStore.self) var activityLog
+    @Environment(AppStatusModel.self) var appStatus
     @Binding var selection: SidebarSelection?
     @State private var model = SidebarModel()
     @State private var namespaceExpanded = true
@@ -206,6 +210,7 @@ struct SidebarView: View {
                                         active: queue.messageCount,
                                         deadLetter: queue.deadLetterCount)
                                 }
+                                .frame(height: 22)
                                 .opacity(queue.status == "Active" || queue.status.isEmpty ? 1.0 : 0.4)
                                 .tag(SidebarSelection.queue(queue))
                                 .contextMenu {
@@ -424,10 +429,11 @@ struct SidebarView: View {
                 topicsExpanded    = true
                 Task { await load() }
             } else {
-                model.queues         = []
-                model.topics         = []
-                model.subscriptions  = [:]
-                model.rules          = [:]
+                model.queues          = []
+                model.topics          = []
+                model.subscriptions   = [:]
+                model.rules           = [:]
+                model.expandedTopics  = []
             }
         }
         .onChange(of: actionStore.pendingRefresh) { _, req in
@@ -789,6 +795,7 @@ struct SidebarView: View {
                           deadLetterCount: $0.deadLetterCount, status: $0.status)
             }
             model.topics = topicInfos.map { TopicItem(name: $0.name, status: $0.status) }
+            appStatus.lastRefreshTime = Date()
         } catch { }
     }
 }
@@ -802,10 +809,21 @@ private struct TopicRow: View {
     let grpc: GRPCManager
 
     @Environment(ActivityLogStore.self) var activityLog
-    @State private var isExpanded = false
+
+    private var isExpandedBinding: Binding<Bool> {
+        Binding(
+            get: { model.expandedTopics.contains(topic.name) },
+            set: { expanded in
+                if expanded { model.expandedTopics.insert(topic.name) }
+                else { model.expandedTopics.remove(topic.name) }
+            }
+        )
+    }
+
+    private var isExpanded: Bool { model.expandedTopics.contains(topic.name) }
 
     var body: some View {
-        DisclosureGroup(isExpanded: $isExpanded) {
+        DisclosureGroup(isExpanded: isExpandedBinding) {
             switch model.subscriptions[topic.name] {
             case .none, .loading:
                 HStack {
@@ -839,6 +857,7 @@ private struct TopicRow: View {
                         .foregroundStyle(.orange)
                 }
             }
+            .frame(height: 22)
             .contentShape(Rectangle())
             .tag(SidebarSelection.topic(topic))
             .contextMenu {
@@ -941,6 +960,7 @@ private struct SubscriptionRow: View {
                 active: sub.activeMessageCount,
                 deadLetter: sub.deadLetterCount)
         }
+        .frame(height: 22)
         .contentShape(Rectangle())
         .tag(SidebarSelection.subscription(sub))
         .contextMenu {
@@ -1136,6 +1156,7 @@ private struct SidebarRuleRow: View {
     var body: some View {
         Label(rule.name, systemImage: "line.3.horizontal.decrease.circle")
             .font(.subheadline)
+            .frame(height: 22)
             .tag(SidebarSelection.rule(rule, subscription))
             .contextMenu {
                 Button("Edit Filter") {

@@ -829,7 +829,12 @@ final class GRPCManager {
         if let q = queueName        { req.queueName        = q }
         if let t = topicName        { req.topicName        = t }
         if let s = subscriptionName { req.subscriptionName = s }
-        let reply: Buskit_PeekMessagesReply = try await buskit.peekMessages(req)
+        // The default gRPC max inbound payload is 4 MB, which is easily exceeded when
+        // fetching hundreds or thousands of messages.  Override the limit so that the
+        // response is only constrained by available memory, not an arbitrary 4 MB cap.
+        var callOptions = CallOptions.defaults
+        callOptions.maxRequestMessageBytes = .max
+        let reply: Buskit_PeekMessagesReply = try await buskit.peekMessages(req, options: callOptions)
         return reply.messages.map { m in
             MessageItem(
                 messageId: m.messageID,

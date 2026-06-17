@@ -5,6 +5,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddGrpc(options =>
 {
     options.EnableDetailedErrors = true;
+    // Allow arbitrarily large response payloads so that bulk peek calls
+    // (1 000+ messages) are not silently truncated or cancelled.
+    options.MaxSendMessageSize = null;
 });
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient(nameof(PermissionEvaluationEngine));

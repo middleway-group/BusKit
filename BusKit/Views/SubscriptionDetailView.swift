@@ -817,14 +817,24 @@ private struct SubMessagesTab: View {
                             }
                             .width(min: 120, ideal: 180)
 
+                            TableColumn("Sequence") { msg in
+                                Text(String(msg.sequenceNumber))
+                                    .font(.system(.caption, design: .monospaced))
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                            .width(min: 60, ideal: 80)
+
                             TableColumn("Subject") { msg in
                                 Text(msg.subject.isEmpty ? "—" : msg.subject)
+                                    .font(.system(.caption))
                                     .lineLimit(1)
                             }
                             .width(min: 80, ideal: 120)
 
                             TableColumn("Content Type") { msg in
                                 Text(msg.contentType.isEmpty ? "—" : msg.contentType)
+                                    .font(.system(.caption))
                                     .lineLimit(1)
                                     .foregroundStyle(.secondary)
                             }
@@ -901,6 +911,7 @@ private struct SubMessagesTab: View {
         }
         .sheet(isPresented: $showBulkResubmitSheet, onDismiss: {
             if bulkResubmitDidSubmit {
+                selectedMessageIDs.removeAll()
                 Task { await loadMessages() }
                 bulkResubmitDidSubmit = false
             }

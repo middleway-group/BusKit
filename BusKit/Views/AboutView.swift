@@ -107,6 +107,11 @@ struct AboutView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
+            Text("Built with help of AI tools")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+
             Spacer()
 
             VStack(spacing: 2) {
