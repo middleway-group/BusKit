@@ -2,6 +2,14 @@
 <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
         <title>BusKit</title>
+    <item>
+            <title>0.2.0</title>
+            <pubDate>Thu, 18 Jun 2026 11:15:59 +0000</pubDate>
+            <sparkle:version xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">200</sparkle:version>
+            <sparkle:shortVersionString xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">0.2.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">26.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/pka-fr/BusKit/releases/download/v0.2.0/BusKit-0.2.0-arm64.dmg" sparkle:edSignature="ew7IN4YYb62g6LmxRrhzCTw98fv3jmrxyY1qkw1V9MgR3VxY7mP9EwvZRRvvd/cuvLYaiID1gmuOEN2sOdxwAA==" length="76223867" type="application/octet-stream"/>
+        </item>
         <item>
             <title>0.1.21</title>
             <pubDate>Thu, 18 Jun 2026 10:10:08 +0000</pubDate>
