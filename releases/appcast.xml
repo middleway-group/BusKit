@@ -8,7 +8,7 @@
             <sparkle:version>121</sparkle:version>
             <sparkle:shortVersionString>0.1.21</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/pka-fr/BusKit/releases/download/v0.1.21/BusKit-0.1.21-arm64.dmg" length="76212667" type="application/octet-stream"/>
+            <enclosure url="https://github.com/pka-fr/BusKit/releases/download/v0.1.21/BusKit-0.1.21-arm64.dmg" sparkle:edSignature="mQFSXjMG8befueA4Wmeuoa874RKKT7d2tWsuCi5yBZs9D2ZJCfzketjsC/rRFBE+XtwawLffraLAI9ioe03pDw==" length="76212667" type="application/octet-stream"/>
         </item>
         <item>
             <title>0.1.20</title>

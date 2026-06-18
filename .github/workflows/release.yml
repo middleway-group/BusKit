@@ -1,9 +1,18 @@
-name: Release
+# This workflow is a FALLBACK for CI-based releases.
+# The canonical release process is: ./Scripts/release.sh
+# (Signs using your local Keychain — no GitHub secret needed.)
+#
+# Only run this manually if you cannot use release.sh.
+# Requires the SPARKLE_PRIVATE_KEY secret to be set in repo settings.
+
+name: Release (manual fallback)
 
 on:
-  push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 0.1.22)'
+        required: true
 
 permissions:
   contents: write
@@ -25,18 +34,9 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Extract version from tag
-        id: version
-        run: |
-          TAG="${GITHUB_REF_NAME}"
-          VERSION="${TAG#v}"
-          echo "tag=$TAG"       >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "🏷️ Releasing version: $VERSION"
-
       - name: Stamp version into Xcode project
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${{ github.event.inputs.version }}"
           PBXPROJ="BusKit.xcodeproj/project.pbxproj"
 
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
@@ -55,78 +55,88 @@ jobs:
 
       - name: Build DMG
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${{ github.event.inputs.version }}"
           ./Scripts/package.sh \
             --arch arm64 \
             --output "BusKit-${VERSION}-arm64.dmg"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: "BusKit v${{ steps.version.outputs.version }}"
-          tag_name: ${{ steps.version.outputs.tag }}
-          generate_release_notes: true
-          files: BusKit-${{ steps.version.outputs.version }}-arm64.dmg
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          TAG="v${VERSION}"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add BusKit.xcodeproj/project.pbxproj
+          git commit -m "chore: stamp version $VERSION for manual release [skip ci]" || true
+          git tag "$TAG"
+          git push origin HEAD:main "$TAG"
+          gh release create "$TAG" "BusKit-${VERSION}-arm64.dmg" \
+            --title "BusKit v${VERSION}" \
+            --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Bump patch version and publish appcast on main
+      - name: Sign and update appcast
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ github.event.inputs.version }}"
+          TAG="v${VERSION}"
           DMG="BusKit-${VERSION}-arm64.dmg"
 
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git fetch origin main
-          git checkout -b version-bump origin/main
-
-          # Bump version
-          ./Scripts/bump-version.sh --patch
-          NEW_VERSION=$(grep 'MARKETING_VERSION' BusKit.xcodeproj/project.pbxproj \
-            | head -1 | sed 's/.*MARKETING_VERSION = //;s/;//' | xargs)
-
-          # Download Sparkle tools
-          SPARKLE_VERSION="2.9.3"
-          echo "📦 Downloading Sparkle tools v${SPARKLE_VERSION}…"
-          curl -sL "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz" \
-            -o sparkle.tar.xz
-          mkdir sparkle-tools && tar xf sparkle.tar.xz -C sparkle-tools
-
-          # Copy DMG temporarily so generate_appcast can sign it
-          # (untracked files survive the branch switch above)
-          mkdir -p releases
-          cp "$DMG" releases/
-
-          # Validate the private key is set
           if [[ -z "$SPARKLE_PRIVATE_KEY" ]]; then
             echo "❌ SPARKLE_PRIVATE_KEY secret is not set" >&2
             exit 1
           fi
 
-          # Sign and generate/update appcast (pipe key via stdin to avoid temp file issues)
-          echo "$SPARKLE_PRIVATE_KEY" | sparkle-tools/bin/generate_appcast \
-            --ed-key-file - \
-            --download-url-prefix "https://github.com/pka-fr/BusKit/releases/download/${TAG}/" \
-            releases/
+          SPARKLE_VERSION="2.9.3"
+          curl -sL "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz" \
+            -o sparkle.tar.xz
+          mkdir sparkle-tools && tar xf sparkle.tar.xz -C sparkle-tools
 
-          # Verify the new entry was actually signed
-          if ! grep -q 'sparkle:edSignature' releases/appcast.xml; then
-            echo "❌ appcast.xml is missing sparkle:edSignature — signing failed" >&2
+          # Sign the DMG directly
+          SIGN_OUT=$(printf '%s' "$SPARKLE_PRIVATE_KEY" \
+            | sparkle-tools/bin/sign_update "$DMG" --ed-key-file -)
+          ED_SIG=$(echo "$SIGN_OUT" | grep -o 'sparkle:edSignature="[^"]*"' \
+            | sed 's/sparkle:edSignature="//;s/"//')
+          DMG_LEN=$(stat -f%z "$DMG")
+          PUBDATE=$(date -u "+%a, %d %b %Y %H:%M:%S +0000")
+          BUILD=$(grep 'CURRENT_PROJECT_VERSION' BusKit.xcodeproj/project.pbxproj \
+            | head -1 | sed 's/.*CURRENT_PROJECT_VERSION = //;s/;//' | xargs)
+          URL="https://github.com/pka-fr/BusKit/releases/download/${TAG}/BusKit-${VERSION}-arm64.dmg"
+
+          if [[ -z "$ED_SIG" ]]; then
+            echo "❌ Signing failed — edSignature is empty" >&2
             exit 1
           fi
-          echo "✅ appcast.xml signatures verified"
+          echo "✅ Signed: ${ED_SIG:0:20}…"
 
-          # Remove DMG — it lives on GitHub Releases, not in the repo
-          rm "releases/${DMG}"
-          echo "✅ appcast.xml generated"
+          python3 - <<PYEOF
+import re
+new_item = f"""    <item>
+            <title>{VERSION}</title>
+            <pubDate>{PUBDATE}</pubDate>
+            <sparkle:version>{BUILD}</sparkle:version>
+            <sparkle:shortVersionString>{VERSION}</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <enclosure url="{URL}" sparkle:edSignature="{ED_SIG}" length="{DMG_LEN}" type="application/octet-stream"/>
+        </item>"""
+with open("releases/appcast.xml") as f:
+    content = f.read()
+content = content.replace("        <title>BusKit</title>",
+                          "        <title>BusKit</title>\n" + new_item)
+items = re.findall(r'    <item>.*?</item>', content, re.DOTALL)
+for old in items[3:]:
+    content = content.replace("\n" + old, "")
+with open("releases/appcast.xml", "w") as f:
+    f.write(content)
+print("✅ appcast.xml updated")
+PYEOF
+          VERSION_VARS="VERSION=$VERSION TAG=$TAG URL=$URL ED_SIG=$ED_SIG DMG_LEN=$DMG_LEN PUBDATE=$PUBDATE BUILD=$BUILD"
 
-          git add BusKit.xcodeproj/project.pbxproj releases/appcast.xml
-          git diff --staged --quiet \
-            && echo "⚠️ No changes to commit — skipping." \
-            && exit 0
-
-          git commit -m "chore: bump version to ${NEW_VERSION} and update appcast [skip ci]"
-          git push origin version-bump:main
-          echo "✅ Bumped to ${NEW_VERSION} and published appcast on main"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add releases/appcast.xml
+          git commit -m "chore: update appcast for $VERSION [skip ci]"
+          git push origin HEAD:main
+          echo "✅ appcast published"
