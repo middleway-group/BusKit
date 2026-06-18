@@ -6,15 +6,10 @@ import Sparkle
 
 final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     private var aboutWindow: NSWindow?
-    private let updaterController: SPUStandardUpdaterController
+    private lazy var updaterController = SPUStandardUpdaterController(
+        startingUpdater: true, updaterDelegate: self, userDriverDelegate: nil)
 
-    override init() {
-        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
-        super.init()
-        updaterController.updater.delegate = self
-    }
-
-    func feedURLStringForUpdater(_ updater: SPUUpdater) -> String? {
+    func feedURLString(for updater: SPUUpdater) -> String? {
         "https://raw.githubusercontent.com/pka-fr/BusKit/main/releases/appcast.xml"
     }
 
