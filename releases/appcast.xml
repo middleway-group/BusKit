@@ -3,6 +3,14 @@
     <channel>
         <title>BusKit</title>
         <item>
+            <title>0.1.16</title>
+            <pubDate>Thu, 18 Jun 2026 07:46:09 +0000</pubDate>
+            <sparkle:version>116</sparkle:version>
+            <sparkle:shortVersionString>0.1.16</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/pka-fr/BusKit/releases/download/v0.1.16/BusKit-0.1.16-arm64.dmg" length="76945410" type="application/octet-stream"/>
+        </item>
+        <item>
             <title>0.1.14</title>
             <pubDate>Thu, 18 Jun 2026 07:07:26 +0000</pubDate>
             <sparkle:version>114</sparkle:version>
