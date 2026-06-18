@@ -1,0 +1,14 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>BusKit</title>
+        <item>
+            <title>0.1.14</title>
+            <pubDate>Thu, 18 Jun 2026 07:07:26 +0000</pubDate>
+            <sparkle:version>114</sparkle:version>
+            <sparkle:shortVersionString>0.1.14</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/pka-fr/BusKit/releases/download/v0.1.14/BusKit-0.1.14-arm64.dmg" length="76088124" type="application/octet-stream"/>
+        </item>
+    </channel>
+</rss>
