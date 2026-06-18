@@ -3,6 +3,14 @@
     <channel>
         <title>BusKit</title>
         <item>
+            <title>0.1.21</title>
+            <pubDate>Thu, 18 Jun 2026 10:10:08 +0000</pubDate>
+            <sparkle:version>121</sparkle:version>
+            <sparkle:shortVersionString>0.1.21</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/pka-fr/BusKit/releases/download/v0.1.21/BusKit-0.1.21-arm64.dmg" length="76212667" type="application/octet-stream"/>
+        </item>
+        <item>
             <title>0.1.20</title>
             <pubDate>Thu, 18 Jun 2026 09:39:17 +0000</pubDate>
             <sparkle:version>120</sparkle:version>
@@ -17,14 +25,6 @@
             <sparkle:shortVersionString>0.1.18</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/pka-fr/BusKit/releases/download/v0.1.18/BusKit-0.1.18-arm64.dmg" sparkle:edSignature="MWCFkN5gZirumVlosAI7w8HRIPtjLtlqgWFXQa/5kbRYzeVKN9pt5P3AkS0vMVcQbkox+SN/l4mJ+aTFdw+JAw==" length="76210940" type="application/octet-stream"/>
-        </item>
-        <item>
-            <title>0.1.17</title>
-            <pubDate>Thu, 18 Jun 2026 08:10:16 +0000</pubDate>
-            <sparkle:version>117</sparkle:version>
-            <sparkle:shortVersionString>0.1.17</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/pka-fr/BusKit/releases/download/v0.1.17/BusKit-0.1.17-arm64.dmg" sparkle:edSignature="P69Qftd+G0/T9Ru0ZOO8bpVkKPABOFAseqRxOuBSLyTs3DNQEqxlFR9ximO9z3JdrH5oal0akfw9XufLORR/Cw==" length="76210949" type="application/octet-stream"/>
         </item>
     </channel>
 </rss>
