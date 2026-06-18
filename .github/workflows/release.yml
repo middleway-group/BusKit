@@ -89,7 +89,7 @@ jobs:
 
           # Download Sparkle tools
           SPARKLE_VERSION=$(curl -s https://api.github.com/repos/sparkle-project/Sparkle/releases/latest \
-            | grep '"tag_name"' | sed 's/.*"v\([^"]*\)".*/\1/')
+            | grep '"tag_name"' | sed 's/.*"tag_name": "\([^"]*\)".*/\1/')
           echo "📦 Downloading Sparkle tools v${SPARKLE_VERSION}…"
           curl -sL "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz" \
             -o sparkle.tar.xz
