@@ -100,10 +100,13 @@ jobs:
           cp "$DMG" releases/
 
           # Sign and generate/update appcast
-          echo "$SPARKLE_PRIVATE_KEY" | sparkle-tools/bin/generate_appcast \
-            --ed-key-file /dev/stdin \
+          SPARKLE_KEY_FILE=$(mktemp)
+          printf '%s' "$SPARKLE_PRIVATE_KEY" > "$SPARKLE_KEY_FILE"
+          sparkle-tools/bin/generate_appcast \
+            --ed-key-file "$SPARKLE_KEY_FILE" \
             --download-url-prefix "https://github.com/pka-fr/BusKit/releases/download/${TAG}/" \
             releases/
+          rm -f "$SPARKLE_KEY_FILE"
 
           # Remove DMG — it lives on GitHub Releases, not in the repo
           rm "releases/${DMG}"
