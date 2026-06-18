@@ -68,25 +68,53 @@ jobs:
           generate_release_notes: true
           files: BusKit-${{ steps.version.outputs.version }}-arm64.dmg
 
-      - name: Bump patch version on main
+      - name: Bump patch version and publish appcast on main
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="${{ steps.version.outputs.tag }}"
+          DMG="BusKit-${VERSION}-arm64.dmg"
+
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Apply bump on top of the current tip of main (not the tagged commit)
           git fetch origin main
           git checkout -b version-bump origin/main
 
+          # Bump version
           ./Scripts/bump-version.sh --patch
-
           NEW_VERSION=$(grep 'MARKETING_VERSION' BusKit.xcodeproj/project.pbxproj \
             | head -1 | sed 's/.*MARKETING_VERSION = //;s/;//' | xargs)
 
-          git add BusKit.xcodeproj/project.pbxproj
+          # Download Sparkle tools
+          SPARKLE_VERSION=$(curl -s https://api.github.com/repos/sparkle-project/Sparkle/releases/latest \
+            | grep '"tag_name"' | sed 's/.*"v\([^"]*\)".*/\1/')
+          echo "📦 Downloading Sparkle tools v${SPARKLE_VERSION}…"
+          curl -sL "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz" \
+            -o sparkle.tar.xz
+          mkdir sparkle-tools && tar xf sparkle.tar.xz -C sparkle-tools
+
+          # Copy DMG temporarily so generate_appcast can sign it
+          # (untracked files survive the branch switch above)
+          mkdir -p releases
+          cp "$DMG" releases/
+
+          # Sign and generate/update appcast
+          echo "$SPARKLE_PRIVATE_KEY" | sparkle-tools/bin/generate_appcast \
+            --ed-key-file /dev/stdin \
+            --download-url-prefix "https://github.com/pka-fr/BusKit/releases/download/${TAG}/" \
+            releases/
+
+          # Remove DMG — it lives on GitHub Releases, not in the repo
+          rm "releases/${DMG}"
+          echo "✅ appcast.xml generated"
+
+          git add BusKit.xcodeproj/project.pbxproj releases/appcast.xml
           git diff --staged --quiet \
-            && echo "⚠️ No version changes to commit — skipping." \
+            && echo "⚠️ No changes to commit — skipping." \
             && exit 0
 
-          git commit -m "chore: bump version to ${NEW_VERSION} [skip ci]"
+          git commit -m "chore: bump version to ${NEW_VERSION} and update appcast [skip ci]"
           git push origin version-bump:main
-          echo "✅ Bumped to ${NEW_VERSION} on main"
+          echo "✅ Bumped to ${NEW_VERSION} and published appcast on main"
