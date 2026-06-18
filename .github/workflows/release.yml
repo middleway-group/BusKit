@@ -99,14 +99,24 @@ jobs:
           mkdir -p releases
           cp "$DMG" releases/
 
-          # Sign and generate/update appcast
-          SPARKLE_KEY_FILE=$(mktemp)
-          printf '%s' "$SPARKLE_PRIVATE_KEY" > "$SPARKLE_KEY_FILE"
-          sparkle-tools/bin/generate_appcast \
-            --ed-key-file "$SPARKLE_KEY_FILE" \
+          # Validate the private key is set
+          if [[ -z "$SPARKLE_PRIVATE_KEY" ]]; then
+            echo "❌ SPARKLE_PRIVATE_KEY secret is not set" >&2
+            exit 1
+          fi
+
+          # Sign and generate/update appcast (pipe key via stdin to avoid temp file issues)
+          echo "$SPARKLE_PRIVATE_KEY" | sparkle-tools/bin/generate_appcast \
+            --ed-key-file - \
             --download-url-prefix "https://github.com/pka-fr/BusKit/releases/download/${TAG}/" \
             releases/
-          rm -f "$SPARKLE_KEY_FILE"
+
+          # Verify the new entry was actually signed
+          if ! grep -q 'sparkle:edSignature' releases/appcast.xml; then
+            echo "❌ appcast.xml is missing sparkle:edSignature — signing failed" >&2
+            exit 1
+          fi
+          echo "✅ appcast.xml signatures verified"
 
           # Remove DMG — it lives on GitHub Releases, not in the repo
           rm "releases/${DMG}"
