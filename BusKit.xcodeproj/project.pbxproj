@@ -67,6 +67,7 @@
 				4FC8890A2F59C09700DC035E /* Sources */,
 				4FC8890B2F59C09700DC035E /* Frameworks */,
 				4FC8890C2F59C09700DC035E /* Resources */,
+				98A415F9974E4775A4C4E673 /* Inject Sparkle Info.plist Keys */,
 			);
 			buildRules = (
 			);
@@ -134,6 +135,22 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		98A415F9974E4775A4C4E673 /* Inject Sparkle Info.plist Keys */ = {
+			isa = PBXShellScriptBuildPhase;
+			inputPaths = (
+			);
+			name = "Inject Sparkle Info.plist Keys";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = (
+				"PLIST=\"${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}\"",
+				"/usr/libexec/PlistBuddy -c \"Add :SUPublicEDKey string Sfr2nhzdwRKRDA2pvhBFbkMqgYJVhM7Hun7KCqdvLRo=\" \"$PLIST\" 2>/dev/null || /usr/libexec/PlistBuddy -c \"Set :SUPublicEDKey Sfr2nhzdwRKRDA2pvhBFbkMqgYJVhM7Hun7KCqdvLRo=\" \"$PLIST\"",
+				"/usr/libexec/PlistBuddy -c \"Add :SUFeedURL string https://raw.githubusercontent.com/pka-fr/BusKit/main/releases/appcast.xml\" \"$PLIST\" 2>/dev/null || /usr/libexec/PlistBuddy -c \"Set :SUFeedURL https://raw.githubusercontent.com/pka-fr/BusKit/main/releases/appcast.xml\" \"$PLIST\"",
+				"",
+			);
+		};
 		D56E9D3707B04D03A2FA3ADD /* Build Sidecar */ = {
 			isa = PBXShellScriptBuildPhase;
 			inputPaths = (
