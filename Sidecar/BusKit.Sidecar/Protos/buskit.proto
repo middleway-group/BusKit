@@ -549,6 +549,7 @@ message SendMessageExtendedRequest {
   string to_address = 8;
   string session_id = 9;
   string partition_key = 10;
+  string message_id = 11;
 }
 
 message BusMessage {

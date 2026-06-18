@@ -1458,6 +1458,7 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
             if (!string.IsNullOrEmpty(request.ToAddress))   message.To          = request.ToAddress;
             if (!string.IsNullOrEmpty(request.SessionId))   message.SessionId   = request.SessionId;
             if (!string.IsNullOrEmpty(request.PartitionKey)) message.PartitionKey = request.PartitionKey;
+            if (!string.IsNullOrEmpty(request.MessageId))   message.MessageId   = request.MessageId;
             foreach (var prop in request.Properties)
                 message.ApplicationProperties[prop.Key] = prop.Value;
 

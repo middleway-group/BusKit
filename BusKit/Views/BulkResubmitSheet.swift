@@ -28,8 +28,9 @@ struct BulkResubmitSheet: View {
     @Binding var didResubmit: Bool
 
     @State private var targetDestination: String
-    @State private var propertiesToStrip: Set<String> = Set(dlqStripCandidates)
+    @State private var propertiesToStrip: Set<String> = Set(dlqStripCandidates.filter { $0 != "Diagnostic-Id" })
     @State private var deleteAfterResubmit = false
+    @State private var generateNewMessageID = false
     @State private var availableQueues: [Buskit_QueueInfo] = []
     @State private var availableTopics: [Buskit_TopicInfo] = []
     @State private var isLoadingDestinations = false
@@ -55,6 +56,7 @@ struct BulkResubmitSheet: View {
                 VStack(alignment: .leading, spacing: 20) {
                     destinationSection
                     propertiesSection
+                    generateNewMessageIDSection
                     deleteAfterResubmitSection
                 }
                 .padding(20)
@@ -178,6 +180,21 @@ struct BulkResubmitSheet: View {
         }
     }
 
+    // MARK: - Generate New Message ID
+
+    private var generateNewMessageIDSection: some View {
+        Toggle(isOn: $generateNewMessageID) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Generate new Message ID")
+                    .font(.body)
+                Text("Each resubmitted message will receive a freshly generated Message ID instead of keeping the original.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .disabled(isSending)
+    }
+
     // MARK: - Delete After Resubmit
 
     private var deleteAfterResubmitSection: some View {
@@ -254,6 +271,7 @@ struct BulkResubmitSheet: View {
                     toAddress:     msg.toAddress,
                     sessionID:     msg.sessionId,
                     partitionKey:  msg.partitionKey,
+                    messageID:     generateNewMessageID ? "" : msg.messageId,
                     properties:    filteredProps
                 )
                 sentCount += 1

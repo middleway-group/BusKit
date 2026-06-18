@@ -1315,6 +1315,8 @@ public nonisolated struct Buskit_SendMessageExtendedRequest: Sendable {
 
   public var partitionKey: String = String()
 
+  public var messageID: String = String()
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -4071,7 +4073,7 @@ nonisolated extension Buskit_DeleteMessageReply: SwiftProtobuf.Message, SwiftPro
 
 nonisolated extension Buskit_SendMessageExtendedRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".SendMessageExtendedRequest"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}queue_or_topic\0\u{1}body\0\u{3}content_type\0\u{1}properties\0\u{1}subject\0\u{3}correlation_id\0\u{3}reply_to\0\u{3}to_address\0\u{3}session_id\0\u{3}partition_key\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}queue_or_topic\0\u{1}body\0\u{3}content_type\0\u{1}properties\0\u{1}subject\0\u{3}correlation_id\0\u{3}reply_to\0\u{3}to_address\0\u{3}session_id\0\u{3}partition_key\0\u{3}message_id\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -4089,6 +4091,7 @@ nonisolated extension Buskit_SendMessageExtendedRequest: SwiftProtobuf.Message, 
       case 8: try { try decoder.decodeSingularStringField(value: &self.toAddress) }()
       case 9: try { try decoder.decodeSingularStringField(value: &self.sessionID) }()
       case 10: try { try decoder.decodeSingularStringField(value: &self.partitionKey) }()
+      case 11: try { try decoder.decodeSingularStringField(value: &self.messageID) }()
       default: break
       }
     }
@@ -4125,6 +4128,9 @@ nonisolated extension Buskit_SendMessageExtendedRequest: SwiftProtobuf.Message, 
     if !self.partitionKey.isEmpty {
       try visitor.visitSingularStringField(value: self.partitionKey, fieldNumber: 10)
     }
+    if !self.messageID.isEmpty {
+      try visitor.visitSingularStringField(value: self.messageID, fieldNumber: 11)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -4139,6 +4145,7 @@ nonisolated extension Buskit_SendMessageExtendedRequest: SwiftProtobuf.Message, 
     if lhs.toAddress != rhs.toAddress {return false}
     if lhs.sessionID != rhs.sessionID {return false}
     if lhs.partitionKey != rhs.partitionKey {return false}
+    if lhs.messageID != rhs.messageID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

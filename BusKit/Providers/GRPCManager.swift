@@ -910,6 +910,7 @@ final class GRPCManager {
                              toAddress: String = "",
                              sessionID: String = "",
                              partitionKey: String = "",
+                             messageID: String = "",
                              properties: [String: String] = [:]) async throws -> Buskit_SendMessageReply {
         guard let buskit else { throw GRPCManagerError.notConnected }
         var req = Buskit_SendMessageExtendedRequest()
@@ -922,6 +923,7 @@ final class GRPCManager {
         req.toAddress = toAddress
         req.sessionID = sessionID
         req.partitionKey = partitionKey
+        req.messageID = messageID
         req.properties = properties
         do {
             let reply = try await buskit.sendMessageExtended(req)
