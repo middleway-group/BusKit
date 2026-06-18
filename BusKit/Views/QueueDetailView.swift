@@ -855,6 +855,10 @@ private struct MessagesTab: View {
                 .frame(minHeight: 160)
             }
         }
+        // Prevent the bottom panel from extending behind the status bar.
+        // NSSplitView (VSplitView/HSplitView) does not automatically respect
+        // SwiftUI safeAreaInset, so we add explicit bottom padding here.
+        .padding(.bottom, 22)
         .task { await loadMessages() }
         .onChange(of: queue.name) { _, _ in Task { await loadMessages() } }
         .onChange(of: trigger)    { _, _ in Task { await loadMessages() } }
