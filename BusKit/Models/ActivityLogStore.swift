@@ -19,6 +19,7 @@ enum ActionKind: String, CaseIterable {
     case deleteTopic = "Delete Topic"
     case createSubscription = "Create Subscription"
     case deleteSubscription = "Delete Subscription"
+    case sendMessage        = "Send Message"
 
     var systemImage: String {
         switch self {
@@ -37,8 +38,8 @@ enum ActionKind: String, CaseIterable {
         case .deleteTopic: return "bubble.left.and.bubble.right.fill"
         case .createSubscription: return "tray.2"
         case .deleteSubscription: return "tray.xmark"
-        }
-    }
+        case .sendMessage:        return "paperplane"
+        }    }
 }
 
 // MARK: - ActionResult
