@@ -137,12 +137,7 @@
 /* Begin PBXShellScriptBuildPhase section */
 		98A415F9974E4775A4C4E673 /* Inject Sparkle Info.plist Keys */ = {
 			isa = PBXShellScriptBuildPhase;
-			inputPaths = (
-			);
 			name = "Inject Sparkle Info.plist Keys";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
 			shellScript = (
 				"PLIST=\"${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}\"",

@@ -1454,13 +1454,31 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
                 Subject      = string.IsNullOrEmpty(request.Subject)      ? null : request.Subject,
                 CorrelationId = string.IsNullOrEmpty(request.CorrelationId) ? null : request.CorrelationId,
             };
-            if (!string.IsNullOrEmpty(request.ReplyTo))     message.ReplyTo     = request.ReplyTo;
-            if (!string.IsNullOrEmpty(request.ToAddress))   message.To          = request.ToAddress;
-            if (!string.IsNullOrEmpty(request.SessionId))   message.SessionId   = request.SessionId;
+            if (!string.IsNullOrEmpty(request.ReplyTo))      message.ReplyTo      = request.ReplyTo;
+            if (!string.IsNullOrEmpty(request.ToAddress))    message.To           = request.ToAddress;
+            if (!string.IsNullOrEmpty(request.SessionId))    message.SessionId    = request.SessionId;
             if (!string.IsNullOrEmpty(request.PartitionKey)) message.PartitionKey = request.PartitionKey;
-            if (!string.IsNullOrEmpty(request.MessageId))   message.MessageId   = request.MessageId;
+            if (!string.IsNullOrEmpty(request.MessageId))    message.MessageId    = request.MessageId;
+
+            // Apply custom application properties, intercepting reserved BusKit keys
+            // that map to broker-level ServiceBusMessage properties.
             foreach (var prop in request.Properties)
-                message.ApplicationProperties[prop.Key] = prop.Value;
+            {
+                if (prop.Key == "x-buskit-ttl-seconds" &&
+                    long.TryParse(prop.Value, out var ttlSeconds) && ttlSeconds > 0)
+                {
+                    message.TimeToLive = TimeSpan.FromSeconds(ttlSeconds);
+                }
+                else if (prop.Key == "x-buskit-scheduled-enqueue-time-unix" &&
+                         long.TryParse(prop.Value, out var unixSeconds))
+                {
+                    message.ScheduledEnqueueTime = DateTimeOffset.FromUnixTimeSeconds(unixSeconds);
+                }
+                else
+                {
+                    message.ApplicationProperties[prop.Key] = prop.Value;
+                }
+            }
 
             await sender.SendMessageAsync(message);
             return new SendMessageReply { Success = true, MessageId = message.MessageId ?? string.Empty };

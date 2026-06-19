@@ -113,6 +113,10 @@ private final class SidebarModel {
     var showDeleteTopicConfirm = false
     var isDeletingTopic = false
 
+    // Send Message state
+    var showSendMessageSheet  = false
+    var sendMessageTarget: SidebarSelection? = nil
+
     // Disable/Enable Topic state
     var disableTopicTarget: TopicItem? = nil
     var showDisableTopicConfirm = false
@@ -335,6 +339,21 @@ struct SidebarView: View {
                 .environment(activityLog)
             }
         }
+        // ── Send Message sheet ────────────────────────────────
+        .sheet(isPresented: $model.showSendMessageSheet) {
+            if let target = model.sendMessageTarget {
+                let (name, label): (String, String) = {
+                    switch target {
+                    case .queue(let q):  return (q.name, "Queue")
+                    case .topic(let t):  return (t.name, "Topic")
+                    default:             return ("", "")
+                    }
+                }()
+                SendMessageSheet(queueOrTopic: name, entityLabel: label)
+                    .environment(grpc)
+                    .environment(activityLog)
+            }
+        }
         // ── Delete Rule confirm ───────────────────────────────────
         .confirmationDialog(
             "Delete Rule?",
@@ -459,6 +478,13 @@ struct SidebarView: View {
     private func queueContextMenu(for queue: QueueItem) -> some View {
         let hasData    = grpc.rbacAccessLevel.hasDataAccess
         let canManage  = grpc.capabilityMap.createResources
+        let canSend    = grpc.capabilityMap.purge
+        Button("Send Message") {
+            model.sendMessageTarget  = .queue(queue)
+            model.showSendMessageSheet = true
+        }
+        .disabled(!canSend)
+        Divider()
         Button("Receive Messages") {
             model.contextTarget  = .queue(queue)
             model.receiveIsDLQ   = false
@@ -861,6 +887,12 @@ private struct TopicRow: View {
             .contentShape(Rectangle())
             .tag(SidebarSelection.topic(topic))
             .contextMenu {
+                    Button("Send Message") {
+                        model.sendMessageTarget  = .topic(topic)
+                        model.showSendMessageSheet = true
+                    }
+                    .disabled(!grpc.capabilityMap.purge)
+                    Divider()
                     Button("Create Subscription") {
                         model.createSubscriptionTopic = topic
                         model.showCreateSubscriptionSheet = true
