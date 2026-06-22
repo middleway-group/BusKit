@@ -1,7 +1,7 @@
 # BusKit
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/pka-fr/BusKit/main/Assets/buskit-logo-200.png" alt="BusKit Logo">
+  <img src="https://raw.githubusercontent.com/pka-fr/BusKit/main/Assets/buskit-logo-small.png" alt="BusKit Logo">
   <br/>
   <strong>A native macOS client for Azure Service Bus</strong>
   <br/><br/>
