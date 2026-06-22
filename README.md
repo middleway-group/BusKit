@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/Swift-5.9+-orange?logo=swift" alt="Swift">
   <img src="https://img.shields.io/badge/macOS-13.0+-blue" alt="macOS">
   <img src="https://img.shields.io/github/v/release/pka-fr/BusKit?include_prereleases" alt="Release">
-  <img src="https://img.shields.io/github/license/pka-fr/BusKit" alt="License">
+  <img src="https://img.shields.io/github/license/pka-fr/BusKit?cache_bust=1" alt="License">
   <img src="https://img.shields.io/github/stars/pka-fr/BusKit?style=social" alt="Stars">
 </p>
 
