@@ -220,6 +220,6 @@ obj/
 packages/
 SidecarBin/
 # Ignore the Assets folder as it contains large files that are not necessary for the repository
-Assets/
+#Assets/
 # Ignore DMG files which are macOS disk images
 *.dmg
