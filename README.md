@@ -33,3 +33,20 @@ the ground up following **Apple's Human Interface Guidelines**, embracing native
 macOS conventions, controls, and design patterns that macOS users expect and love.
 
 No Electron. No ports. No compromises. Just a tool that feels right at home on your Mac. 🍎
+
+## 🏗️ Architecture
+
+BusKit is built on a **Sidecar pattern** — the backend and UI run as separate processes
+communicating via **gRPC**:
+
+- **Backend — C#/.NET** — a sidecar process leveraging the official
+  [Azure SDK for .NET](https://github.com/Azure/azure-sdk-for-net) for all
+  Azure Service Bus operations
+- **UI — Swift/SwiftUI** — native macOS front-end that communicates with the
+  sidecar via gRPC, following Apple's Human Interface Guidelines
+
+This architecture ensures a **clean separation of concerns** — the Swift layer
+focuses purely on the macOS experience, while the C# sidecar handles all
+Azure communication.
+
+> 🤖 Development was assisted by AI tools.
