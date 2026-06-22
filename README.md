@@ -1,13 +1,17 @@
 # BusKit
 
-![Platform](https://img.shields.io/badge/platform-macOS-blue?logo=apple)
-![Swift](https://img.shields.io/badge/Swift-5.9+-orange?logo=swift)
-![macOS](https://img.shields.io/badge/macOS-13.0+-blue)
-![GitHub release](https://img.shields.io/github/v/release/pka-fr/BusKit?include_prereleases)
-![License](https://img.shields.io/github/license/pka-fr/BusKit)
-![Stars](https://img.shields.io/github/stars/pka-fr/BusKit?style=social)
-
-> A native macOS client for Azure Service Bus
+<p align="center">
+  <img src="https://raw.githubusercontent.com/pka-fr/BusKit/main/Assets/buskit-logo-200.png" alt="BusKit Logo">
+  <br/>
+  <strong>A native macOS client for Azure Service Bus</strong>
+  <br/><br/>
+  <img src="https://img.shields.io/badge/platform-macOS-blue?logo=apple" alt="Platform">
+  <img src="https://img.shields.io/badge/Swift-5.9+-orange?logo=swift" alt="Swift">
+  <img src="https://img.shields.io/badge/macOS-13.0+-blue" alt="macOS">
+  <img src="https://img.shields.io/github/v/release/pka-fr/BusKit?include_prereleases" alt="Release">
+  <img src="https://img.shields.io/github/license/pka-fr/BusKit" alt="License">
+  <img src="https://img.shields.io/github/stars/pka-fr/BusKit?style=social" alt="Stars">
+</p>
 
 ---
 
