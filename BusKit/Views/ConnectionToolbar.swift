@@ -172,14 +172,15 @@ private struct ConnectionStringPanel: View {
 private struct AzureADPanel: View {
     @Environment(GRPCManager.self) var grpc
     @Binding var isConnecting: Bool
+    @State private var signInTask: Task<Void, Never>?
 
     var body: some View {
         switch grpc.azureLoginPhase {
         case .idle:
-            AzureSignInPrompt(isConnecting: $isConnecting)
+            AzureSignInPrompt(isConnecting: $isConnecting, signInTask: $signInTask)
                 .environment(grpc)
         case .signingIn:
-            AzureSigningInView()
+            AzureSigningInView(onCancel: cancelSignIn)
         case .selectingTenant:
             AzureTenantPickerView(isConnecting: $isConnecting)
                 .environment(grpc)
@@ -187,6 +188,14 @@ private struct AzureADPanel: View {
             AzureNamespaceForm(isConnecting: $isConnecting)
                 .environment(grpc)
         }
+    }
+
+    private func cancelSignIn() {
+        signInTask?.cancel()
+        signInTask = nil
+        grpc.azureLoginPhase = .idle
+        grpc.azureLoginError = nil
+        isConnecting = false
     }
 }
 
@@ -196,6 +205,7 @@ private struct AzureADPanel: View {
 private struct AzureSignInPrompt: View {
     @Environment(GRPCManager.self) var grpc
     @Binding var isConnecting: Bool
+    @Binding var signInTask: Task<Void, Never>?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -211,7 +221,7 @@ private struct AzureSignInPrompt: View {
             HStack {
                 Spacer()
                 Button("Sign in with Azure…") {
-                    Task { await signIn() }
+                    signInTask = Task { await signIn() }
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(!grpc.isSidecarReady || isConnecting)
@@ -250,6 +260,8 @@ private struct AzureSignInPrompt: View {
             } else {
                 grpc.azureLoginPhase = .selectingTenant
             }
+        } catch is CancellationError {
+            // User cancelled — phase already reset by cancelSignIn(); suppress error.
         } catch {
             grpc.azureLoginError = error.localizedDescription
             grpc.azureLoginPhase = .idle
@@ -260,19 +272,27 @@ private struct AzureSignInPrompt: View {
 // ── Browser open, waiting for auth ────────────────────
 
 private struct AzureSigningInView: View {
+    var onCancel: () -> Void
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 10) {
-                ProgressView().controlSize(.small)
-                Text("A browser window has opened — sign in with your Azure credentials.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 10) {
+                    ProgressView().controlSize(.small)
+                    Text("A browser window has opened — sign in with your Azure credentials.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Text("A second window may open on first use for Azure Service Bus access.")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Text("A second window may open on first use for Azure Service Bus access.")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .fixedSize(horizontal: false, vertical: true)
+            HStack {
+                Spacer()
+                Button("Cancel") { onCancel() }
+            }
         }
     }
 }
