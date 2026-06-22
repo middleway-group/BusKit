@@ -1,0 +1,31 @@
+# BusKit
+
+![Platform](https://img.shields.io/badge/platform-macOS-blue?logo=apple)
+![Swift](https://img.shields.io/badge/Swift-5.9+-orange?logo=swift)
+![macOS](https://img.shields.io/badge/macOS-13.0+-blue)
+![GitHub release](https://img.shields.io/github/v/release/pka-fr/BusKit?include_prereleases)
+![License](https://img.shields.io/github/license/pka-fr/BusKit)
+![Stars](https://img.shields.io/github/stars/pka-fr/BusKit?style=social)
+
+> A native macOS client for Azure Service Bus
+
+---
+
+## 💡 Motivation
+
+If you've ever worked with Azure Service Bus on a Mac, you've probably felt it —
+the gap left by the absence of a true macOS-native client.
+
+[**Azure Service Bus Explorer**](https://github.com/paolosalvatori/ServiceBusExplorer)
+is a fantastic tool, but it's Windows-only. Mac users are often left with workarounds:
+running VMs, using the Azure Portal, or relying on cross-platform tools that feel
+out of place on macOS.
+
+**BusKit was born out of that frustration.**
+
+The goal is simple: bring a first-class Azure Service Bus experience to macOS —
+one that doesn't just *run* on a Mac, but *belongs* on a Mac. BusKit is built from
+the ground up following **Apple's Human Interface Guidelines**, embracing native
+macOS conventions, controls, and design patterns that macOS users expect and love.
+
+No Electron. No ports. No compromises. Just a tool that feels right at home on your Mac. 🍎
