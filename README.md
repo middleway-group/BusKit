@@ -50,3 +50,40 @@ focuses purely on the macOS experience, while the C# sidecar handles all
 Azure communication.
 
 > 🤖 Development was assisted by AI tools.
+
+## 📦 Installation
+
+Download the latest `.dmg` or `.zip` from the [Releases](https://github.com/pka-fr/BusKit/releases) page, then drag **BusKit.app** to your `/Applications` folder.
+
+### macOS: opening an unsigned app
+
+BusKit is not yet notarized by Apple, so macOS will block the first launch. Use one of the following methods to allow it:
+
+**Option A — Right-click to open (recommended)**
+
+1. In Finder, right-click (or Control-click) **BusKit.app**.
+2. Choose **Open** from the context menu.
+3. In the dialog that appears, click **Open** again to confirm.
+
+You only need to do this once — subsequent launches work normally.
+
+**Option B — System Settings**
+
+1. Try to open the app normally; macOS will show a security warning.
+2. Open **System Settings → Privacy & Security**.
+3. Scroll to the **Security** section and click **Open Anyway** next to the BusKit entry.
+4. Authenticate with Touch ID or your password when prompted.
+
+**Option C — Remove quarantine via Terminal**
+
+```bash
+xattr -d -r com.apple.quarantine /Applications/BusKit.app
+```
+
+> ⚠️ Make sure the path matches where you placed the app. Only run this on files you trust.
+
+> **Note:** do *not* disable Gatekeeper globally (`spctl --master-disable`); the per-app steps above are the safe approach.
+
+### Long-term: code signing & notarization
+
+Code signing and notarization through Apple's Developer Program are the recommended permanent solution and are planned for a future release. Signed builds will launch without any additional steps.
