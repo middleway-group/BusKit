@@ -53,7 +53,7 @@ Azure communication.
 
 ## 📦 Installation
 
-Download the latest `.dmg` or `.zip` from the [Releases](https://github.com/middleway-group/BusKit/releases) page, then drag **BusKit.app** to your `/Applications` folder.
+Download the latest `.dmg` from the [Releases](https://github.com/middleway-group/BusKit/releases) page, then drag **BusKit.app** to your `/Applications` folder.
 
 ### macOS: opening an unsigned app
 
