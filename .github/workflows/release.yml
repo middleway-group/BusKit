@@ -103,7 +103,7 @@ jobs:
           PUBDATE=$(date -u "+%a, %d %b %Y %H:%M:%S +0000")
           BUILD=$(grep 'CURRENT_PROJECT_VERSION' BusKit.xcodeproj/project.pbxproj \
             | head -1 | sed 's/.*CURRENT_PROJECT_VERSION = //;s/;//' | xargs)
-          URL="https://github.com/pka-fr/BusKit/releases/download/${TAG}/BusKit-${VERSION}-arm64.dmg"
+          URL="https://github.com/middleway-group/BusKit/releases/download/${TAG}/BusKit-${VERSION}-arm64.dmg"
 
           if [[ -z "$ED_SIG" ]]; then
             echo "❌ Signing failed — edSignature is empty" >&2

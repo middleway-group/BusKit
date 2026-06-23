@@ -10,7 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         startingUpdater: true, updaterDelegate: self, userDriverDelegate: nil)
 
     func feedURLString(for updater: SPUUpdater) -> String? {
-        "https://raw.githubusercontent.com/pka-fr/BusKit/main/releases/appcast.xml"
+        "https://raw.githubusercontent.com/middleway-group/BusKit/main/releases/appcast.xml"
     }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
