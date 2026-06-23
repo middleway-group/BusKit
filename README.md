@@ -1,16 +1,16 @@
 # BusKit
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/pka-fr/BusKit/main/Assets/buskit-logo-small.png" width="150" alt="BusKit Logo">
+  <img src="https://raw.githubusercontent.com/middleway-group/BusKit/main/Assets/buskit-logo-small.png" width="150" alt="BusKit Logo">
   <br/>
   <strong>A native macOS client for Azure Service Bus</strong>
   <br/><br/>
   <img src="https://img.shields.io/badge/platform-macOS-blue?logo=apple" alt="Platform">
   <img src="https://img.shields.io/badge/Swift-5.9+-orange?logo=swift" alt="Swift">
   <img src="https://img.shields.io/badge/macOS-13.0+-blue" alt="macOS">
-  <img src="https://img.shields.io/github/v/release/pka-fr/BusKit?include_prereleases" alt="Release">
-  <img src="https://img.shields.io/github/license/pka-fr/BusKit?cache_bust=1" alt="License">
-  <img src="https://img.shields.io/github/stars/pka-fr/BusKit?style=social" alt="Stars">
+  <img src="https://img.shields.io/github/v/release/middleway-group/BusKit?include_prereleases" alt="Release">
+  <img src="https://img.shields.io/github/license/middleway-group/BusKit?cache_bust=1" alt="License">
+  <img src="https://img.shields.io/github/stars/middleway-group/BusKit?style=social" alt="Stars">
 </p>
 
 ---
@@ -53,7 +53,7 @@ Azure communication.
 
 ## 📦 Installation
 
-Download the latest `.dmg` or `.zip` from the [Releases](https://github.com/pka-fr/BusKit/releases) page, then drag **BusKit.app** to your `/Applications` folder.
+Download the latest `.dmg` or `.zip` from the [Releases](https://github.com/middleway-group/BusKit/releases) page, then drag **BusKit.app** to your `/Applications` folder.
 
 ### macOS: opening an unsigned app
 
