@@ -112,7 +112,7 @@ git -C "$ROOT" push origin "$TAG"
 echo ""
 echo "🚀 Creating GitHub release $TAG…"
 gh release create "$TAG" "$DMG" \
-  --repo pka-fr/BusKit \
+  --repo middleway-group/BusKit \
   --title "BusKit $TAG" \
   --generate-notes
 echo "✅ GitHub release created"
@@ -125,7 +125,7 @@ ED_SIG=$(echo "$SIGN_OUT" | grep -o 'sparkle:edSignature="[^"]*"' \
   | sed 's/sparkle:edSignature="//;s/"//')
 DMG_LEN=$(stat -f%z "$DMG")
 PUBDATE=$(date -u "+%a, %d %b %Y %H:%M:%S +0000")
-DOWNLOAD_URL="https://github.com/pka-fr/BusKit/releases/download/${TAG}/BusKit-${VERSION}-arm64.dmg"
+DOWNLOAD_URL="https://github.com/middleway-group/BusKit/releases/download/${TAG}/BusKit-${VERSION}-arm64.dmg"
 
 echo "   Signature: ${ED_SIG:0:20}…"
 
@@ -183,5 +183,5 @@ rm -f "$DMG"
 echo ""
 echo "🎉 Released BusKit $VERSION successfully!"
 echo "   Tag:      $TAG"
-echo "   Release:  https://github.com/pka-fr/BusKit/releases/tag/$TAG"
-echo "   Appcast:  https://raw.githubusercontent.com/pka-fr/BusKit/main/releases/appcast.xml"
+echo "   Release:  https://github.com/middleway-group/BusKit/releases/tag/$TAG"
+echo "   Appcast:  https://raw.githubusercontent.com/middleway-group/BusKit/main/releases/appcast.xml"

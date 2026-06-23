@@ -142,7 +142,7 @@
 			shellScript = (
 				"PLIST=\"${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}\"",
 				"/usr/libexec/PlistBuddy -c \"Add :SUPublicEDKey string Sfr2nhzdwRKRDA2pvhBFbkMqgYJVhM7Hun7KCqdvLRo=\" \"$PLIST\" 2>/dev/null || /usr/libexec/PlistBuddy -c \"Set :SUPublicEDKey Sfr2nhzdwRKRDA2pvhBFbkMqgYJVhM7Hun7KCqdvLRo=\" \"$PLIST\"",
-				"/usr/libexec/PlistBuddy -c \"Add :SUFeedURL string https://raw.githubusercontent.com/pka-fr/BusKit/main/releases/appcast.xml\" \"$PLIST\" 2>/dev/null || /usr/libexec/PlistBuddy -c \"Set :SUFeedURL https://raw.githubusercontent.com/pka-fr/BusKit/main/releases/appcast.xml\" \"$PLIST\"",
+				"/usr/libexec/PlistBuddy -c \"Add :SUFeedURL string https://raw.githubusercontent.com/middleway-group/BusKit/main/releases/appcast.xml\" \"$PLIST\" 2>/dev/null || /usr/libexec/PlistBuddy -c \"Set :SUFeedURL https://raw.githubusercontent.com/middleway-group/BusKit/main/releases/appcast.xml\" \"$PLIST\"",
 				"",
 			);
 		};
@@ -315,7 +315,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Peter Karda";
 				"INFOPLIST_KEY_NSHumanReadableCopyright[sdk=*]" = "Peter Karda";
-				INFOPLIST_KEY_SUFeedURL = "https://raw.githubusercontent.com/pka-fr/BusKit/main/releases/appcast.xml";
+				INFOPLIST_KEY_SUFeedURL = "https://raw.githubusercontent.com/middleway-group/BusKit/main/releases/appcast.xml";
 				INFOPLIST_KEY_SUPublicEDKey = "Sfr2nhzdwRKRDA2pvhBFbkMqgYJVhM7Hun7KCqdvLRo=";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -357,7 +357,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Peter Karda";
 				"INFOPLIST_KEY_NSHumanReadableCopyright[sdk=*]" = "Peter Karda";
-				INFOPLIST_KEY_SUFeedURL = "https://raw.githubusercontent.com/pka-fr/BusKit/main/releases/appcast.xml";
+				INFOPLIST_KEY_SUFeedURL = "https://raw.githubusercontent.com/middleway-group/BusKit/main/releases/appcast.xml";
 				INFOPLIST_KEY_SUPublicEDKey = "Sfr2nhzdwRKRDA2pvhBFbkMqgYJVhM7Hun7KCqdvLRo=";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
