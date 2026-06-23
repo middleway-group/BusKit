@@ -313,40 +313,43 @@ private struct AzureTenantPickerView: View {
                 ErrorBanner(message: err)
             }
 
-            VStack(spacing: 0) {
-                ForEach(grpc.azureTenants, id: \.tenantID) { tenant in
-                    Button {
-                        Task { await selectTenant(tenant.tenantID) }
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(tenant.displayName.isEmpty ? tenant.tenantID : tenant.displayName)
-                                    .font(.body)
-                                Text(tenant.tenantID)
-                                    .font(.caption)
-                                    .foregroundStyle(.tertiary)
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(grpc.azureTenants, id: \.tenantID) { tenant in
+                        Button {
+                            Task { await selectTenant(tenant.tenantID) }
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(tenant.displayName.isEmpty ? tenant.tenantID : tenant.displayName)
+                                        .font(.body)
+                                    Text(tenant.tenantID)
+                                        .font(.caption)
+                                        .foregroundStyle(.tertiary)
+                                }
+                                Spacer()
+                                if isConnecting && grpc.selectedAzureTenantId == tenant.tenantID {
+                                    ProgressView().controlSize(.small)
+                                } else {
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundStyle(.tertiary)
+                                }
                             }
-                            Spacer()
-                            if isConnecting && grpc.selectedAzureTenantId == tenant.tenantID {
-                                ProgressView().controlSize(.small)
-                            } else {
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundStyle(.tertiary)
-                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 8)
+                            .contentShape(Rectangle())
                         }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 8)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(isConnecting)
+                        .buttonStyle(.plain)
+                        .disabled(isConnecting)
 
-                    if tenant.tenantID != grpc.azureTenants.last?.tenantID {
-                        Divider()
+                        if tenant.tenantID != grpc.azureTenants.last?.tenantID {
+                            Divider()
+                        }
                     }
                 }
             }
+            .frame(maxHeight: 300)
             .background(Color(nsColor: .textBackgroundColor))
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.3)))
