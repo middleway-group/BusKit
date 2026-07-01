@@ -369,55 +369,151 @@ private struct AddRuleSheet: View {
     let onAdd: () -> Void
     @Environment(\.dismiss) private var dismiss
 
+    @State private var sqlEditorHeight: CGFloat = 96
+    @FocusState private var ruleNameFocused: Bool
+
     private var isValid: Bool {
         !ruleName.trimmingCharacters(in: .whitespaces).isEmpty &&
         !sqlFilter.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Add Rule")
-                .font(.headline)
-
+        VStack(spacing: 0) {
+            headerView
             Divider()
+            ScrollView {
+                formGrid
+                    .padding(.horizontal, 20)
+                    .padding(.top, 14)
+                    .padding(.bottom, 20)
+            }
+            if let err = errorMessage {
+                HStack {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.red)
+                    Text(err)
+                        .font(.callout)
+                        .foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 8)
+                .background(Color.red.opacity(0.08))
+            }
+            Divider()
+            footerView
+        }
+        .frame(width: 520)
+        .onAppear { ruleNameFocused = true }
+    }
 
-            Form {
-                LabeledContent("Topic") { Text(topicName) }
-                LabeledContent("Subscription") { Text(subscriptionName) }
+    private var headerView: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Add Rule")
+                    .font(.headline)
+                Text("\(topicName) · \(subscriptionName)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+    }
 
-                LabeledContent("Rule Name") {
+    private var formGrid: some View {
+        Grid(alignment: .topLeading, horizontalSpacing: 8, verticalSpacing: 6) {
+            GridRow {
+                Text("Rule Name")
+                    .font(.system(size: 13))
+                    .gridColumnAlignment(.trailing)
+
+                VStack(alignment: .leading, spacing: 4) {
                     TextField("e.g. HighPriority", text: $ruleName)
                         .textFieldStyle(.roundedBorder)
-                }
-
-                LabeledContent("SQL Filter") {
-                    TextField("e.g. Priority = 'High'", text: $sqlFilter)
-                        .textFieldStyle(.roundedBorder)
-                        .font(.system(.body, design: .monospaced))
+                        .frame(maxWidth: .infinity)
+                        .focused($ruleNameFocused)
                 }
             }
-            .formStyle(.grouped)
 
-            if let error = errorMessage {
-                Label(error, systemImage: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.red)
-                    .font(.caption)
-            }
+            formSectionDivider
 
-            Divider()
+            GridRow {
+                HStack(spacing: 2) {
+                    Text("SQL Filter")
+                    Text("*").foregroundStyle(.red)
+                }
+                .font(.system(size: 13))
 
-            HStack {
-                Spacer()
-                Button("Cancel") { dismiss() }
-                    .keyboardShortcut(.escape)
-                Button("Add Rule") { onAdd() }
-                    .buttonStyle(.borderedProminent)
-                    .keyboardShortcut(.return)
-                    .disabled(!isValid || isAdding)
+                sqlFilterEditor
             }
         }
-        .padding()
-        .frame(width: 420)
+    }
+
+    private var sqlFilterEditor: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ZStack(alignment: .topLeading) {
+                SQLHighlightTextEditor(
+                    text: $sqlFilter,
+                    placeholder: "e.g. Priority = 'High'",
+                    dynamicHeight: $sqlEditorHeight
+                )
+                .frame(height: sqlEditorHeight)
+                .frame(maxWidth: .infinity)
+
+                if sqlFilter.isEmpty {
+                    Text("e.g. Priority = 'High'")
+                        .font(.system(size: 13, design: .monospaced))
+                        .foregroundStyle(.tertiary)
+                        .padding(.leading, 8)
+                        .padding(.top, 7)
+                        .allowsHitTesting(false)
+                }
+            }
+            .background(Color(NSColor.textBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .overlay(
+                RoundedRectangle(cornerRadius: 5)
+                    .stroke(Color(.separatorColor), lineWidth: 1)
+            )
+
+            Text("Use SQL-92 filter syntax, e.g. SystemOutput = 'P93' AND Priority = 'High'")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var footerView: some View {
+        HStack(spacing: 8) {
+            if isAdding {
+                ProgressView().controlSize(.small)
+                Text("Adding…")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button("Cancel") { dismiss() }
+                .keyboardShortcut(.escape, modifiers: [])
+                .disabled(isAdding)
+
+            Button("Add Rule") { onAdd() }
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.return, modifiers: [])
+                .disabled(!isValid || isAdding)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+    }
+
+    private var formSectionDivider: some View {
+        GridRow {
+            Divider()
+                .padding(.vertical, 12)
+                .gridCellColumns(2)
+        }
     }
 }
 
@@ -432,46 +528,155 @@ private struct EditRuleSheet: View {
     let onSave: () -> Void
     @Environment(\.dismiss) private var dismiss
 
+    @State private var sqlEditorHeight: CGFloat = 96
+    @State private var showCancelConfirm = false
+    private let originalFilter: String
+
+    init(ruleName: String,
+         sqlFilter: Binding<String>,
+         errorMessage: Binding<String?>,
+         isSaving: Binding<Bool>,
+         onSave: @escaping () -> Void) {
+        self.ruleName = ruleName
+        self._sqlFilter = sqlFilter
+        self._errorMessage = errorMessage
+        self._isSaving = isSaving
+        self.onSave = onSave
+        self.originalFilter = sqlFilter.wrappedValue
+    }
+
     private var isValid: Bool {
         !sqlFilter.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
+    private var isDirty: Bool {
+        sqlFilter != originalFilter
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Edit Rule: \(ruleName)")
-                .font(.headline)
-
+        VStack(spacing: 0) {
+            headerView
             Divider()
-
-            Form {
-                LabeledContent("SQL Filter") {
-                    TextField("e.g. Priority = 'High'", text: $sqlFilter)
-                        .textFieldStyle(.roundedBorder)
-                        .font(.system(.body, design: .monospaced))
+            ScrollView {
+                formGrid
+                    .padding(.horizontal, 20)
+                    .padding(.top, 14)
+                    .padding(.bottom, 20)
+            }
+            if let err = errorMessage {
+                HStack {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.red)
+                    Text(err)
+                        .font(.callout)
+                        .foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer()
                 }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 8)
+                .background(Color.red.opacity(0.08))
             }
-            .formStyle(.grouped)
-
-            if let error = errorMessage {
-                Label(error, systemImage: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.red)
-                    .font(.caption)
-            }
-
             Divider()
+            footerView
+        }
+        .frame(width: 520)
+        .confirmationDialog("Discard changes?",
+                            isPresented: $showCancelConfirm,
+                            titleVisibility: .visible) {
+            Button("Discard", role: .destructive) { dismiss() }
+            Button("Keep Editing", role: .cancel) {}
+        } message: {
+            Text("Your SQL filter changes will be lost.")
+        }
+    }
 
-            HStack {
-                Spacer()
-                Button("Cancel") { dismiss() }
-                    .keyboardShortcut(.escape)
-                Button("Save") { onSave() }
-                    .buttonStyle(.borderedProminent)
-                    .keyboardShortcut(.return)
-                    .disabled(!isValid || isSaving)
+    private var headerView: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Edit Rule")
+                    .font(.headline)
+                Text("Rule: \(ruleName)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+    }
+
+    private var formGrid: some View {
+        Grid(alignment: .topLeading, horizontalSpacing: 8, verticalSpacing: 6) {
+            GridRow {
+                HStack(spacing: 2) {
+                    Text("SQL Filter")
+                    Text("*").foregroundStyle(.red)
+                }
+                .font(.system(size: 13))
+                .gridColumnAlignment(.trailing)
+
+                sqlFilterEditor
             }
         }
-        .padding()
-        .frame(width: 380)
+    }
+
+    private var sqlFilterEditor: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ZStack(alignment: .topLeading) {
+                SQLHighlightTextEditor(
+                    text: $sqlFilter,
+                    placeholder: "e.g. Priority = 'High'",
+                    dynamicHeight: $sqlEditorHeight
+                )
+                .frame(height: sqlEditorHeight)
+                .frame(maxWidth: .infinity)
+
+                if sqlFilter.isEmpty {
+                    Text("e.g. Priority = 'High'")
+                        .font(.system(size: 13, design: .monospaced))
+                        .foregroundStyle(.tertiary)
+                        .padding(.leading, 8)
+                        .padding(.top, 7)
+                        .allowsHitTesting(false)
+                }
+            }
+            .background(Color(NSColor.textBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .overlay(
+                RoundedRectangle(cornerRadius: 5)
+                    .stroke(Color(.separatorColor), lineWidth: 1)
+            )
+
+            Text("Use SQL-92 filter syntax, e.g. SystemOutput = 'P93' AND Priority = 'High'")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var footerView: some View {
+        HStack(spacing: 8) {
+            if isSaving {
+                ProgressView().controlSize(.small)
+                Text("Saving…")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button("Cancel") {
+                if isDirty { showCancelConfirm = true } else { dismiss() }
+            }
+            .keyboardShortcut(.escape, modifiers: [])
+            .disabled(isSaving)
+
+            Button("Save") { onSave() }
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.return, modifiers: [])
+                .disabled(!isValid || isSaving)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
     }
 }
 
