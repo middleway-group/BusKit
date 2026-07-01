@@ -10,13 +10,7 @@ private struct AcknowledgmentEntry: Identifiable {
 
 private let acknowledgments: [AcknowledgmentEntry] = [
     AcknowledgmentEntry(
-        name: "Azure Service Bus SDK",
-        copyright: "Copyright (c) Microsoft Corporation",
-        license: "MIT License",
-        url: URL(string: "https://github.com/Azure/azure-sdk-for-net")!
-    ),
-    AcknowledgmentEntry(
-        name: "Azure Identity SDK",
+        name: "Azure SDK",
         copyright: "Copyright (c) Microsoft Corporation",
         license: "MIT License",
         url: URL(string: "https://github.com/Azure/azure-sdk-for-net")!
