@@ -113,6 +113,16 @@ private struct SubRulesTab: View {
     private var canManage: Bool { grpc.capabilityMap.manageFilters }
     private var selectedRule: RuleItem? { rules.first { $0.id == selectedRuleID } }
 
+    private func openEditSheet(for rule: RuleItem) {
+        guard canManage else { return }
+        selectedRuleID = rule.id
+        editFilter = rule.filter.hasPrefix("SQL: ")
+            ? String(rule.filter.dropFirst(5))
+            : rule.filter
+        editError = nil
+        editingRule = rule
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // ── Toolbar ────────────────────────────────────────────
@@ -134,11 +144,7 @@ private struct SubRulesTab: View {
 
                 Button {
                     guard let rule = selectedRule else { return }
-                    editFilter = rule.filter.hasPrefix("SQL: ")
-                        ? String(rule.filter.dropFirst(5))
-                        : rule.filter
-                    editError = nil
-                    editingRule = rule
+                    openEditSheet(for: rule)
                 } label: {
                     Label("Edit Filter", systemImage: "pencil")
                         .padding(.horizontal, 8).padding(.vertical, 4)
@@ -198,6 +204,8 @@ private struct SubRulesTab: View {
                         TableColumn("Rule Name") { rule in
                             Label(rule.name, systemImage: "line.3.horizontal.decrease.circle")
                                 .lineLimit(1)
+                                .contentShape(Rectangle())
+                                .onTapGesture(count: 2) { openEditSheet(for: rule) }
                         }
                         .width(min: 120, ideal: 180)
 
@@ -206,17 +214,15 @@ private struct SubRulesTab: View {
                                 .font(.system(.body, design: .monospaced))
                                 .foregroundStyle(.secondary)
                                 .lineLimit(2)
+                                .contentShape(Rectangle())
+                                .onTapGesture(count: 2) { openEditSheet(for: rule) }
                         }
                     }
                     .contextMenu(forSelectionType: UUID.self) { ids in
                         if let id = ids.first, let rule = rules.first(where: { $0.id == id }) {
                             Button("Edit Filter") {
                                 selectedRuleID = id
-                                editFilter = rule.filter.hasPrefix("SQL: ")
-                                    ? String(rule.filter.dropFirst(5))
-                                    : rule.filter
-                                editError = nil
-                                editingRule = rule
+                                openEditSheet(for: rule)
                             }
                             .disabled(!canManage)
                             Divider()
