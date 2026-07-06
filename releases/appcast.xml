@@ -3,6 +3,14 @@
     <channel>
         <title>BusKit</title>
     <item>
+            <title>0.4.0</title>
+            <pubDate>Mon, 06 Jul 2026 09:25:52 +0000</pubDate>
+            <sparkle:version xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">400</sparkle:version>
+            <sparkle:shortVersionString xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">0.4.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">26.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.4.0/BusKit-0.4.0-arm64.dmg" sparkle:edSignature="ezxV6dw3MBMQSFFmCjbrnjS5tlNMToD4+/32rMf+q7EEbM3VntsMZGKoIiJGLI25y548ujBaRbVP2+CDXnLgCQ==" length="76159972" type="application/octet-stream"/>
+        </item>
+    <item>
             <title>0.3.9</title>
             <pubDate>Wed, 01 Jul 2026 11:27:57 +0000</pubDate>
             <sparkle:version xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">309</sparkle:version>
@@ -17,14 +25,6 @@
             <sparkle:shortVersionString xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">0.3.8</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">26.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.3.8/BusKit-0.3.8-arm64.dmg" sparkle:edSignature="PPk0N1VLctpeHGq+0ewsx+o/D5BYxntCkFmGWprZq3fSjgHyrKNcwCc6yuJOGAXdS6KLKYcuh+uMGoaa5DVaBQ==" length="77263558" type="application/octet-stream"/>
-        </item>
-    <item>
-            <title>0.3.7</title>
-            <pubDate>Tue, 23 Jun 2026 12:07:05 +0000</pubDate>
-            <sparkle:version xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">307</sparkle:version>
-            <sparkle:shortVersionString xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">0.3.7</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.3.7/BusKit-0.3.7-arm64.dmg" sparkle:edSignature="nuR3Ty2yMeYf8z5hAY4JlfZpfXR8Jgsw0Lv/qyCFyK/RJklq8JlUQJcDPDXXr1bQL9OejFgGmFYWXArDOhBaAg==" length="76631106" type="application/octet-stream"/>
         </item>
         <item>
             <title>0.1.21</title>
