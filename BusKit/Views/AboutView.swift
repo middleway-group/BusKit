@@ -42,7 +42,7 @@ struct AboutView: View {
             appInfoColumn
             acknowledgementsColumn
         }
-        .frame(width: 520, height: 260)
+        .frame(width: 520, height: 200)
     }
 
     private var acknowledgementsColumn: some View {
@@ -52,13 +52,13 @@ struct AboutView: View {
                     .font(.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
-                    .padding(.bottom, 8)
+                    .padding(.bottom, 6)
 
                 ForEach(Array(acknowledgments.enumerated()), id: \.element.id) { index, entry in
                     if index > 0 {
-                        Spacer().frame(height: 6)
+                        Spacer().frame(height: 8)
                     }
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 1) {
                         Link(entry.name, destination: entry.url)
                             .font(.caption)
                             .fontWeight(.semibold)
@@ -71,42 +71,45 @@ struct AboutView: View {
                     }
                 }
             }
-            .padding(16)
+            .padding(14)
         }
         .frame(width: 260)
     }
 
     private var appInfoColumn: some View {
-        VStack(spacing: 10) {
-            Spacer()
+        VStack(spacing: 0) {
+            Spacer(minLength: 12)
 
-            Image("BusKitLogo")
-                .resizable()
-                .interpolation(.high)
-                .scaledToFit()
-                .frame(width: 64, height: 64)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .shadow(color: .black.opacity(0.15), radius: 6, x: 0, y: 3)
+            VStack(spacing: 4) {
+                Image("BusKitLogo")
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: 64, height: 64)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .shadow(color: .black.opacity(0.15), radius: 6, x: 0, y: 3)
+                    .padding(.bottom, 4)
 
-            Text("BusKit")
-                .font(.title2)
-                .fontWeight(.bold)
+                Text("BusKit")
+                    .font(.title2)
+                    .fontWeight(.bold)
 
-            Text("Version \(appVersion)")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                Text("Version \(appVersion)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
 
-            Text("Azure Service Bus client for macOS")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                Text("Azure Service Bus client for macOS")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
 
-            Text("Built with help of AI tools")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
+                Text("Built with help of AI tools")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+            }
 
-            Spacer()
+            Spacer(minLength: 12)
 
             VStack(spacing: 2) {
                 Text("Released under the MIT License")
@@ -117,7 +120,8 @@ struct AboutView: View {
                     .foregroundStyle(.tertiary)
             }
         }
-        .padding(20)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .frame(width: 260)
     }
