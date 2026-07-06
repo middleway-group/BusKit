@@ -13,6 +13,7 @@ struct RepairResubmitSheet: View {
     let message: MessageItem
     let entityName: String
     let subscriptionName: String?
+    let isDeadLetter: Bool
 
     @State private var targetDestination: String
     @State private var messageBody: String
@@ -34,10 +35,11 @@ struct RepairResubmitSheet: View {
     @State private var isSending = false
     @State private var sendError: String?
 
-    init(message: MessageItem, queueOrTopic: String, subscriptionName: String? = nil) {
+    init(message: MessageItem, queueOrTopic: String, subscriptionName: String? = nil, isDeadLetter: Bool = true) {
         self.message = message
         self.entityName = queueOrTopic
         self.subscriptionName = subscriptionName
+        self.isDeadLetter = isDeadLetter
         _targetDestination = State(initialValue: queueOrTopic)
         _messageBody = State(initialValue: message.body)
         _contentType = State(initialValue: message.contentType)
@@ -343,11 +345,13 @@ struct RepairResubmitSheet: View {
 
     private var footerView: some View {
         HStack(spacing: 8) {
-            Toggle(isOn: $deleteAfterResubmit) {
-                Text("Delete from dead-letter after resubmit")
-                    .font(.body)
+            if isDeadLetter {
+                Toggle(isOn: $deleteAfterResubmit) {
+                    Text("Delete from dead-letter after resubmit")
+                        .font(.body)
+                }
+                .disabled(isSending)
             }
-            .disabled(isSending)
 
             Spacer()
 

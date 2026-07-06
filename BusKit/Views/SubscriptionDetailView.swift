@@ -932,19 +932,15 @@ private struct SubMessagesTab: View {
                 subToolbarDivider
             }
 
-            if isDLQ {
-                Button {
-                    showRepairSheet = true
-                } label: {
-                    Label("Repair & Resubmit", systemImage: "wrench.and.screwdriver")
-                        .padding(.horizontal, 8).padding(.vertical, 4)
-                }
-                .buttonStyle(.borderless)
-                .disabled(selectedMessageIDs.count != 1)
-                .help("Repair and resubmit the selected message")
-
-                subToolbarDivider
+            Button {
+                showRepairSheet = true
+            } label: {
+                Label("Repair & Resubmit", systemImage: "wrench.and.screwdriver")
+                    .padding(.horizontal, 8).padding(.vertical, 4)
             }
+            .buttonStyle(.borderless)
+            .disabled(selectedMessageIDs.count != 1)
+            .help("Repair and resubmit the selected message")
 
             subToolbarDivider
 
@@ -1115,7 +1111,7 @@ private struct SubMessagesTab: View {
         .onChange(of: trigger)           { _, _ in Task { await loadMessages() } }
         .sheet(isPresented: $showRepairSheet) {
             if let msg = selectedMessage {
-                RepairResubmitSheet(message: msg, queueOrTopic: subscription.topicName, subscriptionName: subscription.name)
+                RepairResubmitSheet(message: msg, queueOrTopic: subscription.topicName, subscriptionName: subscription.name, isDeadLetter: isDLQ)
             }
         }
         .sheet(isPresented: $showBulkResubmitSheet, onDismiss: {
