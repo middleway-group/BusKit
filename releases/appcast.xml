@@ -3,6 +3,14 @@
     <channel>
         <title>BusKit</title>
     <item>
+            <title>0.5.1</title>
+            <pubDate>Tue, 07 Jul 2026 07:43:33 +0000</pubDate>
+            <sparkle:version>501</sparkle:version>
+            <sparkle:shortVersionString>0.5.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.1/BusKit-0.5.1-arm64.dmg" sparkle:edSignature="liRBQAFvy7f3ejVrnVwdDEYXfz0RUudTzPSRQkznxTlc1YCulKbR97VUouMMJWsBJj0cNKyUPAZp4RN0PcFQCg==" length="76160658" type="application/octet-stream"/>
+        </item>
+    <item>
             <title>0.5.0</title>
             <pubDate>Mon, 06 Jul 2026 09:49:47 +0000</pubDate>
             <sparkle:version xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">500</sparkle:version>
@@ -17,14 +25,6 @@
             <sparkle:shortVersionString xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">0.4.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">26.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.4.0/BusKit-0.4.0-arm64.dmg" sparkle:edSignature="ezxV6dw3MBMQSFFmCjbrnjS5tlNMToD4+/32rMf+q7EEbM3VntsMZGKoIiJGLI25y548ujBaRbVP2+CDXnLgCQ==" length="76159972" type="application/octet-stream"/>
-        </item>
-    <item>
-            <title>0.3.9</title>
-            <pubDate>Wed, 01 Jul 2026 11:27:57 +0000</pubDate>
-            <sparkle:version xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">309</sparkle:version>
-            <sparkle:shortVersionString xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">0.3.9</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.3.9/BusKit-0.3.9-arm64.dmg" sparkle:edSignature="7QoD8vIeym9nZCkDv+sY6z7ZyBb2O2GE+4f8nTuyGXiSOCrS2FA7sCilg8Zql7xQE894JUTWriiSE4pQRW/MCw==" length="76157263" type="application/octet-stream"/>
         </item>
         <item>
             <title>0.1.21</title>
