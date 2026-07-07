@@ -134,7 +134,7 @@ struct MessageBodyPanel: View {
                 BodyTextView(attributed: displayAttributed)
             } else {
                 Text("Select a message to view its body.")
-                    .font(.system(.body, design: .monospaced))
+                    .font(.body)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(12)
