@@ -129,46 +129,14 @@ DOWNLOAD_URL="https://github.com/middleway-group/BusKit/releases/download/${TAG}
 
 echo "   Signature: ${ED_SIG:0:20}…"
 
-python3 - <<PYEOF
-import xml.etree.ElementTree as ET
-import re, sys
-
-tree = ET.parse("$ROOT/releases/appcast.xml")
-ns = {"sparkle": "http://www.andymatuschak.org/xml-namespaces/sparkle"}
-ET.register_namespace("sparkle", "http://www.andymatuschak.org/xml-namespaces/sparkle")
-root = tree.getroot()
-channel = root.find("channel")
-
-new_item_xml = """    <item>
-            <title>$VERSION</title>
-            <pubDate>$PUBDATE</pubDate>
-            <sparkle:version xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">$BUILD</sparkle:version>
-            <sparkle:shortVersionString xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">$VERSION</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">26.0</sparkle:minimumSystemVersion>
-            <enclosure url="$DOWNLOAD_URL" sparkle:edSignature="$ED_SIG" length="$DMG_LEN" type="application/octet-stream"/>
-        </item>"""
-
-# Read raw file and inject new item after <channel> opening tags
-with open("$ROOT/releases/appcast.xml", "r") as f:
-    content = f.read()
-
-# Insert new <item> after the <title> tag inside <channel>
-content = content.replace(
-    "        <title>BusKit</title>",
-    "        <title>BusKit</title>\n" + new_item_xml
-)
-
-# Keep only 3 items — find and remove 4th <item> block if present
-items = re.findall(r'    <item>.*?</item>', content, re.DOTALL)
-if len(items) > 3:
-    for old_item in items[3:]:
-        content = content.replace("\n" + old_item, "")
-
-with open("$ROOT/releases/appcast.xml", "w") as f:
-    f.write(content)
-
-print("✅ appcast.xml updated")
-PYEOF
+APPCAST_PATH="$ROOT/releases/appcast.xml" \
+VERSION="$VERSION" \
+BUILD="$BUILD" \
+PUBDATE="$PUBDATE" \
+DOWNLOAD_URL="$DOWNLOAD_URL" \
+ED_SIG="$ED_SIG" \
+DMG_LEN="$DMG_LEN" \
+python3 "$ROOT/Scripts/update_appcast.py"
 
 # ── Step 6: Commit and push appcast ──────────────────────────────────────────
 echo ""
