@@ -111,7 +111,7 @@ struct StatusBarView: View {
             .padding(.horizontal, 6)
             .help(activityLog.isLogVisible ? "Hide Activity Log" : "Show Activity Log")
         }
-        .frame(height: 34)
+        .frame(height: 28)
         .background(.bar)
         .overlay(alignment: .top) { Divider() }
     }
