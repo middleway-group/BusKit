@@ -204,6 +204,7 @@ private struct SubRulesTab: View {
                         TableColumn("Rule Name") { rule in
                             Label(rule.name, systemImage: "line.3.horizontal.decrease.circle")
                                 .lineLimit(1)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                                 .contentShape(Rectangle())
                                 .onTapGesture(count: 2) { openEditSheet(for: rule) }
                         }
@@ -214,6 +215,7 @@ private struct SubRulesTab: View {
                                 .font(.system(.body, design: .monospaced))
                                 .foregroundStyle(.secondary)
                                 .lineLimit(2)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                                 .contentShape(Rectangle())
                                 .onTapGesture(count: 2) { openEditSheet(for: rule) }
                         }

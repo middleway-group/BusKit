@@ -111,28 +111,14 @@ jobs:
           fi
           echo "✅ Signed: ${ED_SIG:0:20}…"
 
-          python3 - <<PYEOF
-import re
-new_item = f"""    <item>
-            <title>{VERSION}</title>
-            <pubDate>{PUBDATE}</pubDate>
-            <sparkle:version>{BUILD}</sparkle:version>
-            <sparkle:shortVersionString>{VERSION}</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="{URL}" sparkle:edSignature="{ED_SIG}" length="{DMG_LEN}" type="application/octet-stream"/>
-        </item>"""
-with open("releases/appcast.xml") as f:
-    content = f.read()
-content = content.replace("        <title>BusKit</title>",
-                          "        <title>BusKit</title>\n" + new_item)
-items = re.findall(r'    <item>.*?</item>', content, re.DOTALL)
-for old in items[3:]:
-    content = content.replace("\n" + old, "")
-with open("releases/appcast.xml", "w") as f:
-    f.write(content)
-print("✅ appcast.xml updated")
-PYEOF
-          VERSION_VARS="VERSION=$VERSION TAG=$TAG URL=$URL ED_SIG=$ED_SIG DMG_LEN=$DMG_LEN PUBDATE=$PUBDATE BUILD=$BUILD"
+          APPCAST_PATH="releases/appcast.xml" \
+          VERSION="$VERSION" \
+          BUILD="$BUILD" \
+          PUBDATE="$PUBDATE" \
+          DOWNLOAD_URL="$URL" \
+          ED_SIG="$ED_SIG" \
+          DMG_LEN="$DMG_LEN" \
+          python3 Scripts/update_appcast.py
 
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
