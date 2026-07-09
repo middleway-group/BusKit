@@ -128,6 +128,10 @@ private final class SidebarModel {
     var expandedSubscriptions: Set<String> = []
     // Expanded rule groups state (keyed by "topicName/subName")
     var expandedRuleGroups: Set<String> = []
+
+    // Search: once true, subscriptions/rules for every topic have been
+    // fetched so search can match against their names too.
+    var hasLoadedAllForSearch = false
 }
 
 // MARK: - Receive Count Dialog
@@ -187,93 +191,294 @@ struct SidebarView: View {
     @State private var queuesExpanded    = true
     @State private var topicsExpanded    = true
 
+    // ── Search ────────────────────────────────────────────────────
+    // Raw text bound to the native search field (updates every keystroke).
+    @State private var searchText = ""
+    // Debounced copy actually used for filtering, so a fast typist doesn't
+    // trigger a full-list re-filter/re-render on every character.
+    @State private var debouncedSearchText = ""
+
     // Queues sorted alphabetically.
     private var sortedQueues: [QueueItem] {
         model.queues.sorted { $0.name < $1.name }
     }
 
-    var body: some View {
-        List(selection: $selection) {
-            if model.isLoading && model.queues.isEmpty && model.topics.isEmpty {
-                HStack {
-                    ProgressView().controlSize(.small)
-                    Text("Loading…").foregroundStyle(.secondary)
+    private var trimmedSearchQuery: String {
+        debouncedSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var isSearching: Bool { !trimmedSearchQuery.isEmpty }
+
+    // Flat list of every match across queues, topics, subscriptions and
+    // rules. Only recomputed when the debounced query or underlying data
+    // changes (SwiftUI/@Observable dependency tracking), never per keystroke.
+    private var searchResults: [SidebarSelection] {
+        let query = trimmedSearchQuery.lowercased()
+        guard !query.isEmpty else { return [] }
+
+        var results: [SidebarSelection] = []
+        results.append(contentsOf: model.queues
+            .filter { $0.name.lowercased().contains(query) }
+            .sorted { $0.name < $1.name }
+            .map { .queue($0) })
+        results.append(contentsOf: model.topics
+            .filter { $0.name.lowercased().contains(query) }
+            .sorted { $0.name < $1.name }
+            .map { .topic($0) })
+
+        for topic in model.topics.sorted(by: { $0.name < $1.name }) {
+            guard case .loaded(let subs) = model.subscriptions[topic.name] else { continue }
+            for sub in subs.sorted(by: { $0.name < $1.name }) {
+                if sub.name.lowercased().contains(query) {
+                    results.append(.subscription(sub))
                 }
-            }
-
-            if grpc.connectionState == .connected || !model.queues.isEmpty || !model.topics.isEmpty {
-                DisclosureGroup(isExpanded: $namespaceExpanded) {
-
-                    // ── Queues ──────────────────────────────────────
-                    DisclosureGroup(isExpanded: $queuesExpanded) {
-                        if model.queues.isEmpty && !model.isLoading {
-                            Text("No queues found.")
-                                .foregroundStyle(.secondary).font(.caption)
-                        } else {
-                            ForEach(sortedQueues) { queue in
-                                HStack {
-                                    Label(queue.name, systemImage: "tray")
-                                    Spacer()
-                                    MessageCountBadge(
-                                        active: queue.messageCount,
-                                        deadLetter: queue.deadLetterCount)
-                                }
-                                .frame(height: 22)
-                                .opacity(queue.status == "Active" || queue.status.isEmpty ? 1.0 : 0.4)
-                                .tag(SidebarSelection.queue(queue))
-                                .contextMenu {
-                                    queueContextMenu(for: queue)
-                                }
-                            }
-                        }
-                    } label: {
-                        Label("Queues", systemImage: "tray.full")
-                            .contextMenu {
-                                Button("Create Queue") {
-                                    model.showCreateQueueSheet = true
-                                }
-                                .disabled(!grpc.capabilityMap.createResources)
-                                Divider()
-                                Button("Expand All") { expandAllQueues() }
-                                Button("Collapse All") { collapseAllQueues() }
-                            }
-                    }
-
-                    // ── Topics ──────────────────────────────────────
-                    DisclosureGroup(isExpanded: $topicsExpanded) {
-                        if model.topics.isEmpty && !model.isLoading {
-                            Text("No topics found.")
-                                .foregroundStyle(.secondary).font(.caption)
-                        } else {
-                            ForEach(model.topics) { topic in
-                                TopicRow(topic: topic, model: model, grpc: grpc)
-                            }
-                        }
-                    } label: {
-                        Label("Topics", systemImage: "bubble.left.and.bubble.right")
-                            .contextMenu {
-                                Button("Create Topic") {
-                                    model.showCreateTopicSheet = true
-                                }
-                                .disabled(!grpc.capabilityMap.createResources)
-                                Divider()
-                                Button("Expand All") { Task { await expandAllTopics() } }
-                                Button("Collapse All") { collapseAllTopics() }
-                            }
-                    }
-
-                } label: {
-                    Label(grpc.namespaceName ?? "Service Bus", systemImage: "server.rack")
-                        .fontWeight(.semibold)
+                let key = "\(sub.topicName)/\(sub.name)"
+                guard case .loaded(let rules) = model.rules[key] else { continue }
+                for rule in rules.sorted(by: { $0.name < $1.name })
+                where rule.name.lowercased().contains(query) {
+                    results.append(.rule(rule, sub))
                 }
-            }
-
-            if !model.isLoading && model.queues.isEmpty && model.topics.isEmpty
-                && grpc.connectionState != .connected {
-                Text("Not connected.")
-                    .foregroundStyle(.secondary).font(.caption)
             }
         }
+        return results
+    }
+
+    private var groupedSearchResults: (queues: [SidebarSelection], topics: [SidebarSelection],
+                                        subscriptions: [SidebarSelection], rules: [SidebarSelection]) {
+        var queues: [SidebarSelection] = [], topics: [SidebarSelection] = []
+        var subscriptions: [SidebarSelection] = [], rules: [SidebarSelection] = []
+        for result in searchResults {
+            switch result {
+            case .queue:        queues.append(result)
+            case .topic:        topics.append(result)
+            case .subscription: subscriptions.append(result)
+            case .rule:         rules.append(result)
+            case .rulesGroup:   break
+            }
+        }
+        return (queues, topics, subscriptions, rules)
+    }
+
+    // MARK: - Normal (hierarchical) tree content
+
+    @ViewBuilder
+    private var normalContent: some View {
+        if model.isLoading && model.queues.isEmpty && model.topics.isEmpty {
+            HStack {
+                ProgressView().controlSize(.small)
+                Text("Loading…").foregroundStyle(.secondary)
+            }
+        }
+
+        if grpc.connectionState == .connected || !model.queues.isEmpty || !model.topics.isEmpty {
+            DisclosureGroup(isExpanded: $namespaceExpanded) {
+
+                // ── Queues ──────────────────────────────────────
+                DisclosureGroup(isExpanded: $queuesExpanded) {
+                    if model.queues.isEmpty && !model.isLoading {
+                        Text("No queues found.")
+                            .foregroundStyle(.secondary).font(.caption)
+                    } else {
+                        ForEach(sortedQueues) { queue in
+                            HStack {
+                                Label(queue.name, systemImage: "tray")
+                                Spacer()
+                                MessageCountBadge(
+                                    active: queue.messageCount,
+                                    deadLetter: queue.deadLetterCount)
+                            }
+                            .frame(height: 22)
+                            .opacity(queue.status == "Active" || queue.status.isEmpty ? 1.0 : 0.4)
+                            .tag(SidebarSelection.queue(queue))
+                            .contextMenu {
+                                queueContextMenu(for: queue)
+                            }
+                        }
+                    }
+                } label: {
+                    Label("Queues", systemImage: "tray.full")
+                        .contextMenu {
+                            Button("Create Queue") {
+                                model.showCreateQueueSheet = true
+                            }
+                            .disabled(!grpc.capabilityMap.createResources)
+                            Divider()
+                            Button("Expand All") { expandAllQueues() }
+                            Button("Collapse All") { collapseAllQueues() }
+                        }
+                }
+
+                // ── Topics ──────────────────────────────────────
+                DisclosureGroup(isExpanded: $topicsExpanded) {
+                    if model.topics.isEmpty && !model.isLoading {
+                        Text("No topics found.")
+                            .foregroundStyle(.secondary).font(.caption)
+                    } else {
+                        ForEach(model.topics) { topic in
+                            TopicRow(topic: topic, model: model, grpc: grpc)
+                        }
+                    }
+                } label: {
+                    Label("Topics", systemImage: "bubble.left.and.bubble.right")
+                        .contextMenu {
+                            Button("Create Topic") {
+                                model.showCreateTopicSheet = true
+                            }
+                            .disabled(!grpc.capabilityMap.createResources)
+                            Divider()
+                            Button("Expand All") { Task { await expandAllTopics() } }
+                            Button("Collapse All") { collapseAllTopics() }
+                        }
+                }
+
+            } label: {
+                Label(grpc.namespaceName ?? "Service Bus", systemImage: "server.rack")
+                    .fontWeight(.semibold)
+            }
+        }
+
+        if !model.isLoading && model.queues.isEmpty && model.topics.isEmpty
+            && grpc.connectionState != .connected {
+            Text("Not connected.")
+                .foregroundStyle(.secondary).font(.caption)
+        }
+    }
+
+    // MARK: - Search results content
+
+    /// Grouped like a native macOS "Search" navigator (Xcode/Mail-style):
+    /// results grouped by entity kind, each row showing a breadcrumb so the
+    /// match is unambiguous even before the user navigates to it.
+    ///
+    /// NOTE: Deliberately uses plain header rows instead of SwiftUI `Section`
+    /// — mixing `Section` with the plain `DisclosureGroup` rows used by
+    /// `normalContent` in the same `List` corrupts macOS's outline-view
+    /// layout (a header can render detached at the bottom of the sidebar).
+    @ViewBuilder
+    private var searchResultsContent: some View {
+        let grouped = groupedSearchResults
+        if searchResults.isEmpty {
+            if model.hasLoadedAllForSearch {
+                Text("No results for \"\(trimmedSearchQuery)\".")
+                    .foregroundStyle(.secondary).font(.caption)
+            } else {
+                HStack {
+                    ProgressView().controlSize(.small)
+                    Text("Searching…").foregroundStyle(.secondary)
+                }
+            }
+        } else {
+            if !grouped.queues.isEmpty {
+                searchResultsHeader("Queues")
+                ForEach(grouped.queues, id: \.self) { result in
+                    searchResultRow(result)
+                }
+            }
+            if !grouped.topics.isEmpty {
+                searchResultsHeader("Topics")
+                ForEach(grouped.topics, id: \.self) { result in
+                    searchResultRow(result)
+                }
+            }
+            if !grouped.subscriptions.isEmpty {
+                searchResultsHeader("Subscriptions")
+                ForEach(grouped.subscriptions, id: \.self) { result in
+                    searchResultRow(result)
+                }
+            }
+            if !grouped.rules.isEmpty {
+                searchResultsHeader("Rules")
+                ForEach(grouped.rules, id: \.self) { result in
+                    searchResultRow(result)
+                }
+            }
+        }
+    }
+
+    private func searchResultsHeader(_ title: String) -> some View {
+        Text(title.uppercased())
+            .font(.caption2).fontWeight(.semibold)
+            .foregroundStyle(.secondary)
+            .padding(.top, 4)
+    }
+
+    @ViewBuilder
+    private func searchResultRow(_ result: SidebarSelection) -> some View {
+        switch result {
+        case .queue(let q):
+            Label(q.name, systemImage: "tray")
+                .frame(height: 22)
+                .tag(result)
+
+        case .topic(let t):
+            Label(t.name, systemImage: "bubble.left.and.bubble.right")
+                .frame(height: 22)
+                .tag(result)
+
+        case .subscription(let s):
+            VStack(alignment: .leading, spacing: 1) {
+                Label(s.name, systemImage: "envelope")
+                Text(s.topicName)
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+            .tag(result)
+
+        case .rule(let r, let sub):
+            VStack(alignment: .leading, spacing: 1) {
+                Label(r.name, systemImage: "line.3.horizontal.decrease.circle")
+                Text("\(sub.topicName)/\(sub.name)")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+            .tag(result)
+
+        case .rulesGroup:
+            EmptyView()
+        }
+    }
+
+    private var sidebarList: some View {
+        List(selection: $selection) {
+            if isSearching {
+                searchResultsContent
+            } else {
+                normalContent
+            }
+        }
+        // Force AppKit to tear down and rebuild the outline view's rows
+        // whenever we swap between the flat search-results content and the
+        // hierarchical tree content, instead of trying to diff/reuse rows
+        // across two structurally very different content trees. Without
+        // this, stale row text (e.g. "Topics") can be left behind visually
+        // after searching, collapsing, or expanding.
+        .id(isSearching)
+        .searchable(text: $searchText, placement: .sidebar,
+                    prompt: "Search queues, topics, subscriptions, rules")
+        .task(id: searchText) {
+            // Debounce: wait for a short pause in typing before committing
+            // the query used for filtering. Cancelled automatically by
+            // SwiftUI if searchText changes again before it completes.
+            guard !searchText.isEmpty else {
+                debouncedSearchText = ""
+                return
+            }
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            guard !Task.isCancelled else { return }
+            debouncedSearchText = searchText
+            await ensureSearchDataLoaded()
+        }
+        .onChange(of: selection) { _, newSelection in
+            // A click on a search result row selects it via the List's
+            // native tag-selection; once that happens, reveal it in the
+            // normal hierarchical tree and dismiss the search.
+            guard isSearching, let newSelection else { return }
+            revealInSidebar(newSelection)
+            searchText = ""
+            debouncedSearchText = ""
+        }
+    }
+
+    var body: some View {
+        sidebarList
         // ── Receive sheet ────────────────────────────────────────
         .sheet(isPresented: $model.showReceiveSheet) {
             ReceiveCountDialog(isDLQ: model.receiveIsDLQ, count: $model.receiveCount) {
@@ -463,6 +668,9 @@ struct SidebarView: View {
                 model.subscriptions   = [:]
                 model.rules           = [:]
                 model.expandedTopics  = []
+                model.hasLoadedAllForSearch = false
+                searchText = ""
+                debouncedSearchText = ""
             }
         }
         .onChange(of: actionStore.pendingRefresh) { _, req in
@@ -821,6 +1029,7 @@ struct SidebarView: View {
         model.isLoading     = true
         model.subscriptions = [:]
         model.rules         = [:]
+        model.hasLoadedAllForSearch = false
         defer { model.isLoading = false }
         async let q = grpc.listQueues()
         async let t = grpc.listTopics()
@@ -833,6 +1042,68 @@ struct SidebarView: View {
             model.topics = topicInfos.map { TopicItem(name: $0.name, status: $0.status) }
             appStatus.lastRefreshTime = Date()
         } catch { }
+    }
+
+    /// Lazily fetches subscriptions/rules for every topic (once) so search
+    /// can match names that haven't been expanded/loaded in the tree yet.
+    /// Reuses already-loaded entries and is safe to call repeatedly — the
+    /// `hasLoadedAllForSearch` guard makes repeat calls a no-op until the
+    /// next full refresh or reconnect.
+    private func ensureSearchDataLoaded() async {
+        guard !model.hasLoadedAllForSearch else { return }
+        for topic in model.topics {
+            if model.subscriptions[topic.name] == nil {
+                do {
+                    let infos = try await grpc.listSubscriptions(topicName: topic.name)
+                    model.subscriptions[topic.name] = .loaded(infos.map {
+                        SubscriptionItem(topicName: topic.name, name: $0.name,
+                                         activeMessageCount: $0.activeMessageCount,
+                                         deadLetterCount: $0.deadLetterCount)
+                    })
+                } catch {
+                    model.subscriptions[topic.name] = .failed(error.localizedDescription)
+                    continue
+                }
+            }
+            guard case .loaded(let subs) = model.subscriptions[topic.name] else { continue }
+            for sub in subs {
+                let key = "\(sub.topicName)/\(sub.name)"
+                guard model.rules[key] == nil else { continue }
+                do {
+                    let ruleInfos = try await grpc.listRules(topicName: sub.topicName,
+                                                              subscriptionName: sub.name)
+                    model.rules[key] = .loaded(ruleInfos.map {
+                        RuleItem(name: $0.name, filter: $0.filter)
+                    })
+                } catch {
+                    model.rules[key] = .failed(error.localizedDescription)
+                }
+            }
+        }
+        model.hasLoadedAllForSearch = true
+    }
+
+    /// Expands the disclosure groups above `sel` so it becomes visible in
+    /// the normal hierarchical tree once search is dismissed.
+    private func revealInSidebar(_ sel: SidebarSelection) {
+        namespaceExpanded = true
+        switch sel {
+        case .queue:
+            queuesExpanded = true
+        case .topic(let t):
+            topicsExpanded = true
+            model.expandedTopics.insert(t.name)
+        case .subscription(let s), .rulesGroup(let s):
+            topicsExpanded = true
+            model.expandedTopics.insert(s.topicName)
+            model.expandedSubscriptions.insert("\(s.topicName)/\(s.name)")
+        case .rule(_, let s):
+            topicsExpanded = true
+            model.expandedTopics.insert(s.topicName)
+            let key = "\(s.topicName)/\(s.name)"
+            model.expandedSubscriptions.insert(key)
+            model.expandedRuleGroups.insert(key)
+        }
     }
 
     // MARK: - Expand/Collapse All
