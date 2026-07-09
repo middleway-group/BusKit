@@ -124,6 +124,10 @@ private final class SidebarModel {
 
     // Expanded topics state (keyed by topic name, persists across refreshes)
     var expandedTopics: Set<String> = []
+    // Expanded subscriptions state (keyed by "topicName/subName")
+    var expandedSubscriptions: Set<String> = []
+    // Expanded rule groups state (keyed by "topicName/subName")
+    var expandedRuleGroups: Set<String> = []
 }
 
 // MARK: - Receive Count Dialog
@@ -229,6 +233,9 @@ struct SidebarView: View {
                                     model.showCreateQueueSheet = true
                                 }
                                 .disabled(!grpc.capabilityMap.createResources)
+                                Divider()
+                                Button("Expand All") { expandAllQueues() }
+                                Button("Collapse All") { collapseAllQueues() }
                             }
                     }
 
@@ -249,6 +256,9 @@ struct SidebarView: View {
                                     model.showCreateTopicSheet = true
                                 }
                                 .disabled(!grpc.capabilityMap.createResources)
+                                Divider()
+                                Button("Expand All") { Task { await expandAllTopics() } }
+                                Button("Collapse All") { collapseAllTopics() }
                             }
                     }
 
@@ -824,6 +834,67 @@ struct SidebarView: View {
             appStatus.lastRefreshTime = Date()
         } catch { }
     }
+
+    // MARK: - Expand/Collapse All
+
+    private func expandAllQueues() {
+        queuesExpanded = true
+    }
+
+    private func collapseAllQueues() {
+        queuesExpanded = false
+    }
+
+    /// Expands the Topics group along with every topic, subscription, and
+    /// rule group beneath it, fetching any data that hasn't been loaded yet.
+    private func expandAllTopics() async {
+        topicsExpanded = true
+        for topic in model.topics {
+            model.expandedTopics.insert(topic.name)
+
+            if model.subscriptions[topic.name] == nil {
+                model.subscriptions[topic.name] = .loading
+                do {
+                    let infos = try await grpc.listSubscriptions(topicName: topic.name)
+                    model.subscriptions[topic.name] = .loaded(infos.map {
+                        SubscriptionItem(topicName: topic.name, name: $0.name,
+                                         activeMessageCount: $0.activeMessageCount,
+                                         deadLetterCount: $0.deadLetterCount)
+                    })
+                } catch {
+                    model.subscriptions[topic.name] = .failed(error.localizedDescription)
+                    continue
+                }
+            }
+
+            guard case .loaded(let subs) = model.subscriptions[topic.name] else { continue }
+            for sub in subs {
+                let key = "\(sub.topicName)/\(sub.name)"
+                model.expandedSubscriptions.insert(key)
+                model.expandedRuleGroups.insert(key)
+
+                if model.rules[key] == nil {
+                    model.rules[key] = .loading
+                    do {
+                        let ruleInfos = try await grpc.listRules(topicName: sub.topicName,
+                                                                  subscriptionName: sub.name)
+                        model.rules[key] = .loaded(ruleInfos.map {
+                            RuleItem(name: $0.name, filter: $0.filter)
+                        })
+                    } catch {
+                        model.rules[key] = .failed(error.localizedDescription)
+                    }
+                }
+            }
+        }
+    }
+
+    private func collapseAllTopics() {
+        topicsExpanded = false
+        model.expandedTopics = []
+        model.expandedSubscriptions = []
+        model.expandedRuleGroups = []
+    }
 }
 
 // MARK: - TopicRow
@@ -973,10 +1044,19 @@ private struct SubscriptionRow: View {
     let model: SidebarModel
     let grpc: GRPCManager
 
-    @State private var isExpanded = false
+    private var key: String { "\(sub.topicName)/\(sub.name)" }
+    private var isExpandedBinding: Binding<Bool> {
+        Binding(
+            get: { model.expandedSubscriptions.contains(key) },
+            set: { expanded in
+                if expanded { model.expandedSubscriptions.insert(key) }
+                else { model.expandedSubscriptions.remove(key) }
+            }
+        )
+    }
 
     var body: some View {
-        DisclosureGroup(isExpanded: $isExpanded) {
+        DisclosureGroup(isExpanded: isExpandedBinding) {
             RulesGroupRow(sub: sub, model: model, grpc: grpc)
         } label: {
             subLabel
@@ -1044,10 +1124,20 @@ private struct RulesGroupRow: View {
     let model: SidebarModel
     let grpc: GRPCManager
 
-    @State private var isExpanded = false
     @State private var fetchTask: Task<Void, Never>? = nil
 
     private var ruleKey: String { "\(sub.topicName)/\(sub.name)" }
+
+    private var isExpanded: Bool { model.expandedRuleGroups.contains(ruleKey) }
+    private var isExpandedBinding: Binding<Bool> {
+        Binding(
+            get: { model.expandedRuleGroups.contains(ruleKey) },
+            set: { expanded in
+                if expanded { model.expandedRuleGroups.insert(ruleKey) }
+                else { model.expandedRuleGroups.remove(ruleKey) }
+            }
+        )
+    }
 
     private var canManage: Bool { grpc.capabilityMap.manageFilters }
     private var isLoading: Bool {
@@ -1056,7 +1146,7 @@ private struct RulesGroupRow: View {
     }
 
     var body: some View {
-        DisclosureGroup(isExpanded: $isExpanded) {
+        DisclosureGroup(isExpanded: isExpandedBinding) {
             rulesContent
         } label: {
             Label("Rules", systemImage: "line.3.horizontal.decrease.circle")
