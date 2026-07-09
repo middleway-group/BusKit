@@ -97,9 +97,9 @@ struct StatusBarView: View {
                 Image(systemName: activityLog.isLogVisible ? "list.bullet.clipboard.fill" : "list.bullet.clipboard")
                     .font(.system(size: 11))
                     .foregroundStyle(activityLog.isLogVisible ? Color.accentColor : .secondary)
-                    .frame(width: 24, height: 24)
+                    .frame(width: 22, height: 22)
                     .background(
-                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        RoundedRectangle(cornerRadius: 3, style: .circular)
                             .fill(Color.primary.opacity(isActivityLogButtonHovering ? 0.08 : 0))
                     )
                     .contentShape(Rectangle())
@@ -111,8 +111,12 @@ struct StatusBarView: View {
             .padding(.horizontal, 6)
             .help(activityLog.isLogVisible ? "Hide Activity Log" : "Show Activity Log")
         }
-        .frame(height: 28)
-        .background(.bar)
+        .frame(height: 24)
+        // Explicitly clip to a plain Rectangle — otherwise `.background(.bar)`
+        // inherits the surrounding NavigationSplitView's rounded container
+        // shape, which renders overly-pronounced rounded corners on the
+        // bottom status bar instead of the sharp/square native macOS look.
+        .background(.bar, in: Rectangle())
         .overlay(alignment: .top) { Divider() }
     }
 
