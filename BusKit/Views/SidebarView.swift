@@ -1,4 +1,5 @@
 import SwiftUI
+import GRPCCore
 
 // MARK: - Loading state
 
@@ -17,6 +18,17 @@ extension LoadState: Equatable where T: Equatable {
         default:                             return false
         }
     }
+}
+
+/// True when `error` represents this Task (or the underlying gRPC call)
+/// being cancelled rather than a genuine failure. Used so a cancelled
+/// prefetch (e.g. the search-debounce task restarting on every keystroke)
+/// doesn't get cached as a permanent `.failed` state — that would make a
+/// topic's subscriptions appear stuck in error until a full refresh.
+private func isCancellationError(_ error: Error) -> Bool {
+    if error is CancellationError { return true }
+    if let rpcError = error as? RPCError, rpcError.code == .cancelled { return true }
+    return false
 }
 
 // MARK: - Message count badge
@@ -1052,6 +1064,14 @@ struct SidebarView: View {
     private func ensureSearchDataLoaded() async {
         guard !model.hasLoadedAllForSearch else { return }
         for topic in model.topics {
+            // The debounced `.task(id: searchText)` this runs in gets
+            // cancelled and restarted on every keystroke. If we're being
+            // cancelled mid-prefetch, bail out now rather than continuing
+            // to burn through topics — and, critically, without caching a
+            // `.failed` state below for whatever call is in flight, since
+            // that would wrongly stick around and block a later retry when
+            // the user actually expands the topic in the tree.
+            if Task.isCancelled { return }
             if model.subscriptions[topic.name] == nil {
                 do {
                     let infos = try await grpc.listSubscriptions(topicName: topic.name)
@@ -1061,12 +1081,14 @@ struct SidebarView: View {
                                          deadLetterCount: $0.deadLetterCount)
                     })
                 } catch {
+                    if isCancellationError(error) { return }
                     model.subscriptions[topic.name] = .failed(error.localizedDescription)
                     continue
                 }
             }
             guard case .loaded(let subs) = model.subscriptions[topic.name] else { continue }
             for sub in subs {
+                if Task.isCancelled { return }
                 let key = "\(sub.topicName)/\(sub.name)"
                 guard model.rules[key] == nil else { continue }
                 do {
@@ -1076,6 +1098,7 @@ struct SidebarView: View {
                         RuleItem(name: $0.name, filter: $0.filter)
                     })
                 } catch {
+                    if isCancellationError(error) { return }
                     model.rules[key] = .failed(error.localizedDescription)
                 }
             }
@@ -1201,8 +1224,13 @@ private struct TopicRow: View {
                 .padding(.leading, 8)
 
             case .failed(let msg):
-                Label(msg, systemImage: "exclamationmark.triangle")
-                    .font(.caption).foregroundStyle(.red).padding(.leading, 8)
+                VStack(alignment: .leading, spacing: 4) {
+                    Label(msg, systemImage: "exclamationmark.triangle")
+                        .font(.caption).foregroundStyle(.red)
+                    Button("Retry") { Task { await loadSubscriptions() } }
+                        .font(.caption)
+                }
+                .padding(.leading, 8)
 
             case .loaded(let subs):
                 if subs.isEmpty {
