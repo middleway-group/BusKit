@@ -306,6 +306,7 @@ struct SidebarView: View {
                             .frame(height: 22)
                             .opacity(queue.status == "Active" || queue.status.isEmpty ? 1.0 : 0.4)
                             .tag(SidebarSelection.queue(queue))
+                            .id(SidebarSelection.queue(queue))
                             .contextMenu {
                                 queueContextMenu(for: queue)
                             }
@@ -425,11 +426,13 @@ struct SidebarView: View {
             Label(q.name, systemImage: "tray")
                 .frame(height: 22)
                 .tag(result)
+                .id(result)
 
         case .topic(let t):
             Label(t.name, systemImage: "bubble.left.and.bubble.right")
                 .frame(height: 22)
                 .tag(result)
+                .id(result)
 
         case .subscription(let s):
             VStack(alignment: .leading, spacing: 1) {
@@ -438,6 +441,7 @@ struct SidebarView: View {
                     .font(.caption2).foregroundStyle(.secondary)
             }
             .tag(result)
+            .id(result)
 
         case .rule(let r, let sub):
             VStack(alignment: .leading, spacing: 1) {
@@ -446,6 +450,7 @@ struct SidebarView: View {
                     .font(.caption2).foregroundStyle(.secondary)
             }
             .tag(result)
+            .id(result)
 
         case .rulesGroup:
             EmptyView()
@@ -453,66 +458,67 @@ struct SidebarView: View {
     }
 
     private var sidebarList: some View {
-        List(selection: $selection) {
-            if isSearching {
-                searchResultsContent
-            } else {
-                normalContent
+        ScrollViewReader { proxy in
+            List(selection: $selection) {
+                if isSearching {
+                    searchResultsContent
+                } else {
+                    normalContent
+                }
             }
-        }
-        // Force AppKit to tear down and rebuild the outline view's rows
-        // whenever we swap between the flat search-results content and the
-        // hierarchical tree content, instead of trying to diff/reuse rows
-        // across two structurally very different content trees. Without
-        // this, stale row text (e.g. "Topics") can be left behind visually
-        // after searching, collapsing, or expanding.
-        .id(isSearching)
-        .searchable(text: $searchText, placement: .sidebar,
-                    prompt: "Search queues, topics, subscriptions, rules")
-        .task(id: searchText) {
-            // Debounce: wait for a short pause in typing before committing
-            // the query used for filtering. Cancelled automatically by
-            // SwiftUI if searchText changes again before it completes.
-            guard !searchText.isEmpty else {
+            // Force AppKit to tear down and rebuild the outline view's rows
+            // whenever we swap between the flat search-results content and the
+            // hierarchical tree content, instead of trying to diff/reuse rows
+            // across two structurally very different content trees. Without
+            // this, stale row text (e.g. "Topics") can be left behind visually
+            // after searching, collapsing, or expanding.
+            .id(isSearching)
+            .searchable(text: $searchText, placement: .sidebar,
+                        prompt: "Search queues, topics, subscriptions, rules")
+            .task(id: searchText) {
+                // Debounce: wait for a short pause in typing before committing
+                // the query used for filtering. Cancelled automatically by
+                // SwiftUI if searchText changes again before it completes.
+                guard !searchText.isEmpty else {
+                    debouncedSearchText = ""
+                    return
+                }
+                try? await Task.sleep(nanoseconds: 200_000_000)
+                guard !Task.isCancelled else { return }
+                debouncedSearchText = searchText
+                await ensureSearchDataLoaded()
+            }
+            .onChange(of: selection) { _, newSelection in
+                // A click on a search result row selects it via the List's
+                // native tag-selection; once that happens, reveal it in the
+                // normal hierarchical tree and dismiss the search.
+                guard isSearching, let newSelection else { return }
+                revealInSidebar(newSelection)
+                // Clear selection before dismissing search so the List rebuilds
+                // (via .id(isSearching)) without a pre-set selection. The pending
+                // target is re-applied by the task below after the tree is ready.
+                pendingRevealTarget = newSelection
+                selection = nil
+                searchText = ""
                 debouncedSearchText = ""
-                return
             }
-            try? await Task.sleep(nanoseconds: 200_000_000)
-            guard !Task.isCancelled else { return }
-            debouncedSearchText = searchText
-            await ensureSearchDataLoaded()
-        }
-        .onChange(of: selection) { _, newSelection in
-            // A click on a search result row selects it via the List's
-            // native tag-selection; once that happens, reveal it in the
-            // normal hierarchical tree and dismiss the search.
-            guard isSearching, let newSelection else { return }
-            revealInSidebar(newSelection)
-            // Clear selection before dismissing search so the List rebuilds
-            // (via .id(isSearching)) without a pre-set selection. The pending
-            // target is re-applied by the task below after the tree is ready,
-            // which makes NSOutlineView scroll the item into view.
-            pendingRevealTarget = newSelection
-            selection = nil
-            searchText = ""
-            debouncedSearchText = ""
-        }
-        // Re-apply the selection that was stashed during search dismissal.
-        // The task is cancelled and restarted whenever pendingRevealTarget
-        // changes, so a quick second tap simply replaces the prior scroll.
-        .task(id: pendingRevealTarget) {
-            guard let target = pendingRevealTarget, !isSearching else { return }
-            // Allow a couple of run-loop cycles for SwiftUI to rebuild the
-            // List with all disclosure groups already expanded before we
-            // change the selection — NSOutlineView will then scroll the row
-            // into view with its built-in smooth animation.
-            try? await Task.sleep(nanoseconds: 100_000_000) // ~100 ms
-            // Bail out if the user started a new search during the wait.
-            guard !Task.isCancelled, !isSearching, pendingRevealTarget == target else { return }
-            withAnimation(.easeOut(duration: 0.2)) {
-                selection = target
+            // Re-apply the selection that was stashed during search dismissal.
+            // The task is cancelled and restarted whenever pendingRevealTarget
+            // changes, so a quick second tap simply replaces the prior scroll.
+            .task(id: pendingRevealTarget) {
+                guard let target = pendingRevealTarget, !isSearching else { return }
+                // Allow a couple of run-loop cycles for SwiftUI to rebuild the
+                // List with all disclosure groups already expanded before we
+                // change the selection and explicitly scroll the row into view.
+                try? await Task.sleep(nanoseconds: 100_000_000) // ~100 ms
+                // Bail out if the user started a new search during the wait.
+                guard !Task.isCancelled, !isSearching, pendingRevealTarget == target else { return }
+                withAnimation(.easeOut(duration: 0.2)) {
+                    selection = target
+                    proxy.scrollTo(target, anchor: .center)
+                }
+                pendingRevealTarget = nil
             }
-            pendingRevealTarget = nil
         }
     }
 
@@ -1284,6 +1290,7 @@ private struct TopicRow: View {
             .frame(height: 22)
             .contentShape(Rectangle())
             .tag(SidebarSelection.topic(topic))
+            .id(SidebarSelection.topic(topic))
             .contextMenu {
                     Button("Send Message") {
                         model.sendMessageTarget  = .topic(topic)
@@ -1402,6 +1409,7 @@ private struct SubscriptionRow: View {
         .frame(height: 22)
         .contentShape(Rectangle())
         .tag(SidebarSelection.subscription(sub))
+        .id(SidebarSelection.subscription(sub))
         .contextMenu {
             Button("Receive Messages") {
                 model.contextTarget    = .subscription(sub)
@@ -1479,6 +1487,7 @@ private struct RulesGroupRow: View {
             Label("Rules", systemImage: "line.3.horizontal.decrease.circle")
                 .foregroundStyle(.secondary)
                 .tag(SidebarSelection.rulesGroup(sub))
+                .id(SidebarSelection.rulesGroup(sub))
                 .accessibilityLabel(accessibilityLabel)
                 .contextMenu {
                     Button("Add New Rule") {
@@ -1607,6 +1616,7 @@ private struct SidebarRuleRow: View {
             .font(.subheadline)
             .frame(height: 22)
             .tag(SidebarSelection.rule(rule, subscription))
+            .id(SidebarSelection.rule(rule, subscription))
             .contextMenu {
                 Button("Edit Filter") {
                     model.ruleOpTarget    = (rule, subscription)
