@@ -209,6 +209,10 @@ struct SidebarView: View {
     // Debounced copy actually used for filtering, so a fast typist doesn't
     // trigger a full-list re-filter/re-render on every character.
     @State private var debouncedSearchText = ""
+    // When the user taps a search result we stash the target here so the
+    // List can rebuild (search → tree mode) before the selection is
+    // re-applied, which causes NSOutlineView to scroll the item into view.
+    @State private var pendingRevealTarget: SidebarSelection? = nil
 
     // Queues sorted alphabetically.
     private var sortedQueues: [QueueItem] {
@@ -484,8 +488,31 @@ struct SidebarView: View {
             // normal hierarchical tree and dismiss the search.
             guard isSearching, let newSelection else { return }
             revealInSidebar(newSelection)
+            // Clear selection before dismissing search so the List rebuilds
+            // (via .id(isSearching)) without a pre-set selection. The pending
+            // target is re-applied by the task below after the tree is ready,
+            // which makes NSOutlineView scroll the item into view.
+            pendingRevealTarget = newSelection
+            selection = nil
             searchText = ""
             debouncedSearchText = ""
+        }
+        // Re-apply the selection that was stashed during search dismissal.
+        // The task is cancelled and restarted whenever pendingRevealTarget
+        // changes, so a quick second tap simply replaces the prior scroll.
+        .task(id: pendingRevealTarget) {
+            guard let target = pendingRevealTarget, !isSearching else { return }
+            // Allow a couple of run-loop cycles for SwiftUI to rebuild the
+            // List with all disclosure groups already expanded before we
+            // change the selection — NSOutlineView will then scroll the row
+            // into view with its built-in smooth animation.
+            try? await Task.sleep(nanoseconds: 100_000_000) // ~100 ms
+            // Bail out if the user started a new search during the wait.
+            guard !Task.isCancelled, !isSearching, pendingRevealTarget == target else { return }
+            withAnimation(.easeOut(duration: 0.2)) {
+                selection = target
+            }
+            pendingRevealTarget = nil
         }
     }
 
@@ -683,6 +710,7 @@ struct SidebarView: View {
                 model.hasLoadedAllForSearch = false
                 searchText = ""
                 debouncedSearchText = ""
+                pendingRevealTarget = nil
             }
         }
         .onChange(of: actionStore.pendingRefresh) { _, req in
