@@ -148,6 +148,7 @@
 		};
 		D56E9D3707B04D03A2FA3ADD /* Build Sidecar */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			inputPaths = (
 				"$(SRCROOT)/Sidecar/BusKit.Sidecar/BusKit.Sidecar.csproj",
 			);

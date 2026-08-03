@@ -1273,7 +1273,8 @@ private struct SubMessagesTab: View {
                     topicName: subscription.topicName,
                     subscriptionName: subscription.name,
                     isDLQ: isDLQ,
-                    sequenceNumber: msg.sequenceNumber
+                    sequenceNumber: msg.sequenceNumber,
+                    sessionId: msg.sessionId.isEmpty ? nil : msg.sessionId
                 )
                 messages.removeAll { $0.id == msg.id }
                 selectedMessageIDs.remove(msg.id)
