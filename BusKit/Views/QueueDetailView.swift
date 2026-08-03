@@ -1008,7 +1008,8 @@ private struct MessagesTab: View {
                 try await grpc.deleteMessage(
                     queueName: queue.name,
                     isDLQ: isDLQ,
-                    sequenceNumber: msg.sequenceNumber
+                    sequenceNumber: msg.sequenceNumber,
+                    sessionId: msg.sessionId.isEmpty ? nil : msg.sessionId
                 )
                 messages.removeAll { $0.sequenceNumber == msg.sequenceNumber }
                 selectedMessageIDs.remove(msg.id)

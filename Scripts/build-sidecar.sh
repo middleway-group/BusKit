@@ -16,10 +16,16 @@ STAGING_DIR="$ROOT/SidecarBin"
 # Allow callers (e.g. package.sh) to override the .NET runtime identifier and output dir.
 # Defaults to osx-arm64 to preserve the existing Xcode build-phase behaviour.
 TARGET_DIR="${SIDECAR_TARGET_RID:-osx-arm64}"
+# Build config priority:
+# 1) SIDECAR_BUILD_CONFIGURATION (explicit override)
+# 2) Xcode CONFIGURATION (Debug/Release when run from Xcode)
+# 3) Release (manual/script fallback)
+BUILD_CONFIGURATION="${SIDECAR_BUILD_CONFIGURATION:-${CONFIGURATION:-Release}}"
 
 echo "ROOT            = $ROOT"
 echo "SIDECAR_PROJECT = $SIDECAR_PROJECT"
 echo "TARGET_DIR      = $TARGET_DIR"
+echo "CONFIG          = $BUILD_CONFIGURATION"
 
 if [ ! -f "$SIDECAR_PROJECT" ]; then
   echo "❌ ERROR: csproj not found at $SIDECAR_PROJECT" >&2
@@ -44,7 +50,7 @@ rm -rf "$OUTPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
 
 dotnet publish "$SIDECAR_PROJECT" \
-  -c Release \
+  -c "$BUILD_CONFIGURATION" \
   -r "$TARGET_DIR" \
   --self-contained true \
   -o "$OUTPUT_DIR"
