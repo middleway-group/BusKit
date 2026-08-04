@@ -27,7 +27,14 @@ extension LoadState: Equatable where T: Equatable {
 /// topic's subscriptions appear stuck in error until a full refresh.
 private func isCancellationError(_ error: Error) -> Bool {
     if error is CancellationError { return true }
-    if let rpcError = error as? RPCError, rpcError.code == .cancelled { return true }
+    if let rpcError = error as? RPCError {
+        if rpcError.code == .cancelled { return true }
+        // grpc-swift's client stream executor wraps a locally-thrown
+        // CancellationError (Task cancellation) as an `.unknown`-coded
+        // RPCError with the original error as `cause`, rather than surfacing
+        // it as `.cancelled` — see ClientStreamExecutor._waitForFirstResponsePart.
+        if rpcError.cause is CancellationError { return true }
+    }
     return false
 }
 
@@ -88,6 +95,10 @@ private final class SidebarModel {
     // fraction since purgeMessages() only resolves once fully complete.
     var purgeInitialCount  : Int64 = 0
     var purgeCurrentCount  : Int64 = 0
+    // Tracks the in-flight purge Task so the Cancel button can cancel it directly —
+    // there is no server-side cancel RPC, cancelling the underlying gRPC call is enough
+    // since the sidecar's purge loop already checks ServerCallContext.CancellationToken.
+    var purgeTask: Task<Void, Never>? = nil
 
     // Rule operation state
     var ruleOpTarget: (rule: RuleItem, sub: SubscriptionItem)? = nil
@@ -508,7 +519,7 @@ struct SidebarView: View {
             model.purgeIsDLQ ? "Purge Deadletter Messages" : "Purge Messages",
             isPresented: $model.showPurgeAlert
         ) {
-            Button("Purge All", role: .destructive) { Task { await performPurge() } }
+            Button("Purge All", role: .destructive) { model.purgeTask = Task { await performPurge() } }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text(purgeAlertMessage)
@@ -526,7 +537,9 @@ struct SidebarView: View {
             ProgressPopupView(
                 messageProgress: purgeProgressMessage,
                 isCircular: false,
-                progress: purgeProgressFraction)
+                progress: purgeProgressFraction,
+                cancelAction: { Task { await cancelPurge() } }
+            )
         }
         // ── Edit Rule sheet ───────────────────────────────────────
         .sheet(isPresented: $model.showEditRuleSheet) {
@@ -843,6 +856,14 @@ struct SidebarView: View {
         actionStore.receive(entityKey: key, isDLQ: model.receiveIsDLQ, count: Int32(model.receiveCount))
     }
 
+    private func cancelPurge() async {
+        // Cancelling the Task cancels the underlying gRPC call (grpc-swift propagates
+        // structured-concurrency cancellation), which the sidecar's purge loop observes
+        // via ServerCallContext.CancellationToken and stops on. There is no separate
+        // cancel RPC — the in-flight call is the only thing that needs stopping.
+        model.purgeTask?.cancel()
+    }
+
     private func performPurge() async {
         guard let target = model.contextTarget else { return }
         let isDLQ = model.purgeIsDLQ
@@ -856,7 +877,10 @@ struct SidebarView: View {
         }
         model.purgeCurrentCount = model.purgeInitialCount
         model.isPurging = true
-        defer { model.isPurging = false }
+        defer {
+            model.isPurging = false
+            model.purgeTask = nil
+        }
         let pollTask = Task { await pollPurgeProgress(target: target, isDLQ: isDLQ) }
         defer { pollTask.cancel() }
         do {
@@ -879,8 +903,20 @@ struct SidebarView: View {
             model.purgeResultTitle   = "Purge Complete"
             model.purgeResultMessage = "Purged \(count) message\(count == 1 ? "" : "s")."
         } catch {
-            model.purgeResultTitle   = "Purge Failed"
-            model.purgeResultMessage = error.localizedDescription
+            if isCancellationError(error) {
+                // Some messages may already have been purged before cancellation landed,
+                // so refresh counts rather than assuming nothing happened.
+                switch target {
+                case .queue(let q):        await refreshQueueCounts(name: q.name)
+                case .subscription(let s):  await refreshSubscriptionCounts(topicName: s.topicName, subName: s.name)
+                default: break
+                }
+                model.purgeResultTitle   = "Purge Cancelled"
+                model.purgeResultMessage = "The purge operation was cancelled. Some messages may have already been deleted."
+            } else {
+                model.purgeResultTitle   = "Purge Failed"
+                model.purgeResultMessage = error.localizedDescription
+            }
         }
         model.showPurgeResult = true
     }

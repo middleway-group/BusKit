@@ -6,15 +6,17 @@ public struct ProgressPopupView: View {
     let messageProgress: String
     let progress: Double?
     let isCircular: Bool
+    let cancelAction: (() -> Void)?
 
     /// - Parameters:
     ///   - messageProgress: Message to display below the progress indicator.
     ///   - isCircular: Format of the progress indicator, true circular, false linear.
     ///   - progress: Progress value between 0.0 and 1.0, or nil for indeterminate progress.
-    public init(messageProgress: String, isCircular: Bool = true, progress: Double? = nil) {
+    public init(messageProgress: String, isCircular: Bool = true, progress: Double? = nil, cancelAction: (() -> Void)? = nil) {
         self.messageProgress = messageProgress
         self.isCircular = isCircular
         self.progress = progress
+        self.cancelAction = cancelAction
     }
 
     public var body: some View {
@@ -24,6 +26,11 @@ public struct ProgressPopupView: View {
             Text(messageProgress)
                 .font(.callout)
                 .foregroundStyle(.secondary)
+            Button("Cancel") {
+                cancelAction?()
+            }
+            .disabled(cancelAction == nil)
+            
         }
         .padding(32)
         .frame(width: 260)
