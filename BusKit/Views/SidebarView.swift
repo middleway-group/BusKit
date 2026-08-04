@@ -1502,9 +1502,16 @@ private struct RulesGroupRow: View {
                         .disabled(isLoading)
                 }
         }
+        .onAppear {
+            if isExpanded, fetchTask == nil {
+                if model.rules[ruleKey] == nil { startFetch() }
+                else if case .loading = model.rules[ruleKey] { startFetch() }
+            }
+        }
         .onChange(of: isExpanded) { _, expanded in
             if expanded {
                 if model.rules[ruleKey] == nil { startFetch() }
+                else if case .loading = model.rules[ruleKey], fetchTask == nil { startFetch() }
             } else {
                 fetchTask?.cancel()
                 fetchTask = nil
