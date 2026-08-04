@@ -1289,10 +1289,18 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
             int count = 0;
             while (!context.CancellationToken.IsCancellationRequested)
             {
-                var batch = await receiver.ReceiveMessagesAsync(100, TimeSpan.FromSeconds(2),
-                    context.CancellationToken);
-                if (batch.Count == 0) break;
-                count += batch.Count;
+                try
+                {
+                    var batch = await receiver.ReceiveMessagesAsync(100, TimeSpan.FromSeconds(2), context.CancellationToken);
+                    if (batch.Count == 0) break;
+                    count += batch.Count;
+                } 
+                catch(TaskCanceledException)
+                {
+                    // Cancel requested from the user, stopping the purge operation
+                    await receiver.CloseAsync();
+                    break;
+                }
             }
             return new PurgeMessagesReply { PurgedCount = count };
         }
