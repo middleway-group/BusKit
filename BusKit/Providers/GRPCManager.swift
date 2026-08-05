@@ -886,7 +886,8 @@ final class GRPCManager {
                        topicName: String? = nil,
                        subscriptionName: String? = nil,
                        isDLQ: Bool = false,
-                       sequenceNumber: Int64) async throws {
+                       sequenceNumber: Int64,
+                       sessionId: String? = nil) async throws {
         guard let buskit else { throw GRPCManagerError.notConnected }
         var req = Buskit_DeleteMessageRequest()
         req.queueName = queueName ?? ""
@@ -894,6 +895,7 @@ final class GRPCManager {
         req.subscriptionName = subscriptionName ?? ""
         req.deadLetter = isDLQ
         req.sequenceNumber = sequenceNumber
+        req.sessionID = sessionId ?? ""
         let reply = try await buskit.deleteMessage(req)
         if !reply.success {
             throw GRPCManagerError.operationFailed(reply.error)
