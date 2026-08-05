@@ -1271,6 +1271,8 @@ public nonisolated struct Buskit_DeleteMessageRequest: Sendable {
 
   public var sequenceNumber: Int64 = 0
 
+  public var sessionID: String = String()
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -3988,7 +3990,7 @@ nonisolated extension Buskit_PurgeMessagesReply: SwiftProtobuf.Message, SwiftPro
 
 nonisolated extension Buskit_DeleteMessageRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".DeleteMessageRequest"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}queue_name\0\u{3}topic_name\0\u{3}subscription_name\0\u{3}dead_letter\0\u{3}sequence_number\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}queue_name\0\u{3}topic_name\0\u{3}subscription_name\0\u{3}dead_letter\0\u{3}sequence_number\0\u{3}session_id\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -4001,6 +4003,7 @@ nonisolated extension Buskit_DeleteMessageRequest: SwiftProtobuf.Message, SwiftP
       case 3: try { try decoder.decodeSingularStringField(value: &self.subscriptionName) }()
       case 4: try { try decoder.decodeSingularBoolField(value: &self.deadLetter) }()
       case 5: try { try decoder.decodeSingularInt64Field(value: &self.sequenceNumber) }()
+      case 6: try { try decoder.decodeSingularStringField(value: &self.sessionID) }()
       default: break
       }
     }
@@ -4022,6 +4025,9 @@ nonisolated extension Buskit_DeleteMessageRequest: SwiftProtobuf.Message, SwiftP
     if self.sequenceNumber != 0 {
       try visitor.visitSingularInt64Field(value: self.sequenceNumber, fieldNumber: 5)
     }
+    if !self.sessionID.isEmpty {
+      try visitor.visitSingularStringField(value: self.sessionID, fieldNumber: 6)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -4031,6 +4037,7 @@ nonisolated extension Buskit_DeleteMessageRequest: SwiftProtobuf.Message, SwiftP
     if lhs.subscriptionName != rhs.subscriptionName {return false}
     if lhs.deadLetter != rhs.deadLetter {return false}
     if lhs.sequenceNumber != rhs.sequenceNumber {return false}
+    if lhs.sessionID != rhs.sessionID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

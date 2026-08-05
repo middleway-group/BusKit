@@ -1266,6 +1266,14 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         var isSubscription = !string.IsNullOrEmpty(request.TopicName)
                           && !string.IsNullOrEmpty(request.SubscriptionName);
 
+        // The dead-letter sub-queue is never session-aware, even for a session-enabled
+        // queue/subscription, so only check/purge sessions for the main entity.
+        var requiresSession = !request.DeadLetter
+            && await IsSessionEnabledAsync(isSubscription, request.QueueName, request.TopicName, request.SubscriptionName);
+
+        if (requiresSession)
+            return await PurgeSessionEnabledEntity(_client, request, isSubscription, context);
+
         var options = new ServiceBusReceiverOptions
         {
             ReceiveMode = ServiceBusReceiveMode.ReceiveAndDelete,
@@ -1281,13 +1289,79 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
             int count = 0;
             while (!context.CancellationToken.IsCancellationRequested)
             {
-                var batch = await receiver.ReceiveMessagesAsync(100, TimeSpan.FromSeconds(2),
-                    context.CancellationToken);
-                if (batch.Count == 0) break;
-                count += batch.Count;
+                try
+                {
+                    var batch = await receiver.ReceiveMessagesAsync(100, TimeSpan.FromSeconds(2), context.CancellationToken);
+                    if (batch.Count == 0) break;
+                    count += batch.Count;
+                } 
+                catch(TaskCanceledException)
+                {
+                    // Cancel requested from the user, stopping the purge operation
+                    await receiver.CloseAsync();
+                    break;
+                }
             }
             return new PurgeMessagesReply { PurgedCount = count };
         }
+    }
+
+    private async Task<bool> IsSessionEnabledAsync(
+        bool isSubscription, string queueName, string topicName, string subscriptionName)
+    {
+        if (_adminClient == null) return false;
+
+        try
+        {
+            return isSubscription
+                ? (await _adminClient.GetSubscriptionAsync(topicName, subscriptionName)).Value.RequiresSession
+                : (await _adminClient.GetQueueAsync(queueName)).Value.RequiresSession;
+        }
+        catch (Exception)
+        {
+            // Entity metadata could not be retrieved; fall back to a plain receiver.
+            return false;
+        }
+    }
+
+    // Drains every session of a session-enabled queue/subscription, one session at a time,
+    // until no more sessions with pending messages are available.
+    private static async Task<PurgeMessagesReply> PurgeSessionEnabledEntity(
+        ServiceBusClient client, PurgeMessagesRequest request, bool isSubscription, ServerCallContext context)
+    {
+        var sessionOptions = new ServiceBusSessionReceiverOptions
+        {
+            ReceiveMode = ServiceBusReceiveMode.ReceiveAndDelete
+        };
+
+        int count = 0;
+        while (!context.CancellationToken.IsCancellationRequested)
+        {
+            ServiceBusSessionReceiver sessionReceiver;
+            try
+            {
+                sessionReceiver = isSubscription
+                    ? await client.AcceptNextSessionAsync(request.TopicName, request.SubscriptionName, sessionOptions, context.CancellationToken)
+                    : await client.AcceptNextSessionAsync(request.QueueName, sessionOptions, context.CancellationToken);
+            }
+            catch (ServiceBusException ex) when (ex.Reason == ServiceBusFailureReason.ServiceTimeout)
+            {
+                break; // No more sessions with pending messages.
+            }
+
+            await using (sessionReceiver)
+            {
+                while (true)
+                {
+                    var batch = await sessionReceiver.ReceiveMessagesAsync(1000, TimeSpan.FromSeconds(2),
+                        context.CancellationToken);
+                    if (batch.Count == 0) break;
+                    count += batch.Count;
+                }
+            }
+        }
+
+        return new PurgeMessagesReply { PurgedCount = count };
     }
 
     // ── Send Message ─────────────────────────────────────
@@ -1384,15 +1458,41 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         var isSubscription = !string.IsNullOrEmpty(request.TopicName)
                           && !string.IsNullOrEmpty(request.SubscriptionName);
 
-        var options = new ServiceBusReceiverOptions
-        {
-            ReceiveMode = ServiceBusReceiveMode.PeekLock,
-            SubQueue = request.DeadLetter ? SubQueue.DeadLetter : SubQueue.None
-        };
+        // The dead-letter sub-queue is never session-aware, even for a session-enabled
+        // queue/subscription, so only use a session receiver for the main entity.
+        var useSessionReceiver = !request.DeadLetter && !string.IsNullOrEmpty(request.SessionId);
 
-        var receiver = isSubscription
-            ? _client.CreateReceiver(request.TopicName, request.SubscriptionName, options)
-            : _client.CreateReceiver(request.QueueName, options);
+        ServiceBusReceiver receiver;
+        try
+        {
+            if (useSessionReceiver)
+            {
+                var sessionOptions = new ServiceBusSessionReceiverOptions
+                {
+                    ReceiveMode = ServiceBusReceiveMode.PeekLock
+                };
+
+                receiver = isSubscription
+                    ? await _client.AcceptSessionAsync(request.TopicName, request.SubscriptionName, request.SessionId, sessionOptions, context.CancellationToken)
+                    : await _client.AcceptSessionAsync(request.QueueName, request.SessionId, sessionOptions, context.CancellationToken);
+            }
+            else
+            {
+                var options = new ServiceBusReceiverOptions
+                {
+                    ReceiveMode = ServiceBusReceiveMode.PeekLock,
+                    SubQueue = request.DeadLetter ? SubQueue.DeadLetter : SubQueue.None
+                };
+
+                receiver = isSubscription
+                    ? _client.CreateReceiver(request.TopicName, request.SubscriptionName, options)
+                    : _client.CreateReceiver(request.QueueName, options);
+            }
+        }
+        catch (ServiceBusException ex)
+        {
+            return new DeleteMessageReply { Success = false, Error = ex.Message };
+        }
 
         await using (receiver)
         {

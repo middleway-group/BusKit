@@ -531,6 +531,7 @@ message DeleteMessageRequest {
   string subscription_name = 3;
   bool dead_letter = 4;
   int64 sequence_number = 5;
+  string session_id = 6;
 }
 
 message DeleteMessageReply {
