@@ -34,6 +34,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         NSApp.terminate(nil)
     }
 
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        updaterController.updater.checkForUpdatesInBackground()
+    }
+
     @objc func checkForUpdates() {
         updaterController.checkForUpdates(nil)
     }
