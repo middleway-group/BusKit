@@ -8,6 +8,7 @@ import UniformTypeIdentifiers
 struct QueueDetailView: View {
     @Environment(GRPCManager.self) var grpc
     @Environment(EntityActionStore.self) var actionStore
+    @Environment(AppStatusModel.self) var appStatus
     let queue: QueueItem
 
     @State private var selectedTab = 0
@@ -56,6 +57,12 @@ struct QueueDetailView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle(queue.name)
+        .onAppear {
+            if selectedTab == 0 { appStatus.clearMessageCount() }
+        }
+        .onChange(of: selectedTab) { _, newTab in
+            if newTab == 0 { appStatus.clearMessageCount() }
+        }
         .onChange(of: actionStore.pendingAction) { _, action in
             guard let action, action.entityKey == EntityActionStore.queueKey(queue.name) else { return }
             if grpc.rbacAccessLevel.hasDataAccess {
@@ -901,9 +908,11 @@ private struct MessagesTab: View {
                                                    maxCount: requestedCount)
             appStatus.lastRefreshTime   = Date()
             appStatus.visibleMessageCount = messages.count
+            appStatus.totalMessageCount = isDLQ ? queue.deadLetterCount : queue.messageCount
         } catch {
             messages = []
             loadError = error.localizedDescription
+            appStatus.clearMessageCount()
         }
     }
 

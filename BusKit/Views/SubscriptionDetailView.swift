@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 struct SubscriptionDetailView: View {
     @Environment(GRPCManager.self) var grpc
     @Environment(EntityActionStore.self) var actionStore
+    @Environment(AppStatusModel.self) var appStatus
     let subscription: SubscriptionItem
 
     @State private var selectedTab = 0
@@ -58,6 +59,12 @@ struct SubscriptionDetailView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle("\(subscription.topicName) / \(subscription.name)")
+        .onAppear {
+            if selectedTab < 2 { appStatus.clearMessageCount() }
+        }
+        .onChange(of: selectedTab) { _, newTab in
+            if newTab < 2 { appStatus.clearMessageCount() }
+        }
         .onChange(of: actionStore.pendingAction) { _, action in
             guard let action, action.entityKey == entityKey else { return }
             if grpc.rbacAccessLevel.hasDataAccess {
@@ -1165,9 +1172,11 @@ private struct SubMessagesTab: View {
                 maxCount: requestedCount)
             appStatus.lastRefreshTime    = Date()
             appStatus.visibleMessageCount = messages.count
+            appStatus.totalMessageCount = isDLQ ? subscription.deadLetterCount : subscription.activeMessageCount
         } catch {
             messages = []
             loadError = error.localizedDescription
+            appStatus.clearMessageCount()
         }
     }
 

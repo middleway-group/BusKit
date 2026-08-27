@@ -43,12 +43,12 @@ struct StatusBarView: View {
             }
 
             // ── Message count ───────────────────────────────────
-            if appStatus.visibleMessageCount > 0 {
+            if let messageCountStatusText = appStatus.messageCountStatusText {
                 HStack(spacing: 5) {
                     Image(systemName: "envelope")
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
-                    Text("\(appStatus.visibleMessageCount) message\(appStatus.visibleMessageCount == 1 ? "" : "s")")
+                    Text(messageCountStatusText)
                 }
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
