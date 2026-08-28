@@ -3,6 +3,14 @@
     <channel>
         <title>BusKit</title>
     <item>
+            <title>0.5.8</title>
+            <pubDate>Fri, 28 Aug 2026 13:43:14 +0000</pubDate>
+            <sparkle:version>508</sparkle:version>
+            <sparkle:shortVersionString>0.5.8</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.8/BusKit-0.5.8-arm64.dmg" sparkle:edSignature="e+c3bqg3C8/svvhp4HLkYREf3g+Ag+BE4swE+a5qixmooyFNdBkyhcVzQrg0iqp5qwRmfV/ljBRwzz/pJfA8Cg==" length="76715676" type="application/octet-stream"/>
+        </item>
+    <item>
             <title>0.5.7</title>
             <pubDate>Wed, 05 Aug 2026 09:38:27 +0000</pubDate>
             <sparkle:version>507</sparkle:version>
@@ -17,14 +25,6 @@
             <sparkle:shortVersionString>0.5.6</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.6/BusKit-0.5.6-arm64.dmg" sparkle:edSignature="ry3K3ObBwAGTNy6RD4N+PGVCqvelHBcI91LfAGrBdgx4ZmOHxNtS6eUHlR0+e9GHWLUjFdXwZB3hhxvyXY6xDg==" length="76223007" type="application/octet-stream"/>
-        </item>
-    <item>
-            <title>0.5.5</title>
-            <pubDate>Fri, 10 Jul 2026 12:11:27 +0000</pubDate>
-            <sparkle:version>505</sparkle:version>
-            <sparkle:shortVersionString>0.5.5</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.5/BusKit-0.5.5-arm64.dmg" sparkle:edSignature="z1E9K6vWjB+is1FNdn/J1B6rQo7EnKofk1bEQ5e/6weL+mtQ5d7dExxQa7thZeUME7A+yjKNe2lLhCTC2ZK4Dg==" length="76121003" type="application/octet-stream"/>
         </item>
         <item>
             <title>0.1.21</title>
