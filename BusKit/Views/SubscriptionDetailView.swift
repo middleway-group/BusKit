@@ -915,6 +915,8 @@ private struct SubMessagesTab: View {
     @State private var isLoadingMore = false
     @State private var loadError: String?
     @State private var currentMaxCount: Int32 = 0
+    @State private var loadMoreError: String?
+    @State private var allMessagesLoaded = false
     @State private var selectedMessageIDs: Set<UUID> = []
     @State private var showRepairSheet = false
     @State private var showBulkResubmitSheet = false
@@ -939,7 +941,7 @@ private struct SubMessagesTab: View {
     }
 
     private var hasMoreMessages: Bool {
-        Int64(messages.count) < totalCount
+        !allMessagesLoaded && Int64(messages.count) < totalCount
     }
 
     private var actionToolbar: some View {
@@ -1017,28 +1019,38 @@ private struct SubMessagesTab: View {
         Group {
             if hasMoreMessages {
                 Divider()
-                Button {
-                    Task { await loadMoreMessages() }
-                } label: {
-                    HStack {
-                        Spacer()
-                        if isLoadingMore {
-                            ProgressView()
-                                .controlSize(.small)
-                            Text("Loading…")
-                                .foregroundStyle(.secondary)
-                        } else {
-                            Image(systemName: "arrow.down.circle")
-                            Text("Load \(min(loadMoreBatchSize, Int32(totalCount - Int64(messages.count)))) More Messages…")
+                VStack(spacing: 4) {
+                    Button {
+                        Task { await loadMoreMessages() }
+                    } label: {
+                        HStack {
+                            Spacer()
+                            if isLoadingMore {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("Loading…")
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Image(systemName: "arrow.down.circle")
+                                Text("Load \(min(Int64(loadMoreBatchSize), max(0, totalCount - Int64(messages.count)))) More Messages…")
+                            }
+                            Spacer()
                         }
-                        Spacer()
+                        .contentShape(Rectangle())
                     }
-                    .font(.caption)
-                    .padding(.vertical, 6)
-                    .contentShape(Rectangle())
+                    .buttonStyle(.plain)
+                    .disabled(isLoadingMore)
+
+                    if let loadMoreError {
+                        Text(loadMoreError)
+                            .foregroundStyle(.red)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
                 }
-                .buttonStyle(.plain)
-                .disabled(isLoadingMore)
+                .font(.caption)
+                .padding(.vertical, 6)
                 .background(.bar)
             }
         }
@@ -1072,84 +1084,85 @@ private struct SubMessagesTab: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
                         VStack(spacing: 0) {
-                        Table(messages, selection: $selectedMessageIDs) {
-                            TableColumn("Message ID") { msg in
-                                Text(msg.messageId.isEmpty ? "—" : msg.messageId)
-                                    .font(.system(.caption, design: .monospaced))
-                                    .lineLimit(1)
-                            }
-                            .width(min: 120, ideal: 180)
-
-                            TableColumn("Sequence") { msg in
-                                Text(String(msg.sequenceNumber))
-                                    .font(.system(.caption, design: .monospaced))
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                            }
-                            .width(min: 60, ideal: 80)
-
-                            TableColumn("Subject") { msg in
-                                Text(msg.subject.isEmpty ? "—" : msg.subject)
-                                    .font(.system(.caption))
-                                    .lineLimit(1)
-                            }
-                            .width(min: 80, ideal: 120)
-
-                            TableColumn("Content Type") { msg in
-                                Text(msg.contentType.isEmpty ? "—" : msg.contentType)
-                                    .font(.system(.caption))
-                                    .lineLimit(1)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .width(min: 80, ideal: 120)
-
-                            TableColumn("Enqueued") { msg in
-                                Text(msg.enqueuedTime, style: .relative)
-                                    .font(.system(.caption, weight: .light))
-                                    .foregroundStyle(Color(nsColor: .systemGray))
-                                    .help(msg.enqueuedTime.formatted(
-                                        date: .complete, time: .complete))
-                            }
-                            .width(min: 90, ideal: 110)
-
-                            TableColumn("Deliveries") { msg in
-                                DeliveryBadge(count: msg.deliveryCount)
-                            }
-                            .width(65)
-                        }
-                        .contextMenu(forSelectionType: UUID.self) { ids in
-                            if isDLQ && !ids.isEmpty {
-                                Button(ids.count == 1
-                                       ? "Resubmit Selected Message"
-                                       : "Resubmit \(ids.count) Messages") {
-                                    selectedMessageIDs = ids
-                                    showBulkResubmitSheet = true
+                            Table(messages, selection: $selectedMessageIDs) {
+                                TableColumn("Message ID") { msg in
+                                    Text(msg.messageId.isEmpty ? "—" : msg.messageId)
+                                        .font(.system(.caption, design: .monospaced))
+                                        .lineLimit(1)
                                 }
-                                Divider()
-                            }
-                            if ids.count == 1, let id = ids.first {
-                                Button("Repair and Resubmit") {
-                                    selectedMessageIDs = [id]
-                                    showRepairSheet = true
+                                .width(min: 120, ideal: 180)
+
+                                TableColumn("Sequence") { msg in
+                                    Text(String(msg.sequenceNumber))
+                                        .font(.system(.caption, design: .monospaced))
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
                                 }
-                                Divider()
+                                .width(min: 60, ideal: 80)
+
+                                TableColumn("Subject") { msg in
+                                    Text(msg.subject.isEmpty ? "—" : msg.subject)
+                                        .font(.system(.caption))
+                                        .lineLimit(1)
+                                }
+                                .width(min: 80, ideal: 120)
+
+                                TableColumn("Content Type") { msg in
+                                    Text(msg.contentType.isEmpty ? "—" : msg.contentType)
+                                        .font(.system(.caption))
+                                        .lineLimit(1)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .width(min: 80, ideal: 120)
+
+                                TableColumn("Enqueued") { msg in
+                                    Text(msg.enqueuedTime, style: .relative)
+                                        .font(.system(.caption, weight: .light))
+                                        .foregroundStyle(Color(nsColor: .systemGray))
+                                        .help(msg.enqueuedTime.formatted(
+                                            date: .complete, time: .complete))
+                                }
+                                .width(min: 90, ideal: 110)
+
+                                TableColumn("Deliveries") { msg in
+                                    DeliveryBadge(count: msg.deliveryCount)
+                                }
+                                .width(65)
                             }
-                            if !ids.isEmpty {
-                                Button(ids.count == 1 ? "Save Message" : "Save \(ids.count) Messages") {
-                                    saveMessages(messages.filter { ids.contains($0.id) })
+                            .contextMenu(forSelectionType: UUID.self) { ids in
+                                if isDLQ && !ids.isEmpty {
+                                    Button(ids.count == 1
+                                           ? "Resubmit Selected Message"
+                                           : "Resubmit \(ids.count) Messages") {
+                                        selectedMessageIDs = ids
+                                        showBulkResubmitSheet = true
+                                    }
+                                    Divider()
+                                }
+                                if ids.count == 1, let id = ids.first {
+                                    Button("Repair and Resubmit") {
+                                        selectedMessageIDs = [id]
+                                        showRepairSheet = true
+                                    }
+                                    Divider()
+                                }
+                                if !ids.isEmpty {
+                                    Button(ids.count == 1 ? "Save Message" : "Save \(ids.count) Messages") {
+                                        saveMessages(messages.filter { ids.contains($0.id) })
+                                    }
+                                }
+                                if !ids.isEmpty {
+                                    Button(ids.count == 1
+                                           ? "Delete Message"
+                                           : "Delete \(ids.count) Messages",
+                                           role: .destructive) {
+                                        selectedMessageIDs = ids
+                                        showDeleteConfirm = true
+                                    }
                                 }
                             }
-                            if !ids.isEmpty {
-                                Button(ids.count == 1
-                                       ? "Delete Message"
-                                       : "Delete \(ids.count) Messages",
-                                       role: .destructive) {
-                                    selectedMessageIDs = ids
-                                    showDeleteConfirm = true
-                                }
-                            }
-                        }
-                        loadMoreRow
+                            .layoutPriority(1)
+                            loadMoreRow
                         }
                     }
                 }
@@ -1212,6 +1225,8 @@ private struct SubMessagesTab: View {
     private func loadMessages() async {
         isLoading = true
         loadError = nil
+        loadMoreError = nil
+        allMessagesLoaded = false
         defer { isLoading = false }
         do {
             messages = try await grpc.peekMessages(
@@ -1235,8 +1250,9 @@ private struct SubMessagesTab: View {
     private func loadMoreMessages() async {
         guard !isLoadingMore, !isLoading, hasMoreMessages else { return }
         isLoadingMore = true
+        loadMoreError = nil
         defer { isLoadingMore = false }
-        let newMaxCount = currentMaxCount + loadMoreBatchSize
+        let newMaxCount = Int32(min(Int64(max(currentMaxCount, requestedCount)) + Int64(loadMoreBatchSize), Int64(Int32.max)))
         do {
             let fetched = try await grpc.peekMessages(
                 topicName: subscription.topicName,
@@ -1248,8 +1264,13 @@ private struct SubMessagesTab: View {
             messages.append(contentsOf: newMessages)
             currentMaxCount = newMaxCount
             appStatus.visibleMessageCount = messages.count
+            // If the server had nothing new to offer despite requesting more,
+            // treat this batch as exhausted regardless of the (possibly stale) total count.
+            if newMessages.isEmpty {
+                allMessagesLoaded = true
+            }
         } catch {
-            loadError = error.localizedDescription
+            loadMoreError = error.localizedDescription
         }
     }
 
