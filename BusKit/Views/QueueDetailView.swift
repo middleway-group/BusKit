@@ -650,13 +650,18 @@ private struct MessagesTab: View {
 
     @State private var messages: [MessageItem] = []
     @State private var isLoading = false
+    @State private var isLoadingMore = false
     @State private var loadError: String?
+    @State private var currentMaxCount: Int32 = 0
     @State private var selectedMessageIDs: Set<UUID> = []
     @State private var showRepairSheet = false
     @State private var showBulkResubmitSheet = false
     @State private var bulkResubmitDidSubmit = false
     @State private var showDeleteConfirm = false
     @State private var isDeleting = false
+
+    /// Number of additional messages fetched each time "Load More" is triggered.
+    private let loadMoreBatchSize: Int32 = 50
 
     private var selectedMessage: MessageItem? {
         guard let id = selectedMessageIDs.first else { return nil }
@@ -665,6 +670,14 @@ private struct MessagesTab: View {
 
     private var selectedMessages: [MessageItem] {
         messages.filter { selectedMessageIDs.contains($0.id) }
+    }
+
+    private var totalCount: Int64 {
+        isDLQ ? queue.deadLetterCount : queue.messageCount
+    }
+
+    private var hasMoreMessages: Bool {
+        Int64(messages.count) < totalCount
     }
 
     private var actionToolbar: some View {
@@ -738,6 +751,39 @@ private struct MessagesTab: View {
         .background(.bar)
     }
 
+    /// Sentinel row shown below the table that lets the user fetch the next
+    /// batch of messages in place, without resetting scroll position or selection.
+    private var loadMoreRow: some View {
+        Group {
+            if hasMoreMessages {
+                Divider()
+                Button {
+                    Task { await loadMoreMessages() }
+                } label: {
+                    HStack {
+                        Spacer()
+                        if isLoadingMore {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Loading…")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Image(systemName: "arrow.down.circle")
+                            Text("Load \(min(loadMoreBatchSize, Int32(totalCount - Int64(messages.count)))) More Messages…")
+                        }
+                        Spacer()
+                    }
+                    .font(.caption)
+                    .padding(.vertical, 6)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(isLoadingMore)
+                .background(.bar)
+            }
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // ── Action toolbar ───────────────────────────────────
@@ -765,7 +811,8 @@ private struct MessagesTab: View {
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
-                        Table(messages, selection: $selectedMessageIDs) {
+                        VStack(spacing: 0) {
+                            Table(messages, selection: $selectedMessageIDs) {
                             TableColumn("Message ID") { msg in
                                 Text(msg.messageId.isEmpty ? "—" : msg.messageId)
                                     .font(.system(.caption, design: .monospaced))
@@ -843,6 +890,8 @@ private struct MessagesTab: View {
                                 }
                             }
                         }
+                        loadMoreRow
+                        }
                     }
                 }
                 .frame(minHeight: 162)
@@ -906,6 +955,7 @@ private struct MessagesTab: View {
             messages = try await grpc.peekMessages(queueName: queue.name,
                                                    isDLQ: isDLQ,
                                                    maxCount: requestedCount)
+            currentMaxCount = requestedCount
             appStatus.lastRefreshTime   = Date()
             appStatus.visibleMessageCount = messages.count
             appStatus.totalMessageCount = isDLQ ? queue.deadLetterCount : queue.messageCount
@@ -913,6 +963,27 @@ private struct MessagesTab: View {
             messages = []
             loadError = error.localizedDescription
             appStatus.clearMessageCount()
+        }
+    }
+
+    /// Fetches the next batch of messages and appends only the newly-seen
+    /// ones to the existing list, preserving scroll position and selection.
+    private func loadMoreMessages() async {
+        guard !isLoadingMore, !isLoading, hasMoreMessages else { return }
+        isLoadingMore = true
+        defer { isLoadingMore = false }
+        let newMaxCount = currentMaxCount + loadMoreBatchSize
+        do {
+            let fetched = try await grpc.peekMessages(queueName: queue.name,
+                                                      isDLQ: isDLQ,
+                                                      maxCount: newMaxCount)
+            let existingSequenceNumbers = Set(messages.map(\.sequenceNumber))
+            let newMessages = fetched.filter { !existingSequenceNumbers.contains($0.sequenceNumber) }
+            messages.append(contentsOf: newMessages)
+            currentMaxCount = newMaxCount
+            appStatus.visibleMessageCount = messages.count
+        } catch {
+            loadError = error.localizedDescription
         }
     }
 
