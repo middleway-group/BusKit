@@ -661,6 +661,7 @@ private struct MessagesTab: View {
     @State private var bulkResubmitDidSubmit = false
     @State private var showDeleteConfirm = false
     @State private var isDeleting = false
+    @State private var isLoadMoreHovering = false
 
     /// Number of additional messages fetched each time "Load More" is triggered.
     private let loadMoreBatchSize: Int32 = 50
@@ -755,43 +756,60 @@ private struct MessagesTab: View {
 
     /// Sentinel row shown below the table that lets the user fetch the next
     /// batch of messages in place, without resetting scroll position or selection.
+    ///
+    /// Styled deliberately unlike a table row (centered control, tinted
+    /// background, hover highlight) so it reads as an action rather than
+    /// selectable data at a glance.
     private var loadMoreRow: some View {
         Group {
             if hasMoreMessages {
-                Divider()
-                VStack(spacing: 4) {
-                    Button {
-                        Task { await loadMoreMessages() }
-                    } label: {
-                        HStack {
-                            Spacer()
-                            if isLoadingMore {
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text("Loading…")
-                                    .foregroundStyle(.secondary)
-                            } else {
-                                Image(systemName: "arrow.down.circle")
-                                Text("Load \(min(Int64(loadMoreBatchSize), max(0, totalCount - Int64(messages.count)))) More Messages…")
+                VStack(spacing: 0) {
+                    Divider()
+                    VStack(spacing: 4) {
+                        Button {
+                            Task { await loadMoreMessages() }
+                        } label: {
+                            HStack(spacing: 6) {
+                                if isLoadingMore {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                    Text("Loading…")
+                                        .foregroundStyle(.secondary)
+                                } else {
+                                    Image(systemName: "arrow.down.circle")
+                                    Text("Load \(min(Int64(loadMoreBatchSize), max(0, totalCount - Int64(messages.count)))) More Messages…")
+                                }
                             }
-                            Spacer()
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 5)
+                            .padding(.horizontal, 10)
+                            .contentShape(Rectangle())
                         }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(isLoadingMore)
+                        .buttonStyle(.plain)
+                        .disabled(isLoadingMore)
+                        .background(
+                            RoundedRectangle(cornerRadius: 5)
+                                .fill(isLoadMoreHovering && !isLoadingMore
+                                      ? Color.accentColor.opacity(0.15)
+                                      : Color.clear)
+                        )
+                        .onHover { hovering in
+                            isLoadMoreHovering = hovering
+                        }
 
-                    if let loadMoreError {
-                        Text(loadMoreError)
-                            .foregroundStyle(.red)
-                            .lineLimit(2)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
+                        if let loadMoreError {
+                            Text(loadMoreError)
+                                .foregroundStyle(.red)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
                     }
+                    .font(.caption)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 8)
                 }
-                .font(.caption)
-                .padding(.vertical, 6)
-                .background(.bar)
+                .background(Color(nsColor: .underPageBackgroundColor))
             }
         }
     }
