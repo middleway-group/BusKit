@@ -810,6 +810,7 @@ private struct MessagesTab: View {
                     .padding(.horizontal, 8)
                 }
                 .background(Color(nsColor: .underPageBackgroundColor))
+                .onDisappear { isLoadMoreHovering = false }
             }
         }
     }
