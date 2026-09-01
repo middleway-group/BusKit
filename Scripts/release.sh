@@ -129,6 +129,8 @@ DOWNLOAD_URL="https://github.com/middleway-group/BusKit/releases/download/${TAG}
 
 echo "   Signature: ${ED_SIG:0:20}…"
 
+RELEASE_NOTES_HTML=$(python3 "$ROOT/Scripts/render_release_notes.py" "$ROOT/RELEASE_NOTES.md")
+
 APPCAST_PATH="$ROOT/releases/appcast.xml" \
 VERSION="$VERSION" \
 BUILD="$BUILD" \
@@ -136,12 +138,34 @@ PUBDATE="$PUBDATE" \
 DOWNLOAD_URL="$DOWNLOAD_URL" \
 ED_SIG="$ED_SIG" \
 DMG_LEN="$DMG_LEN" \
+RELEASE_NOTES_HTML="$RELEASE_NOTES_HTML" \
 python3 "$ROOT/Scripts/update_appcast.py"
 
 # ── Step 6: Commit and push appcast ──────────────────────────────────────────
 echo ""
 echo "📝 Committing appcast…"
 git -C "$ROOT" add releases/appcast.xml
+
+# Reset RELEASE_NOTES.md to the placeholder for the next release.
+cat > "$ROOT/RELEASE_NOTES.md" <<'EOF'
+<!--
+Release notes for the NEXT release.
+
+Edit this file before running ./Scripts/release.sh to describe what's new.
+It's rendered into the Sparkle appcast <description> and shown to users in
+the "Software Update" dialog when an update is found.
+
+Supported syntax (minimal Markdown subset):
+  # Heading
+  - Bullet point
+  Plain paragraph text
+
+After a successful release, this file is reset to the placeholder below.
+-->
+- No notable changes.
+EOF
+git -C "$ROOT" add RELEASE_NOTES.md
+
 git -C "$ROOT" commit -m "chore: update appcast for $VERSION [skip ci]"
 git -C "$ROOT" push origin main
 

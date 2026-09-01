@@ -14,6 +14,11 @@ Required environment variables:
   DOWNLOAD_URL  URL to the release DMG asset
   ED_SIG        Sparkle EdDSA signature of the DMG
   DMG_LEN       Size in bytes of the DMG
+
+Optional environment variables:
+  RELEASE_NOTES_HTML  HTML fragment describing what's new in this release.
+                       Rendered by Sparkle's update alert as the item's
+                       <description>. If unset/empty, no description is added.
 """
 import os
 import re
@@ -25,13 +30,22 @@ pubdate = os.environ["PUBDATE"]
 download_url = os.environ["DOWNLOAD_URL"]
 ed_sig = os.environ["ED_SIG"]
 dmg_len = os.environ["DMG_LEN"]
+release_notes_html = os.environ.get("RELEASE_NOTES_HTML", "").strip()
+
+description_block = ""
+if release_notes_html:
+    # CDATA may not contain the literal sequence "]]>" — split it if present.
+    safe_html = release_notes_html.replace("]]>", "]]]]><![CDATA[>")
+    description_block = (
+        f"\n            <description><![CDATA[{safe_html}]]></description>"
+    )
 
 new_item = f"""    <item>
             <title>{version}</title>
             <pubDate>{pubdate}</pubDate>
             <sparkle:version>{build}</sparkle:version>
             <sparkle:shortVersionString>{version}</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>{description_block}
             <enclosure url="{download_url}" sparkle:edSignature="{ed_sig}" length="{dmg_len}" type="application/octet-stream"/>
         </item>"""
 
