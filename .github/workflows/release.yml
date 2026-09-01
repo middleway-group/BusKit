@@ -111,6 +111,8 @@ jobs:
           fi
           echo "✅ Signed: ${ED_SIG:0:20}…"
 
+          RELEASE_NOTES_HTML=$(python3 Scripts/render_release_notes.py RELEASE_NOTES.md)
+
           APPCAST_PATH="releases/appcast.xml" \
           VERSION="$VERSION" \
           BUILD="$BUILD" \
@@ -118,11 +120,32 @@ jobs:
           DOWNLOAD_URL="$URL" \
           ED_SIG="$ED_SIG" \
           DMG_LEN="$DMG_LEN" \
+          RELEASE_NOTES_HTML="$RELEASE_NOTES_HTML" \
           python3 Scripts/update_appcast.py
 
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add releases/appcast.xml
+
+          cat > RELEASE_NOTES.md <<'EOF'
+<!--
+Release notes for the NEXT release.
+
+Edit this file before running ./Scripts/release.sh to describe what's new.
+It's rendered into the Sparkle appcast <description> and shown to users in
+the "Software Update" dialog when an update is found.
+
+Supported syntax (minimal Markdown subset):
+  # Heading
+  - Bullet point
+  Plain paragraph text
+
+After a successful release, this file is reset to the placeholder below.
+-->
+- No notable changes.
+EOF
+          git add RELEASE_NOTES.md
+
           git commit -m "chore: update appcast for $VERSION [skip ci]"
           git push origin HEAD:main
           echo "✅ appcast published"
