@@ -86,7 +86,6 @@ struct ContentView: View {
                 showRbacDialog = false
                 shownRbacLevel = nil
                 appStatus.lastRefreshTime = nil
-                appStatus.clearMessageCount()
             }
         }
         .onChange(of: grpc.rbacAccessLevel) { _, newLevel in

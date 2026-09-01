@@ -2,8 +2,8 @@ import SwiftUI
 
 // MARK: - StatusBarView
 
-/// Native macOS-style bottom status bar showing connection state,
-/// last refresh time, and the count of currently-visible messages.
+/// Native macOS-style bottom status bar showing connection state
+/// and last refresh time.
 @available(macOS 15.0, *)
 struct StatusBarView: View {
     @Environment(GRPCManager.self) var grpc
@@ -40,19 +40,6 @@ struct StatusBarView: View {
                 .padding(.horizontal, 12)
 
                 statusDivider
-            }
-
-            // ── Message count ───────────────────────────────────
-            if let messageCountStatusText = appStatus.messageCountStatusText {
-                HStack(spacing: 5) {
-                    Image(systemName: "envelope")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.tertiary)
-                    Text(messageCountStatusText)
-                }
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 12)
             }
 
             Spacer()

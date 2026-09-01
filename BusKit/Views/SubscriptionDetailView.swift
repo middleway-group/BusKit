@@ -59,12 +59,6 @@ struct SubscriptionDetailView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle("\(subscription.topicName) / \(subscription.name)")
-        .onAppear {
-            if selectedTab < 2 { appStatus.clearMessageCount() }
-        }
-        .onChange(of: selectedTab) { _, newTab in
-            if newTab < 2 { appStatus.clearMessageCount() }
-        }
         .onChange(of: actionStore.pendingAction) { _, action in
             guard let action, action.entityKey == entityKey else { return }
             if grpc.rbacAccessLevel.hasDataAccess {
@@ -1014,47 +1008,65 @@ private struct SubMessagesTab: View {
         .background(.bar)
     }
 
-    /// Sentinel row shown below the table that lets the user fetch the next
-    /// batch of messages in place, without resetting scroll position or selection.
-    ///
-    /// Styled deliberately unlike a table row (centered control, tinted
-    /// background, hover highlight) so it reads as an action rather than
-    /// selectable data at a glance.
+    /// "X of Y messages loaded" text describing how many of the total
+    /// available messages are currently in the table.
+    private var messagesLoadedText: String {
+        let visibleCount = messages.count
+        let visibleStr = visibleCount.formatted()
+        if totalCount >= Int64(visibleCount) {
+            return "\(visibleStr) of \(totalCount.formatted()) message\(totalCount == 1 ? "" : "s") loaded"
+        }
+        return "\(visibleStr) message\(visibleCount == 1 ? "" : "s") loaded"
+    }
+
+    /// Row shown below the table that surfaces the "messages loaded" count on
+    /// the left and, when more messages are available, a "Load More" action
+    /// on the right that fetches the next batch in place, without resetting
+    /// scroll position or selection.
     private var loadMoreRow: some View {
         Group {
-            if hasMoreMessages {
+            if !messages.isEmpty {
                 VStack(spacing: 0) {
                     Divider()
                     VStack(spacing: 4) {
-                        Button {
-                            Task { await loadMoreMessages() }
-                        } label: {
-                            HStack(spacing: 6) {
-                                if isLoadingMore {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                    Text("Loading…")
-                                        .foregroundStyle(.secondary)
-                                } else {
-                                    Image(systemName: "arrow.down.circle")
-                                    Text("Load \(min(Int64(loadMoreBatchSize), max(0, totalCount - Int64(messages.count)))) More Messages…")
+                        HStack(spacing: 8) {
+                            Text(messagesLoadedText)
+                                .foregroundStyle(.secondary)
+
+                            Spacer(minLength: 8)
+
+                            if hasMoreMessages {
+                                Button {
+                                    Task { await loadMoreMessages() }
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        if isLoadingMore {
+                                            ProgressView()
+                                                .controlSize(.small)
+                                            Text("Loading…")
+                                                .foregroundStyle(.secondary)
+                                        } else {
+                                            Image(systemName: "arrow.down.circle")
+                                            Text("Load \(min(Int64(loadMoreBatchSize), max(0, totalCount - Int64(messages.count)))) More Messages…")
+                                        }
+                                    }
+                                    .padding(.vertical, 5)
+                                    .padding(.horizontal, 10)
+                                    .contentShape(Rectangle())
                                 }
+                                .buttonStyle(.plain)
+                                .disabled(isLoadingMore)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 5)
+                                        .fill(isLoadMoreHovering && !isLoadingMore
+                                              ? Color.accentColor.opacity(0.15)
+                                              : Color.clear)
+                                )
+                                .onHover { hovering in
+                                    isLoadMoreHovering = hovering
+                                }
+                                .fixedSize()
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 5)
-                            .padding(.horizontal, 10)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(isLoadingMore)
-                        .background(
-                            RoundedRectangle(cornerRadius: 5)
-                                .fill(isLoadMoreHovering && !isLoadingMore
-                                      ? Color.accentColor.opacity(0.15)
-                                      : Color.clear)
-                        )
-                        .onHover { hovering in
-                            isLoadMoreHovering = hovering
                         }
 
                         if let loadMoreError {
@@ -1062,6 +1074,7 @@ private struct SubMessagesTab: View {
                                 .foregroundStyle(.red)
                                 .lineLimit(2)
                                 .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity)
                                 .padding(.horizontal)
                         }
                     }
@@ -1255,12 +1268,9 @@ private struct SubMessagesTab: View {
                 maxCount: requestedCount)
             currentMaxCount = requestedCount
             appStatus.lastRefreshTime    = Date()
-            appStatus.visibleMessageCount = messages.count
-            appStatus.totalMessageCount = isDLQ ? subscription.deadLetterCount : subscription.activeMessageCount
         } catch {
             messages = []
             loadError = error.localizedDescription
-            appStatus.clearMessageCount()
         }
     }
 
@@ -1282,7 +1292,6 @@ private struct SubMessagesTab: View {
             let newMessages = fetched.filter { !existingSequenceNumbers.contains($0.sequenceNumber) }
             messages.append(contentsOf: newMessages)
             currentMaxCount = newMaxCount
-            appStatus.visibleMessageCount = messages.count
             // If the server had nothing new to offer despite requesting more,
             // treat this batch as exhausted regardless of the (possibly stale) total count.
             if newMessages.isEmpty {
