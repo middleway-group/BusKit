@@ -1287,12 +1287,25 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         await using (receiver)
         {
             int count = 0;
+            int consecutiveEmptyBatches = 0;
             while (!context.CancellationToken.IsCancellationRequested)
             {
                 try
                 {
                     var batch = await receiver.ReceiveMessagesAsync(100, TimeSpan.FromSeconds(2), context.CancellationToken);
-                    if (batch.Count == 0) break;
+                    if (batch.Count == 0)
+                    {
+                        // A single empty batch doesn't necessarily mean the entity is drained:
+                        // partitioned entities can transiently return zero messages from the
+                        // partition picked for this receive even though other partitions still
+                        // hold plenty of messages. Only stop once several consecutive attempts
+                        // come back empty.
+                        consecutiveEmptyBatches++;
+                        if (consecutiveEmptyBatches >= EmptyBatchesBeforeStop) break;
+                        continue;
+                    }
+
+                    consecutiveEmptyBatches = 0;
                     count += batch.Count;
                 } 
                 catch(TaskCanceledException)
@@ -1305,6 +1318,11 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
             return new PurgeMessagesReply { PurgedCount = count };
         }
     }
+
+    // Number of consecutive empty receive batches required before concluding an entity has
+    // been fully drained. Guards against partitioned entities transiently reporting no
+    // messages on a given partition while others still have messages pending.
+    private const int EmptyBatchesBeforeStop = 5;
 
     private async Task<bool> IsSessionEnabledAsync(
         bool isSubscription, string queueName, string topicName, string subscriptionName)
