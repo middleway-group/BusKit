@@ -3,6 +3,23 @@
     <channel>
         <title>BusKit</title>
     <item>
+            <title>0.5.9</title>
+            <pubDate>Wed, 02 Sep 2026 07:30:11 +0000</pubDate>
+            <sparkle:version>509</sparkle:version>
+            <sparkle:shortVersionString>0.5.9</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h2>Bug Fixes</h2>
+<ul>
+<li>Fixed: Purging high volume of messages sometimes silently failed</li>
+</ul>
+<h2>Features</h2>
+<ul>
+<li>Improves discoverability of the messages loaded count by placing it near the content it describes.</li>
+<li>Improved visual balance by moving the load-more action to the right, following common UI patterns (info on the left, action on the right).</li>
+</ul>]]></description>
+            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.9/BusKit-0.5.9-arm64.dmg" sparkle:edSignature="5OWF9GHKChxOnR3Lg/5qIIS7819WR8A3eh7t+l7r/MkNsbZXqiqy73ekYm2j2uv7M5pu/5+f/shfBgAIFLQXCA==" length="76716633" type="application/octet-stream"/>
+        </item>
+    <item>
             <title>0.5.8</title>
             <pubDate>Fri, 28 Aug 2026 13:43:14 +0000</pubDate>
             <sparkle:version>508</sparkle:version>
@@ -17,14 +34,6 @@
             <sparkle:shortVersionString>0.5.7</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.7/BusKit-0.5.7-arm64.dmg" sparkle:edSignature="4oAMA7psdrbi3DrVS4TbNsccH1vkdOIr0X8wOeY0xCj8Vf8o/ld2dNWw1EtM8mk3QkMtYKT8vGdC4mpT6xpGBA==" length="76222982" type="application/octet-stream"/>
-        </item>
-    <item>
-            <title>0.5.6</title>
-            <pubDate>Wed, 05 Aug 2026 06:53:41 +0000</pubDate>
-            <sparkle:version>506</sparkle:version>
-            <sparkle:shortVersionString>0.5.6</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.6/BusKit-0.5.6-arm64.dmg" sparkle:edSignature="ry3K3ObBwAGTNy6RD4N+PGVCqvelHBcI91LfAGrBdgx4ZmOHxNtS6eUHlR0+e9GHWLUjFdXwZB3hhxvyXY6xDg==" length="76223007" type="application/octet-stream"/>
         </item>
         <item>
             <title>0.1.21</title>
