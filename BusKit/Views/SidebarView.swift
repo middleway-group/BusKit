@@ -692,8 +692,9 @@ struct SidebarView: View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
-            TextField("Search queues, topics, subscriptions, rules", text: $searchText)
+            TextField("Search", text: $searchText)
                 .textFieldStyle(.plain)
+                .help("Search queues, topics, subscriptions, rules")
             if !searchText.isEmpty {
                 Button {
                     searchText = ""
