@@ -67,6 +67,31 @@ private struct MessageCountBadge: View {
     }
 }
 
+private struct MessageFilterToggleButton: View {
+    @Binding var isOn: Bool
+    let color: Color
+    let accessibilityLabel: String
+    let helpText: String
+
+    var body: some View {
+        Button {
+            isOn.toggle()
+        } label: {
+            Circle()
+                .fill(isOn ? color : color.opacity(0.12))
+                .overlay {
+                    Circle()
+                        .stroke(color.opacity(isOn ? 1.0 : 0.55), lineWidth: 1.5)
+                }
+                .frame(width: 14, height: 14)
+        }
+        .buttonStyle(.plain)
+        .help(helpText)
+        .accessibilityLabel(Text(accessibilityLabel))
+        .accessibilityValue(Text(isOn ? "On" : "Off"))
+    }
+}
+
 // MARK: - Sidebar data model
 
 @available(macOS 15.0, *)
@@ -161,6 +186,8 @@ private final class SidebarModel {
     // Search: once true, subscriptions/rules for every topic have been
     // fetched so search can match against their names too.
     var hasLoadedAllForSearch = false
+    // Count filters only need subscriptions, not rules.
+    var hasLoadedAllSubscriptionsForFilters = false
 }
 
 // MARK: - Receive Count Dialog
@@ -221,7 +248,7 @@ struct SidebarView: View {
     @State private var topicsExpanded    = true
 
     // ── Search ────────────────────────────────────────────────────
-    // Raw text bound to the native search field (updates every keystroke).
+    // Raw text bound to the search field (updates every keystroke).
     @State private var searchText = ""
     // Debounced copy actually used for filtering, so a fast typist doesn't
     // trigger a full-list re-filter/re-render on every character.
@@ -230,6 +257,8 @@ struct SidebarView: View {
     // List can rebuild (search → tree mode) before the selection is
     // re-applied, which causes NSOutlineView to scroll the item into view.
     @State private var pendingRevealTarget: SidebarSelection? = nil
+    @AppStorage("sidebarFilterHasMessages") private var filterHasMessages = false
+    @AppStorage("sidebarFilterHasDeadletters") private var filterHasDeadletters = false
 
     // Queues sorted alphabetically.
     private var sortedQueues: [QueueItem] {
@@ -241,6 +270,54 @@ struct SidebarView: View {
     }
 
     private var isSearching: Bool { !trimmedSearchQuery.isEmpty }
+    private var hasCountFilter: Bool { filterHasMessages || filterHasDeadletters }
+    private var filterTaskID: String {
+        "\(searchText)|\(filterHasMessages)|\(filterHasDeadletters)"
+    }
+
+    private var filteredQueues: [QueueItem] {
+        sortedQueues.filter(queueMatchesFilters)
+    }
+
+    private var filteredTopics: [TopicItem] {
+        model.topics.filter { !filteredSubscriptions(for: $0).isEmpty }
+    }
+
+    private var isPreparingFilteredTopics: Bool {
+        hasCountFilter && !model.hasLoadedAllSubscriptionsForFilters && !model.topics.isEmpty
+    }
+
+    private var hasFilteredResults: Bool {
+        !filteredQueues.isEmpty || !filteredTopics.isEmpty
+    }
+
+    private func textMatches(_ values: String...) -> Bool {
+        let query = trimmedSearchQuery.lowercased()
+        guard !query.isEmpty else { return true }
+        return values.contains { $0.lowercased().contains(query) }
+    }
+
+    private func countMatches(active: Int64, deadLetter: Int64) -> Bool {
+        guard hasCountFilter else { return true }
+        return (filterHasMessages && active > 0)
+            || (filterHasDeadletters && deadLetter > 0)
+    }
+
+    private func queueMatchesFilters(_ queue: QueueItem) -> Bool {
+        textMatches(queue.name)
+            && countMatches(active: queue.messageCount, deadLetter: queue.deadLetterCount)
+    }
+
+    private func subscriptionMatchesFilters(_ subscription: SubscriptionItem) -> Bool {
+        textMatches(subscription.topicName, subscription.name)
+            && countMatches(active: subscription.activeMessageCount,
+                            deadLetter: subscription.deadLetterCount)
+    }
+
+    private func filteredSubscriptions(for topic: TopicItem) -> [SubscriptionItem] {
+        guard case .loaded(let subs) = model.subscriptions[topic.name] else { return [] }
+        return subs.filter(subscriptionMatchesFilters)
+    }
 
     // Flat list of every match across queues, topics, subscriptions and
     // rules. Only recomputed when the debounced query or underlying data
@@ -378,6 +455,70 @@ struct SidebarView: View {
         }
     }
 
+    @ViewBuilder
+    private var filteredContent: some View {
+        if model.isLoading && model.queues.isEmpty && model.topics.isEmpty {
+            HStack {
+                ProgressView().controlSize(.small)
+                Text("Loading…").foregroundStyle(.secondary)
+            }
+        } else if isPreparingFilteredTopics && !hasFilteredResults {
+            HStack {
+                ProgressView().controlSize(.small)
+                Text("Filtering…").foregroundStyle(.secondary)
+            }
+        } else if !hasFilteredResults {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("No queues or subscriptions match the current filters.")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
+                Button("Clear filters") {
+                    clearFilters()
+                }
+                .font(.caption)
+            }
+        } else {
+            DisclosureGroup(isExpanded: $namespaceExpanded) {
+                if !filteredQueues.isEmpty {
+                    DisclosureGroup(isExpanded: $queuesExpanded) {
+                        ForEach(filteredQueues) { queue in
+                            HStack {
+                                Label(queue.name, systemImage: "tray")
+                                Spacer()
+                                MessageCountBadge(
+                                    active: queue.messageCount,
+                                    deadLetter: queue.deadLetterCount)
+                            }
+                            .frame(height: 22)
+                            .opacity(queue.status == "Active" || queue.status.isEmpty ? 1.0 : 0.4)
+                            .tag(SidebarSelection.queue(queue))
+                            .id(SidebarSelection.queue(queue))
+                            .contextMenu {
+                                queueContextMenu(for: queue)
+                            }
+                        }
+                    } label: {
+                        Label("Queues", systemImage: "tray.full")
+                    }
+                }
+
+                if !filteredTopics.isEmpty {
+                    DisclosureGroup(isExpanded: $topicsExpanded) {
+                        ForEach(filteredTopics) { topic in
+                            TopicRow(topic: topic, model: model, grpc: grpc,
+                                     subscriptionFilter: subscriptionMatchesFilters)
+                        }
+                    } label: {
+                        Label("Topics", systemImage: "bubble.left.and.bubble.right")
+                    }
+                }
+            } label: {
+                Label(grpc.namespaceName ?? "Service Bus", systemImage: "server.rack")
+                    .fontWeight(.semibold)
+            }
+        }
+    }
+
     // MARK: - Search results content
 
     /// Grouped like a native macOS "Search" navigator (Xcode/Mail-style):
@@ -477,7 +618,10 @@ struct SidebarView: View {
     private var sidebarList: some View {
         ScrollViewReader { proxy in
             List(selection: $selection) {
-                if isSearching {
+                if hasCountFilter
+                    && (grpc.connectionState == .connected || !model.queues.isEmpty || !model.topics.isEmpty) {
+                    filteredContent
+                } else if isSearching {
                     searchResultsContent
                 } else {
                     normalContent
@@ -489,27 +633,32 @@ struct SidebarView: View {
             // across two structurally very different content trees. Without
             // this, stale row text (e.g. "Topics") can be left behind visually
             // after searching, collapsing, or expanding.
-            .id(isSearching)
-            .searchable(text: $searchText, placement: .sidebar,
-                        prompt: "Search queues, topics, subscriptions, rules")
-            .task(id: searchText) {
+            .id("\(isSearching)-\(hasCountFilter)")
+            .task(id: filterTaskID) {
                 // Debounce: wait for a short pause in typing before committing
                 // the query used for filtering. Cancelled automatically by
                 // SwiftUI if searchText changes again before it completes.
                 guard !searchText.isEmpty else {
                     debouncedSearchText = ""
+                    if hasCountFilter {
+                        await ensureSubscriptionsLoadedForFilters()
+                    }
                     return
                 }
                 try? await Task.sleep(nanoseconds: 200_000_000)
                 guard !Task.isCancelled else { return }
                 debouncedSearchText = searchText
-                await ensureSearchDataLoaded()
+                if hasCountFilter {
+                    await ensureSubscriptionsLoadedForFilters()
+                } else {
+                    await ensureSearchDataLoaded()
+                }
             }
             .onChange(of: selection) { _, newSelection in
                 // A click on a search result row selects it via the List's
                 // native tag-selection; once that happens, reveal it in the
                 // normal hierarchical tree and dismiss the search.
-                guard isSearching, let newSelection else { return }
+                guard isSearching, !hasCountFilter, let newSelection else { return }
                 revealInSidebar(newSelection)
                 // Clear selection before dismissing search so the List rebuilds
                 // (via .id(isSearching)) without a pre-set selection. The pending
@@ -523,7 +672,7 @@ struct SidebarView: View {
             // The task is cancelled and restarted whenever pendingRevealTarget
             // changes, so a quick second tap simply replaces the prior scroll.
             .task(id: pendingRevealTarget) {
-                guard let target = pendingRevealTarget, !isSearching else { return }
+                guard let target = pendingRevealTarget, !isSearching, !hasCountFilter else { return }
                 // Allow a couple of run-loop cycles for SwiftUI to rebuild the
                 // List with all disclosure groups already expanded before we
                 // change the selection and explicitly scroll the row into view.
@@ -539,8 +688,48 @@ struct SidebarView: View {
         }
     }
 
+    private var searchAndFilterBar: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+            TextField("Search queues, topics, subscriptions, rules", text: $searchText)
+                .textFieldStyle(.plain)
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                    debouncedSearchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Clear search")
+                .accessibilityLabel("Clear search")
+            }
+            MessageFilterToggleButton(
+                isOn: $filterHasMessages,
+                color: .blue,
+                accessibilityLabel: "Filter: has messages",
+                helpText: "Filter: has messages")
+            MessageFilterToggleButton(
+                isOn: $filterHasDeadletters,
+                color: .red,
+                accessibilityLabel: "Filter: has deadletter messages",
+                helpText: "Filter: has deadletter messages")
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(Color.secondary.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.horizontal, 8)
+        .padding(.top, 8)
+    }
+
     var body: some View {
-        sidebarList
+        VStack(spacing: 0) {
+            searchAndFilterBar
+            sidebarList
+        }
         // ── Receive sheet ────────────────────────────────────────
         .sheet(isPresented: $model.showReceiveSheet) {
             ReceiveCountDialog(isDLQ: model.receiveIsDLQ, count: $model.receiveCount) {
@@ -742,6 +931,7 @@ struct SidebarView: View {
                 model.rules           = [:]
                 model.expandedTopics  = []
                 model.hasLoadedAllForSearch = false
+                model.hasLoadedAllSubscriptionsForFilters = false
                 searchText = ""
                 debouncedSearchText = ""
                 pendingRevealTarget = nil
@@ -1183,6 +1373,7 @@ struct SidebarView: View {
         model.subscriptions = [:]
         model.rules         = [:]
         model.hasLoadedAllForSearch = false
+        model.hasLoadedAllSubscriptionsForFilters = false
         defer { model.isLoading = false }
         async let q = grpc.listQueues()
         async let t = grpc.listTopics()
@@ -1194,6 +1385,9 @@ struct SidebarView: View {
             }
             model.topics = topicInfos.map { TopicItem(name: $0.name, status: $0.status) }
             appStatus.lastRefreshTime = Date()
+            if hasCountFilter {
+                await ensureSubscriptionsLoadedForFilters()
+            }
         } catch { }
     }
 
@@ -1245,6 +1439,34 @@ struct SidebarView: View {
             }
         }
         model.hasLoadedAllForSearch = true
+        model.hasLoadedAllSubscriptionsForFilters = true
+    }
+
+    private func ensureSubscriptionsLoadedForFilters() async {
+        guard hasCountFilter, !model.hasLoadedAllSubscriptionsForFilters else { return }
+        for topic in model.topics {
+            if Task.isCancelled { return }
+            guard model.subscriptions[topic.name] == nil else { continue }
+            do {
+                let infos = try await grpc.listSubscriptions(topicName: topic.name)
+                model.subscriptions[topic.name] = .loaded(infos.map {
+                    SubscriptionItem(topicName: topic.name, name: $0.name,
+                                     activeMessageCount: $0.activeMessageCount,
+                                     deadLetterCount: $0.deadLetterCount)
+                })
+            } catch {
+                if isCancellationError(error) { return }
+                model.subscriptions[topic.name] = .failed(error.localizedDescription)
+            }
+        }
+        model.hasLoadedAllSubscriptionsForFilters = true
+    }
+
+    private func clearFilters() {
+        searchText = ""
+        debouncedSearchText = ""
+        filterHasMessages = false
+        filterHasDeadletters = false
     }
 
     /// Expands the disclosure groups above `sel` so it becomes visible in
@@ -1339,6 +1561,7 @@ private struct TopicRow: View {
     let topic: TopicItem
     let model: SidebarModel
     let grpc: GRPCManager
+    var subscriptionFilter: ((SubscriptionItem) -> Bool)? = nil
 
     @Environment(ActivityLogStore.self) var activityLog
 
@@ -1374,11 +1597,12 @@ private struct TopicRow: View {
                 .padding(.leading, 8)
 
             case .loaded(let subs):
-                if subs.isEmpty {
+                let visibleSubs = subscriptionFilter.map { subs.filter($0) } ?? subs
+                if visibleSubs.isEmpty {
                     Text("No subscriptions").font(.caption).foregroundStyle(.secondary)
                         .padding(.leading, 8)
                 } else {
-                    ForEach(subs) { sub in
+                    ForEach(visibleSubs) { sub in
                         SubscriptionRow(sub: sub, model: model, grpc: grpc)
                             .padding(.leading, 8)
                     }
