@@ -12,8 +12,4 @@ Supported syntax (minimal Markdown subset):
 
 After a successful release, this file is reset to the placeholder below.
 -->
-# Relase Notes
-
-## Enhancements
-
-- Add toggle button in search bar allowing to filter queues/topic subscriptions with or without messages and deadletters
+- No notable changes.

@@ -3,6 +3,19 @@
     <channel>
         <title>BusKit</title>
     <item>
+            <title>0.5.10</title>
+            <pubDate>Thu, 03 Sep 2026 13:48:52 +0000</pubDate>
+            <sparkle:version>510</sparkle:version>
+            <sparkle:shortVersionString>0.5.10</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h2>Relase Notes</h2>
+<p>## Enhancements</p>
+<ul>
+<li>Add toggle button in search bar allowing to filter queues/topic subscriptions with or without messages and deadletters</li>
+</ul>]]></description>
+            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.10/BusKit-0.5.10-arm64.dmg" sparkle:edSignature="8yxXX9orw8flNZMCx3p55ZmlDBsm3RD4HXG1P+2sHfuctPA+xybQ11R9fBzDO5BWu60qFnJ0CGTf318cPqcFAw==" length="76729275" type="application/octet-stream"/>
+        </item>
+    <item>
             <title>0.5.9</title>
             <pubDate>Wed, 02 Sep 2026 07:30:11 +0000</pubDate>
             <sparkle:version>509</sparkle:version>
@@ -26,14 +39,6 @@
             <sparkle:shortVersionString>0.5.8</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.8/BusKit-0.5.8-arm64.dmg" sparkle:edSignature="e+c3bqg3C8/svvhp4HLkYREf3g+Ag+BE4swE+a5qixmooyFNdBkyhcVzQrg0iqp5qwRmfV/ljBRwzz/pJfA8Cg==" length="76715676" type="application/octet-stream"/>
-        </item>
-    <item>
-            <title>0.5.7</title>
-            <pubDate>Wed, 05 Aug 2026 09:38:27 +0000</pubDate>
-            <sparkle:version>507</sparkle:version>
-            <sparkle:shortVersionString>0.5.7</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.7/BusKit-0.5.7-arm64.dmg" sparkle:edSignature="4oAMA7psdrbi3DrVS4TbNsccH1vkdOIr0X8wOeY0xCj8Vf8o/ld2dNWw1EtM8mk3QkMtYKT8vGdC4mpT6xpGBA==" length="76222982" type="application/octet-stream"/>
         </item>
         <item>
             <title>0.1.21</title>
