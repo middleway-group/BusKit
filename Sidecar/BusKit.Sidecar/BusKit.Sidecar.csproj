@@ -14,10 +14,10 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
-    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
-    <PackageReference Include="Azure.Monitor.Query" Version="1.4.0" />
-    <PackageReference Include="Azure.ResourceManager.ServiceBus" Version="1.1.0" />
-    <PackageReference Include="Grpc.AspNetCore" Version="2.80.0" />
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.2" />
+    <PackageReference Include="Azure.Monitor.Query" Version="1.7.1" />
+    <PackageReference Include="Azure.ResourceManager.ServiceBus" Version="1.2.0" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.83.0" />
   </ItemGroup>
 
 </Project>
