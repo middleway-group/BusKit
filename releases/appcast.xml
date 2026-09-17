@@ -3,6 +3,18 @@
     <channel>
         <title>BusKit</title>
     <item>
+            <title>0.5.11</title>
+            <pubDate>Thu, 17 Sep 2026 17:35:38 +0000</pubDate>
+            <sparkle:version>511</sparkle:version>
+            <sparkle:shortVersionString>0.5.11</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h2>Bugfixes</h2>
+<ul>
+<li>fixed window state persistence. Some users complained they could not resize the application to normal size.</li>
+</ul>]]></description>
+            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.11/BusKit-0.5.11-arm64.dmg" sparkle:edSignature="oBnFgoIrbxX3JZPmuhUxqkamydWt/a1yATq+hhH8xlSjSv/Mx1uKbA4F8xknevCP6Y0AfIb2fjARuX8ivIXhCA==" length="76618151" type="application/octet-stream"/>
+        </item>
+    <item>
             <title>0.5.10</title>
             <pubDate>Thu, 03 Sep 2026 13:48:52 +0000</pubDate>
             <sparkle:version>510</sparkle:version>
@@ -31,14 +43,6 @@
 <li>Improved visual balance by moving the load-more action to the right, following common UI patterns (info on the left, action on the right).</li>
 </ul>]]></description>
             <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.9/BusKit-0.5.9-arm64.dmg" sparkle:edSignature="5OWF9GHKChxOnR3Lg/5qIIS7819WR8A3eh7t+l7r/MkNsbZXqiqy73ekYm2j2uv7M5pu/5+f/shfBgAIFLQXCA==" length="76716633" type="application/octet-stream"/>
-        </item>
-    <item>
-            <title>0.5.8</title>
-            <pubDate>Fri, 28 Aug 2026 13:43:14 +0000</pubDate>
-            <sparkle:version>508</sparkle:version>
-            <sparkle:shortVersionString>0.5.8</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.8/BusKit-0.5.8-arm64.dmg" sparkle:edSignature="e+c3bqg3C8/svvhp4HLkYREf3g+Ag+BE4swE+a5qixmooyFNdBkyhcVzQrg0iqp5qwRmfV/ljBRwzz/pJfA8Cg==" length="76715676" type="application/octet-stream"/>
         </item>
         <item>
             <title>0.1.21</title>
