@@ -12,6 +12,4 @@ Supported syntax (minimal Markdown subset):
 
 After a successful release, this file is reset to the placeholder below.
 -->
-# Bugfixes
-
-- fixed window state persistence. Some users complained they could not resize the application to normal size.
+- No notable changes.
