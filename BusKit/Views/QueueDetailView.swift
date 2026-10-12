@@ -790,7 +790,7 @@ private struct MessagesTab: View {
                                             Text("Load \(min(Int64(loadMoreBatchSize), max(0, totalCount - Int64(messages.count)))) More Messages…")
                                         }
                                     }
-                                    .padding(.vertical, 5)
+                                    .padding(.vertical, 2)
                                     .padding(.horizontal, 10)
                                     .contentShape(Rectangle())
                                 }
@@ -819,7 +819,7 @@ private struct MessagesTab: View {
                         }
                     }
                     .font(.caption)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, 3)
                     .padding(.horizontal, 8)
                 }
                 .background(Color(nsColor: .windowBackgroundColor))
@@ -939,7 +939,7 @@ private struct MessagesTab: View {
                         }
                     }
                 }
-                .frame(minHeight: 162)
+                .frame(minHeight: 184)
 
                 // ── Bottom: body + properties side by side ──────────
                 HSplitView {
