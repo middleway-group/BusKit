@@ -31,8 +31,11 @@ struct SubscriptionDetailView: View {
             .pickerStyle(.segmented)
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
+            .background(.background)
+            .zIndex(1)
 
             Divider()
+                .zIndex(1)
 
             Group {
                 switch selectedTab {
@@ -57,6 +60,7 @@ struct SubscriptionDetailView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
         }
         .navigationTitle("\(subscription.topicName) / \(subscription.name)")
         .onChange(of: actionStore.pendingAction) { _, action in
@@ -1398,6 +1402,9 @@ private struct SubMessagesTab: View {
         guard !toDelete.isEmpty else { return }
         isDeleting = true
         defer { isDeleting = false }
+        // Above this count, individual toasts would flood the window; show one summary instead.
+        let summarize = toDelete.count >= ActivityLogStore.bulkToastThreshold
+        var deletedCount = 0
         for msg in toDelete {
             do {
                 try await grpc.deleteMessage(
@@ -1409,13 +1416,25 @@ private struct SubMessagesTab: View {
                 )
                 messages.removeAll { $0.id == msg.id }
                 selectedMessageIDs.remove(msg.id)
+                deletedCount += 1
                 activityLog.log(action: .delete, messageId: msg.messageId,
-                                result: .success("Deleted successfully"))
+                                result: .success("Deleted successfully"),
+                                showToast: !summarize)
             } catch {
                 activityLog.log(action: .delete, messageId: msg.messageId,
                                 result: .failure(error.localizedDescription),
-                                hint: "The message may have already been consumed or the subscription lock expired.")
+                                hint: "The message may have already been consumed or the subscription lock expired.",
+                                showToast: !summarize)
             }
+        }
+        if summarize {
+            let failed = toDelete.count - deletedCount
+            activityLog.postToast(
+                action: ActionKind.delete.rawValue,
+                result: failed == 0
+                    ? .success("Deleted \(deletedCount) messages")
+                    : .failure("Deleted \(deletedCount) of \(toDelete.count) messages"),
+                hint: failed == 0 ? nil : "\(failed) failed. See the activity log for details.")
         }
         actionStore.requestRefresh(.subscription(topic: subscription.topicName, sub: subscription.name))
     }
