@@ -106,6 +106,9 @@ struct ToastItem: Identifiable {
 @Observable
 final class ActivityLogStore {
 
+    /// Bulk operations touching at least this many items show one summary toast.
+    static let bulkToastThreshold = 10
+
     // MARK: State
 
     var entries     : [ActivityLogEntry] = []
@@ -121,11 +124,27 @@ final class ActivityLogStore {
 
     /// Records a user action in the log and surfaces a toast notification.
     @MainActor
-    func log(action: ActionKind, messageId: String, result: ActionResult, hint: String? = nil) {
+    func log(action: ActionKind, messageId: String, result: ActionResult, hint: String? = nil,
+             showToast: Bool = true) {
         let entry = ActivityLogEntry(action: action, target: messageId, result: result, hint: hint)
         entries.insert(entry, at: 0)
 
-        let toast = ToastItem(action: action.rawValue, messageId: messageId, result: result, details: hint)
+        if showToast {
+            postToast(action: action.rawValue, messageId: messageId, result: result, hint: hint)
+        }
+
+        // Auto-open the log panel whenever a new error is recorded.
+        if result.isError {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                isLogVisible = true
+            }
+        }
+    }
+
+    /// Shows a toast without adding a log entry (e.g. one summary for a bulk operation).
+    @MainActor
+    func postToast(action: String, messageId: String = "", result: ActionResult, hint: String? = nil) {
+        let toast = ToastItem(action: action, messageId: messageId, result: result, details: hint)
         withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
             toasts.append(toast)
         }
@@ -136,13 +155,6 @@ final class ActivityLogStore {
             Task { @MainActor [weak self] in
                 try? await Task.sleep(for: .seconds(3))
                 self?.dismissToast(id: toastId)
-            }
-        }
-
-        // Auto-open the log panel whenever a new error is recorded.
-        if result.isError {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                isLogVisible = true
             }
         }
     }
