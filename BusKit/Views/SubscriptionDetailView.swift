@@ -31,11 +31,8 @@ struct SubscriptionDetailView: View {
             .pickerStyle(.segmented)
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
-            .background(.background)
-            .zIndex(1)
 
             Divider()
-                .zIndex(1)
 
             Group {
                 switch selectedTab {
@@ -60,7 +57,6 @@ struct SubscriptionDetailView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .clipped()
         }
         .navigationTitle("\(subscription.topicName) / \(subscription.name)")
         .onChange(of: actionStore.pendingAction) { _, action in
@@ -1086,7 +1082,7 @@ private struct SubMessagesTab: View {
                     .padding(.vertical, 6)
                     .padding(.horizontal, 8)
                 }
-                .background(Color(nsColor: .underPageBackgroundColor))
+                .background(Color(nsColor: .windowBackgroundColor))
                 .onDisappear { isLoadMoreHovering = false }
             }
         }
