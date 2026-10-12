@@ -3,6 +3,18 @@
     <channel>
         <title>BusKit</title>
     <item>
+            <title>0.5.12</title>
+            <pubDate>Mon, 12 Oct 2026 14:34:52 +0000</pubDate>
+            <sparkle:version>512</sparkle:version>
+            <sparkle:shortVersionString>0.5.12</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<ul>
+<li>Small UI improvements</li>
+<li>Bug fixing</li>
+</ul>]]></description>
+            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.12/BusKit-0.5.12-arm64.dmg" sparkle:edSignature="LJ92G6ZetjdnFL60pKaC769taHcYo50hMOdtX3+Hpw+vFbjbiRXqDlRDUEff3/DLN0FuXqRlTcfLc1FvKZ7tDw==" length="71916371" type="application/octet-stream"/>
+        </item>
+    <item>
             <title>0.5.11</title>
             <pubDate>Thu, 17 Sep 2026 17:35:38 +0000</pubDate>
             <sparkle:version>511</sparkle:version>
@@ -26,23 +38,6 @@
 <li>Add toggle button in search bar allowing to filter queues/topic subscriptions with or without messages and deadletters</li>
 </ul>]]></description>
             <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.10/BusKit-0.5.10-arm64.dmg" sparkle:edSignature="8yxXX9orw8flNZMCx3p55ZmlDBsm3RD4HXG1P+2sHfuctPA+xybQ11R9fBzDO5BWu60qFnJ0CGTf318cPqcFAw==" length="76729275" type="application/octet-stream"/>
-        </item>
-    <item>
-            <title>0.5.9</title>
-            <pubDate>Wed, 02 Sep 2026 07:30:11 +0000</pubDate>
-            <sparkle:version>509</sparkle:version>
-            <sparkle:shortVersionString>0.5.9</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Bug Fixes</h2>
-<ul>
-<li>Fixed: Purging high volume of messages sometimes silently failed</li>
-</ul>
-<h2>Features</h2>
-<ul>
-<li>Improves discoverability of the messages loaded count by placing it near the content it describes.</li>
-<li>Improved visual balance by moving the load-more action to the right, following common UI patterns (info on the left, action on the right).</li>
-</ul>]]></description>
-            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.9/BusKit-0.5.9-arm64.dmg" sparkle:edSignature="5OWF9GHKChxOnR3Lg/5qIIS7819WR8A3eh7t+l7r/MkNsbZXqiqy73ekYm2j2uv7M5pu/5+f/shfBgAIFLQXCA==" length="76716633" type="application/octet-stream"/>
         </item>
         <item>
             <title>0.1.21</title>
