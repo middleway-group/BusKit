@@ -24,6 +24,8 @@ struct BulkResubmitSheet: View {
     let entityName: String
     /// Non-nil when the source is a topic subscription (used for delete-after-resubmit).
     let subscriptionName: String?
+    /// `true` when the messages come from the dead-letter sub-queue.
+    let isDeadLetter: Bool
     /// Set to `true` when the user confirms a resubmit (not on cancel).
     @Binding var didResubmit: Bool
 
@@ -37,11 +39,15 @@ struct BulkResubmitSheet: View {
 
     @State private var isSending = false
     @State private var sentCount  = 0
+    @State private var isCancelling = false
+    @State private var isRemoving = false
+    @State private var sendTask: Task<Void, Never>?
 
-    init(messages: [MessageItem], queueOrTopic: String, subscriptionName: String? = nil, didResubmit: Binding<Bool> = .constant(false)) {
+    init(messages: [MessageItem], queueOrTopic: String, subscriptionName: String? = nil, isDeadLetter: Bool = true, didResubmit: Binding<Bool> = .constant(false)) {
         self.messages         = messages
         self.entityName       = queueOrTopic
         self.subscriptionName = subscriptionName
+        self.isDeadLetter     = isDeadLetter
         _didResubmit          = didResubmit
         _targetDestination    = State(initialValue: queueOrTopic)
     }
@@ -55,7 +61,7 @@ struct BulkResubmitSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     destinationSection
-                    propertiesSection
+                    if isDeadLetter { propertiesSection }
                     generateNewMessageIDSection
                     deleteAfterResubmitSection
                 }
@@ -73,7 +79,7 @@ struct BulkResubmitSheet: View {
     private var headerView: some View {
         HStack {
             VStack(alignment: .leading, spacing: 3) {
-                Text("Resubmit Dead-Letter Messages")
+                Text(isDeadLetter ? "Resubmit Dead-Letter Messages" : "Resubmit Messages")
                     .font(.headline)
                 Text(messages.count == 1
                      ? "1 message selected"
@@ -200,9 +206,11 @@ struct BulkResubmitSheet: View {
     private var deleteAfterResubmitSection: some View {
         Toggle(isOn: $deleteAfterResubmit) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Delete from dead-letter after resubmit")
+                Text(isDeadLetter ? "Delete from dead-letter after resubmit" : "Remove original after resubmit")
                     .font(.body)
-                Text("Successfully resubmitted messages will also be removed from the dead-letter queue.")
+                Text(isDeadLetter
+                     ? "Successfully resubmitted messages will also be removed from the dead-letter queue."
+                     : "Successfully resubmitted messages will also be removed (completed) from the source. Resubmitting to a topic delivers to all of its subscriptions.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -216,18 +224,20 @@ struct BulkResubmitSheet: View {
         HStack(spacing: 8) {
             if isSending {
                 ProgressView().controlSize(.small)
-                Text("Resubmitting \(sentCount) of \(messages.count)…")
+                Text(isCancelling ? "Stopping…" : isRemoving ? "Removing originals from the source…" : "Resubmitting \(sentCount) of \(messages.count)…")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Spacer()
 
-            Button("Cancel") { dismiss() }
-                .keyboardShortcut(.escape, modifiers: [])
-                .disabled(isSending)
+            Button(isSending ? "Stop" : "Cancel") {
+                if isSending { isCancelling = true; sendTask?.cancel() } else { dismiss() }
+            }
+            .keyboardShortcut(.escape, modifiers: [])
+            .disabled(isCancelling)
 
             let label = messages.count == 1 ? "Resubmit Message" : "Resubmit \(messages.count) Messages"
-            Button(label) { Task { await resubmitAll() } }
+            Button(label) { sendTask = Task { await resubmitAll() } }
                 .buttonStyle(.borderedProminent)
                 .disabled(isSubmitDisabled)
         }
@@ -255,11 +265,17 @@ struct BulkResubmitSheet: View {
     private func resubmitAll() async {
         isSending = true
         sentCount = 0
+        isCancelling = false
         let dest  = targetDestination.trimmingCharacters(in: .whitespacesAndNewlines)
         var failureCount = 0
+        var firstError: String?
+        var pendingDeletes: [MessageItem] = []
 
         for msg in messages {
-            let filteredProps = msg.properties.filter { !propertiesToStrip.contains($0.key) }
+            if isCancelling || Task.isCancelled { break }
+            let filteredProps = isDeadLetter
+                ? msg.properties.filter { !propertiesToStrip.contains($0.key) }
+                : msg.properties
             do {
                 _ = try await grpc.sendMessageExtended(
                     queueOrTopic:  dest,
@@ -277,21 +293,39 @@ struct BulkResubmitSheet: View {
                 sentCount += 1
 
                 if deleteAfterResubmit {
-                    try await deleteFromDLQ(msg)
+                    pendingDeletes.append(msg)
+                    if pendingDeletes.count >= 500 { await flushDeletes(&pendingDeletes) }
                 }
             } catch {
+                if isCancelling || Task.isCancelled { break }
                 failureCount += 1
-                activityLog.log(action: .resubmit, messageId: msg.messageId,
-                                result: .failure(error.localizedDescription),
-                                hint: "Verify the target destination exists and you have sender permissions.")
+                if firstError == nil { firstError = error.localizedDescription }
             }
         }
 
+        if isCancelling || Task.isCancelled {
+            // Clean up already-sent originals without keeping the sheet waiting.
+            let leftover = pendingDeletes
+            Task { var rest = leftover; await flushDeletes(&rest) }
+        } else {
+            await flushDeletes(&pendingDeletes)
+        }
+
         isSending = false
+        let wasCancelled = isCancelling
+        isCancelling = false
+
+        if failureCount > 0 {
+            activityLog.log(action: .resubmit, messageId: "",
+                            result: .failure("\(failureCount) message\(failureCount == 1 ? "" : "s") failed to resubmit: \(firstError ?? "unknown error")"),
+                            hint: "Verify the target destination exists and you have sender permissions.")
+        }
 
         // Show one summary toast for successes, then close the sheet.
         if sentCount > 0 {
-            let summary = sentCount == messages.count
+            let summary = wasCancelled
+                ? "Stopped: \(sentCount) of \(messages.count) messages resubmitted to \(dest)"
+                : sentCount == messages.count
                 ? (sentCount == 1 ? "Resubmitted to \(dest)" : "All \(sentCount) messages resubmitted to \(dest)")
                 : "\(sentCount) of \(messages.count) messages resubmitted to \(dest)"
             activityLog.log(action: .resubmit,
@@ -312,22 +346,56 @@ struct BulkResubmitSheet: View {
         dismiss()
     }
 
-    private func deleteFromDLQ(_ msg: MessageItem) async throws {
-        if let sub = subscriptionName {
-            try await grpc.deleteMessage(
-                topicName:        entityName,
-                subscriptionName: sub,
-                isDLQ:            true,
-                sequenceNumber:   msg.sequenceNumber
-            )
-        } else {
-            try await grpc.deleteMessage(
-                queueName:      entityName,
-                isDLQ:          true,
-                sequenceNumber: msg.sequenceNumber
-            )
+    /// Removes already-resubmitted originals. Session messages are deleted one by one
+    /// (they need a session receiver); everything else goes through one bulk pass.
+    private func flushDeletes(_ pending: inout [MessageItem]) async {
+        let batch = pending
+        pending.removeAll()
+        guard !batch.isEmpty else { return }
+        isRemoving = true
+        defer { isRemoving = false }
+
+        let sessionMessages = batch.filter { !$0.sessionId.isEmpty }
+        let plain = batch.filter { $0.sessionId.isEmpty }
+        var notFound = Set<Int64>()
+
+        for msg in sessionMessages {
+            do {
+                try await grpc.deleteMessage(
+                    queueName:        subscriptionName == nil ? entityName : nil,
+                    topicName:        subscriptionName == nil ? nil : entityName,
+                    subscriptionName: subscriptionName,
+                    isDLQ:            isDeadLetter,
+                    sequenceNumber:   msg.sequenceNumber,
+                    sessionId:        msg.sessionId)
+            } catch { notFound.insert(msg.sequenceNumber) }
         }
-        activityLog.log(action: .delete, messageId: msg.messageId,
-                        result: .success("Deleted from dead-letter after resubmit"))
+
+        if !plain.isEmpty {
+            do {
+                let missing = try await grpc.deleteMessages(
+                    queueName:        subscriptionName == nil ? entityName : nil,
+                    topicName:        subscriptionName == nil ? nil : entityName,
+                    subscriptionName: subscriptionName,
+                    isDLQ:            isDeadLetter,
+                    sequenceNumbers:  plain.map(\.sequenceNumber))
+                notFound.formUnion(missing)
+            } catch {
+                notFound.formUnion(plain.map(\.sequenceNumber))
+            }
+        }
+
+        if !notFound.isEmpty {
+            activityLog.log(action: .delete, messageId: "",
+                            result: .failure("\(notFound.count) resubmitted original\(notFound.count == 1 ? "" : "s") could not be removed"),
+                            hint: "The messages were already sent to the destination; remove the originals manually to avoid duplicates.")
+        }
+        let removed = batch.count - notFound.count
+        if removed > 0 {
+            activityLog.log(action: .delete, messageId: "",
+                            result: .success(isDeadLetter
+                                ? "Deleted \(removed) from dead-letter after resubmit"
+                                : "Deleted \(removed) originals after resubmit"))
+        }
     }
 }

@@ -107,9 +107,11 @@ struct MessageSearchEmptyView: View {
     let startDeepSearch: () -> Void
 
     var body: some View {
-        VStack(spacing: 12) {
-            ContentUnavailableView.search(text: search.appliedQuery)
-                .frame(maxHeight: 160)
+        ContentUnavailableView {
+            Label("No Results for \u{201C}\(search.appliedQuery)\u{201D}", systemImage: "magnifyingglass")
+        } description: {
+            Text("Check the spelling or try a new search.")
+        } actions: {
             if canDeepSearch && !search.deepFinished {
                 Button("Search all messages", action: startDeepSearch)
             }

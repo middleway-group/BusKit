@@ -936,6 +936,27 @@ final class GRPCManager {
         }
     }
 
+    /// Deletes many messages in a single pass over the entity. Returns the sequence
+    /// numbers that could not be found.
+    func deleteMessages(queueName: String? = nil,
+                        topicName: String? = nil,
+                        subscriptionName: String? = nil,
+                        isDLQ: Bool = false,
+                        sequenceNumbers: [Int64]) async throws -> [Int64] {
+        guard let buskit else { throw GRPCManagerError.notConnected }
+        var req = Buskit_DeleteMessagesRequest()
+        req.queueName = queueName ?? ""
+        req.topicName = topicName ?? ""
+        req.subscriptionName = subscriptionName ?? ""
+        req.deadLetter = isDLQ
+        req.sequenceNumbers = sequenceNumbers
+        let reply = try await buskit.deleteMessages(req)
+        if !reply.error.isEmpty && reply.notFoundSequenceNumbers.isEmpty && reply.deletedCount == 0 {
+            throw GRPCManagerError.operationFailed(reply.error)
+        }
+        return reply.notFoundSequenceNumbers
+    }
+
     // MARK: - Send Message Extended (preserves system properties)
     func sendMessageExtended(queueOrTopic: String,
                              body: String,

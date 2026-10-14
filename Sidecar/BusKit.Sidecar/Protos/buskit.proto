@@ -39,6 +39,7 @@ service BusKitService {
   rpc PeekMessages (PeekMessagesRequest) returns (PeekMessagesReply);
   rpc SendMessage (SendMessageRequest) returns (SendMessageReply);
   rpc DeleteMessage (DeleteMessageRequest) returns (DeleteMessageReply);
+  rpc DeleteMessages (DeleteMessagesRequest) returns (DeleteMessagesReply);
   rpc SendMessageExtended (SendMessageExtendedRequest) returns (SendMessageReply);
   rpc SubscribeMessages (SubscribeRequest) returns (stream BusMessage);
 }
@@ -539,6 +540,20 @@ message DeleteMessageRequest {
 message DeleteMessageReply {
   bool success = 1;
   string error = 2;
+}
+
+message DeleteMessagesRequest {
+  string queue_name = 1;
+  string topic_name = 2;
+  string subscription_name = 3;
+  bool dead_letter = 4;
+  repeated int64 sequence_numbers = 5;
+}
+
+message DeleteMessagesReply {
+  int32 deleted_count = 1;
+  repeated int64 not_found_sequence_numbers = 2;
+  string error = 3;
 }
 
 message SendMessageExtendedRequest {
