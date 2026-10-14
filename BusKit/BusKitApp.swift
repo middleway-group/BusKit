@@ -185,6 +185,7 @@ struct BusKitApp: App {
         }
         .windowStyle(.titleBar)
         .commands {
+            MessageSearchCommands()
             CommandGroup(replacing: .appInfo) {
                 Button("About BusKit") {
                     NSApp.sendAction(#selector(AppDelegate.showAboutWindow), to: nil, from: nil)

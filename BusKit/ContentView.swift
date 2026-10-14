@@ -44,6 +44,12 @@ struct ContentView: View {
                 // ── Toast notification overlay ───────────────────
                 ToastOverlay()
             }
+            .toolbar {
+                DefaultToolbarItem(kind: .search, placement: .primaryAction)
+                ToolbarItem(placement: .primaryAction) {
+                    ConnectionToolbar(connectionString: $connectionString)
+                }
+            }
         }
         // Propagate the shared models to all child views, including
         // the safeAreaInset StatusBarView (must wrap the inset, not precede it).
@@ -62,11 +68,6 @@ struct ContentView: View {
         .environment(appStatus)
         .environment(activityLog)
         .navigationTitle("BusKit")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                ConnectionToolbar(connectionString: $connectionString)
-            }
-        }
         .onChange(of: selection) { _, newSelection in
             // When a rules group or a specific rule is selected, focus the Rules tab.
             let sub: SubscriptionItem?

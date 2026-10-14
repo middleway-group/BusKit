@@ -1201,7 +1201,7 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         // Paginate using fromSequenceNumber to honour any requested count above that.
         const int azurePageSize = 250;
         int remaining = request.MaxMessages > 0 ? request.MaxMessages : 20;
-        long fromSequenceNumber = 0;
+        long fromSequenceNumber = Math.Max(0, request.FromSequenceNumber);
 
         try
         {

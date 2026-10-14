@@ -821,10 +821,12 @@ final class GRPCManager {
                       topicName: String? = nil,
                       subscriptionName: String? = nil,
                       isDLQ: Bool = false,
-                      maxCount: Int32 = 10) async throws -> [MessageItem] {
+                      maxCount: Int32 = 10,
+                      fromSequenceNumber: Int64 = 0) async throws -> [MessageItem] {
         guard let buskit else { throw GRPCManagerError.notConnected }
         var req = Buskit_PeekMessagesRequest()
         req.maxMessages = maxCount
+        req.fromSequenceNumber = fromSequenceNumber
         req.deadLetter  = isDLQ
         if let q = queueName        { req.queueName        = q }
         if let t = topicName        { req.topicName        = t }
@@ -852,6 +854,38 @@ final class GRPCManager {
                 sessionId: m.sessionID,
                 partitionKey: m.partitionKey
             )
+        }
+    }
+
+    /// Streams messages in batches, starting after `afterSequenceNumber`, until the
+    /// entity is exhausted. Cancelling the consuming task (or the stream) stops the scan.
+    func peekBatches(queueName: String? = nil,
+                     topicName: String? = nil,
+                     subscriptionName: String? = nil,
+                     isDLQ: Bool = false,
+                     afterSequenceNumber: Int64 = 0,
+                     batchSize: Int32 = 250) -> AsyncThrowingStream<[MessageItem], Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task { @MainActor in
+                var next = afterSequenceNumber + 1
+                do {
+                    while !Task.isCancelled {
+                        let batch = try await self.peekMessages(queueName: queueName,
+                                                                topicName: topicName,
+                                                                subscriptionName: subscriptionName,
+                                                                isDLQ: isDLQ,
+                                                                maxCount: batchSize,
+                                                                fromSequenceNumber: next)
+                        guard let last = batch.map(\.sequenceNumber).max() else { break }
+                        continuation.yield(batch)
+                        next = last + 1
+                    }
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
         }
     }
 

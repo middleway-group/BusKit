@@ -1163,6 +1163,9 @@ public nonisolated struct Buskit_PeekMessagesRequest: Sendable {
 
   public var deadLetter: Bool = false
 
+  /// Peek starting at this sequence number (0 = from the beginning).
+  public var fromSequenceNumber: Int64 = 0
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -3720,7 +3723,7 @@ nonisolated extension Buskit_UpdateSubscriptionTtlReply: SwiftProtobuf.Message, 
 
 nonisolated extension Buskit_PeekMessagesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".PeekMessagesRequest"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}queue_name\0\u{3}max_messages\0\u{3}topic_name\0\u{3}subscription_name\0\u{3}dead_letter\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}queue_name\0\u{3}max_messages\0\u{3}topic_name\0\u{3}subscription_name\0\u{3}dead_letter\0\u{3}from_sequence_number\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -3733,6 +3736,7 @@ nonisolated extension Buskit_PeekMessagesRequest: SwiftProtobuf.Message, SwiftPr
       case 3: try { try decoder.decodeSingularStringField(value: &self.topicName) }()
       case 4: try { try decoder.decodeSingularStringField(value: &self.subscriptionName) }()
       case 5: try { try decoder.decodeSingularBoolField(value: &self.deadLetter) }()
+      case 6: try { try decoder.decodeSingularInt64Field(value: &self.fromSequenceNumber) }()
       default: break
       }
     }
@@ -3754,6 +3758,9 @@ nonisolated extension Buskit_PeekMessagesRequest: SwiftProtobuf.Message, SwiftPr
     if self.deadLetter != false {
       try visitor.visitSingularBoolField(value: self.deadLetter, fieldNumber: 5)
     }
+    if self.fromSequenceNumber != 0 {
+      try visitor.visitSingularInt64Field(value: self.fromSequenceNumber, fieldNumber: 6)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -3763,6 +3770,7 @@ nonisolated extension Buskit_PeekMessagesRequest: SwiftProtobuf.Message, SwiftPr
     if lhs.topicName != rhs.topicName {return false}
     if lhs.subscriptionName != rhs.subscriptionName {return false}
     if lhs.deadLetter != rhs.deadLetter {return false}
+    if lhs.fromSequenceNumber != rhs.fromSequenceNumber {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
