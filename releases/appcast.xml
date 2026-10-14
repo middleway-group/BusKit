@@ -3,6 +3,18 @@
     <channel>
         <title>BusKit</title>
     <item>
+            <title>0.6.0</title>
+            <pubDate>Wed, 14 Oct 2026 15:39:21 +0000</pubDate>
+            <sparkle:version>600</sparkle:version>
+            <sparkle:shortVersionString>0.6.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<ul>
+<li>Message search by Message ID or Subject</li>
+<li>Performance improvements and bug fixes</li>
+</ul>]]></description>
+            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.6.0/BusKit-0.6.0-arm64.dmg" sparkle:edSignature="kmVn4vaCEitmlbh2ExQRl2A70njWjInpLvfuM1a/FdTvKem8sGm9vUOTdaJ4omoSPd1WVQwNR56+sZ2vRL59Cg==" length="71483770" type="application/octet-stream"/>
+        </item>
+    <item>
             <title>0.5.13</title>
             <pubDate>Mon, 12 Oct 2026 17:07:28 +0000</pubDate>
             <sparkle:version>513</sparkle:version>
@@ -24,18 +36,6 @@
 <li>Bug fixing</li>
 </ul>]]></description>
             <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.12/BusKit-0.5.12-arm64.dmg" sparkle:edSignature="LJ92G6ZetjdnFL60pKaC769taHcYo50hMOdtX3+Hpw+vFbjbiRXqDlRDUEff3/DLN0FuXqRlTcfLc1FvKZ7tDw==" length="71916371" type="application/octet-stream"/>
-        </item>
-    <item>
-            <title>0.5.11</title>
-            <pubDate>Thu, 17 Sep 2026 17:35:38 +0000</pubDate>
-            <sparkle:version>511</sparkle:version>
-            <sparkle:shortVersionString>0.5.11</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Bugfixes</h2>
-<ul>
-<li>fixed window state persistence. Some users complained they could not resize the application to normal size.</li>
-</ul>]]></description>
-            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.11/BusKit-0.5.11-arm64.dmg" sparkle:edSignature="oBnFgoIrbxX3JZPmuhUxqkamydWt/a1yATq+hhH8xlSjSv/Mx1uKbA4F8xknevCP6Y0AfIb2fjARuX8ivIXhCA==" length="76618151" type="application/octet-stream"/>
         </item>
         <item>
             <title>0.1.21</title>

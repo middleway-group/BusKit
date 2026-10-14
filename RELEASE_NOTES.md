@@ -12,5 +12,4 @@ Supported syntax (minimal Markdown subset):
 
 After a successful release, this file is reset to the placeholder below.
 -->
-- Message search by Message ID or Subject
-- Performance improvements and bug fixes
+- No notable changes.
