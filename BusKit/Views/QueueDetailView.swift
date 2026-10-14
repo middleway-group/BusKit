@@ -643,8 +643,11 @@ private struct MessagesTab: View {
     let requestedCount: Int32
 
     @State private var messages: [MessageItem] = []
+    @State private var search = MessageSearchModel()
     @State private var sortOrder: [KeyPathComparator<MessageItem>] = []
-    private var sortedMessages: [MessageItem] { messages.sorted(using: sortOrder) }
+    /// Loaded messages, or the active search results derived from them.
+    private var displayedMessages: [MessageItem] { search.isFiltering ? search.results : messages }
+    private var sortedMessages: [MessageItem] { displayedMessages.sorted(using: sortOrder) }
     @State private var isLoading = false
     @State private var isLoadingMore = false
     @State private var loadError: String?
@@ -664,11 +667,11 @@ private struct MessagesTab: View {
 
     private var selectedMessage: MessageItem? {
         guard let id = selectedMessageIDs.first else { return nil }
-        return messages.first { $0.id == id }
+        return displayedMessages.first { $0.id == id }
     }
 
     private var selectedMessages: [MessageItem] {
-        messages.filter { selectedMessageIDs.contains($0.id) }
+        displayedMessages.filter { selectedMessageIDs.contains($0.id) }
     }
 
     private var totalCount: Int64 {
@@ -677,6 +680,27 @@ private struct MessagesTab: View {
 
     private var hasMoreMessages: Bool {
         !allMessagesLoaded && Int64(messages.count) < totalCount
+    }
+
+    private func startDeepSearch() {
+        let after = messages.map(\.sequenceNumber).max() ?? 0
+        search.startDeepSearch(batches: grpc.peekBatches(queueName: queue.name,
+                                                         isDLQ: isDLQ,
+                                                         afterSequenceNumber: after))
+    }
+
+    /// Keeps the current selection if it still matches; otherwise selects the first result.
+    private func reconcileSelectionWithSearch() {
+        guard search.isFiltering else { return }
+        let visible = Set(displayedMessages.map(\.id))
+        let kept = selectedMessageIDs.intersection(visible)
+        if !kept.isEmpty {
+            if kept != selectedMessageIDs { selectedMessageIDs = kept }
+        } else if let first = sortedMessages.first {
+            selectedMessageIDs = [first.id]
+        } else {
+            selectedMessageIDs = []
+        }
     }
 
     private var actionToolbar: some View {
@@ -772,8 +796,15 @@ private struct MessagesTab: View {
                     Divider()
                     VStack(spacing: 4) {
                         HStack(spacing: 8) {
-                            Text(messagesLoadedText)
-                                .foregroundStyle(.secondary)
+                            if search.isFiltering {
+                                MessageSearchStatusView(search: search,
+                                                        totalCount: totalCount,
+                                                        canDeepSearch: hasMoreMessages,
+                                                        startDeepSearch: startDeepSearch)
+                            } else {
+                                Text(messagesLoadedText)
+                                    .foregroundStyle(.secondary)
+                            }
 
                             Spacer(minLength: 8)
 
@@ -797,7 +828,7 @@ private struct MessagesTab: View {
                                     .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
-                                .disabled(isLoadingMore)
+                                .disabled(isLoadingMore || search.isDeepSearching)
                                 .background(
                                     RoundedRectangle(cornerRadius: 5)
                                         .fill(isLoadMoreHovering && !isLoadingMore
@@ -860,9 +891,7 @@ private struct MessagesTab: View {
                         VStack(spacing: 0) {
                             Table(sortedMessages, selection: $selectedMessageIDs, sortOrder: $sortOrder) {
                                 TableColumn("Message ID", value: \.messageId) { msg in
-                                    Text(msg.messageId.isEmpty ? "—" : msg.messageId)
-                                        .font(.system(.caption, design: .monospaced))
-                                        .lineLimit(1)
+                                    MessageIDCell(message: msg, search: search)
                                 }
                                 .width(min: 120, ideal: 180)
 
@@ -875,9 +904,7 @@ private struct MessagesTab: View {
                                 .width(min: 60, ideal: 80)
 
                                 TableColumn("Subject", value: \.subject) { msg in
-                                    Text(msg.subject.isEmpty ? "—" : msg.subject)
-                                        .font(.system(.caption))
-                                        .lineLimit(1)
+                                    MessageSubjectCell(message: msg, search: search)
                                 }
                                 .width(min: 80, ideal: 120)
 
@@ -914,7 +941,7 @@ private struct MessagesTab: View {
                                     Divider()
                                 }
                                 if ids.count == 1, let id = ids.first,
-                                   let msg = messages.first(where: { $0.id == id }) {
+                                   let msg = displayedMessages.first(where: { $0.id == id }) {
                                     Button("Repair and Resubmit") {
                                         selectedMessageIDs = [id]
                                         showRepairSheet = true
@@ -923,7 +950,7 @@ private struct MessagesTab: View {
                                 }
                                 if !ids.isEmpty {
                                     Button(ids.count == 1 ? "Save Message" : "Save \(ids.count) Messages") {
-                                        saveMessages(messages.filter { ids.contains($0.id) })
+                                        saveMessages(displayedMessages.filter { ids.contains($0.id) })
                                     }
                                 }
                                 if isDLQ && !ids.isEmpty {
@@ -934,6 +961,13 @@ private struct MessagesTab: View {
                                         selectedMessageIDs = ids
                                         showDeleteConfirm = true
                                     }
+                                }
+                            }
+                            .overlay {
+                                if search.isFiltering && search.results.isEmpty && !search.isDeepSearching {
+                                    MessageSearchEmptyView(search: search,
+                                                           canDeepSearch: hasMoreMessages,
+                                                           startDeepSearch: startDeepSearch)
                                 }
                             }
                             .layoutPriority(1)
@@ -958,8 +992,14 @@ private struct MessagesTab: View {
         // NSSplitView (VSplitView/HSplitView) does not automatically respect
         // SwiftUI safeAreaInset, so we add explicit bottom padding here.
         .padding(.bottom, 22)
+        .messageSearch(search)
         .task { await loadMessages() }
-        .onChange(of: queue.name) { _, _ in Task { await loadMessages() } }
+        .onChange(of: displayedMessages.map(\.id)) { _, _ in reconcileSelectionWithSearch() }
+        .onChange(of: messages.map(\.id)) { _, _ in search.loadedMessagesChanged(messages) }
+        .onChange(of: queue.name) { _, _ in
+            search.clear()
+            Task { await loadMessages() }
+        }
         .onChange(of: trigger)    { _, _ in Task { await loadMessages() } }
         .sheet(isPresented: $showRepairSheet) {
             if let msg = selectedMessage {
@@ -995,6 +1035,7 @@ private struct MessagesTab: View {
     }
 
     private func loadMessages() async {
+        search.reset(clearQuery: false)
         isLoading = true
         loadError = nil
         loadMoreError = nil
@@ -1146,6 +1187,7 @@ private struct MessagesTab: View {
                     sessionId: msg.sessionId.isEmpty ? nil : msg.sessionId
                 )
                 messages.removeAll { $0.sequenceNumber == msg.sequenceNumber }
+                search.discard(sequenceNumber: msg.sequenceNumber)
                 selectedMessageIDs.remove(msg.id)
                 deletedCount += 1
                 activityLog.log(action: .delete, messageId: msg.messageId,

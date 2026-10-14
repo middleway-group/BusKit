@@ -451,6 +451,8 @@ message PeekMessagesRequest {
   string topic_name = 3;
   string subscription_name = 4;
   bool dead_letter = 5;
+  // Peek starting at this sequence number (0 = from the beginning).
+  int64 from_sequence_number = 6;
 }
 
 message PeekMessagesReply {
