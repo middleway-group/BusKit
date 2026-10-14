@@ -1556,6 +1556,74 @@ public class BusKitServiceImpl : BusKitService.BusKitServiceBase
         }
     }
 
+    public override async Task<DeleteMessagesReply> DeleteMessages(
+        DeleteMessagesRequest request, ServerCallContext context)
+    {
+        if (_client == null)
+            return new DeleteMessagesReply { Error = "Not connected" };
+
+        var remaining = new HashSet<long>(request.SequenceNumbers);
+        var reply = new DeleteMessagesReply();
+        if (remaining.Count == 0) return reply;
+
+        var options = new ServiceBusReceiverOptions
+        {
+            ReceiveMode = ServiceBusReceiveMode.PeekLock,
+            PrefetchCount = 500,
+            SubQueue = request.DeadLetter ? SubQueue.DeadLetter : SubQueue.None
+        };
+        var isSubscription = !string.IsNullOrEmpty(request.TopicName)
+                          && !string.IsNullOrEmpty(request.SubscriptionName);
+
+        // Non-matching messages stay locked until the scan ends; abandoning them
+        // earlier would just make the next receive return them again.
+        var skipped = new List<ServiceBusReceivedMessage>();
+        try
+        {
+            await using var receiver = isSubscription
+                ? _client.CreateReceiver(request.TopicName, request.SubscriptionName, options)
+                : _client.CreateReceiver(request.QueueName, options);
+
+            try
+            {
+                while (remaining.Count > 0)
+                {
+                    var batch = await receiver.ReceiveMessagesAsync(
+                        maxMessages: 500, maxWaitTime: TimeSpan.FromSeconds(3), context.CancellationToken);
+                    if (batch.Count == 0) break;
+
+                    foreach (var msg in batch)
+                    {
+                        if (remaining.Remove(msg.SequenceNumber))
+                        {
+                            await receiver.CompleteMessageAsync(msg, context.CancellationToken);
+                            reply.DeletedCount++;
+                        }
+                        else
+                        {
+                            skipped.Add(msg);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                foreach (var msg in skipped)
+                {
+                    try { await receiver.AbandonMessageAsync(msg); }
+                    catch { /* best-effort release */ }
+                }
+            }
+        }
+        catch (Exception ex) when (ex is ServiceBusException or InvalidOperationException)
+        {
+            reply.Error = ex.Message;
+        }
+
+        reply.NotFoundSequenceNumbers.AddRange(remaining);
+        return reply;
+    }
+
     public override async Task<SendMessageReply> SendMessageExtended(
         SendMessageExtendedRequest request, ServerCallContext context)
     {

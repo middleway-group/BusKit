@@ -679,7 +679,14 @@ private struct MessagesTab: View {
     }
 
     private var hasMoreMessages: Bool {
-        !allMessagesLoaded && Int64(messages.count) < totalCount
+        !allMessagesLoaded && (Int64(messages.count) < totalCount || messages.count >= Int(currentMaxCount))
+    }
+
+    /// Entity counts reported by Azure are approximate and can lag behind the real
+    /// contents, so a full page of results may still have more messages after it.
+    private var loadMoreCount: Int64 {
+        let remaining = totalCount - Int64(messages.count)
+        return remaining > 0 ? min(Int64(loadMoreBatchSize), remaining) : Int64(loadMoreBatchSize)
     }
 
     private func startDeepSearch() {
@@ -820,7 +827,7 @@ private struct MessagesTab: View {
                                                 .foregroundStyle(.secondary)
                                         } else {
                                             Image(systemName: "arrow.down.circle")
-                                            Text("Load \(min(Int64(loadMoreBatchSize), max(0, totalCount - Int64(messages.count)))) More Messages…")
+                                            Text("Load \(loadMoreCount) More Messages…")
                                         }
                                     }
                                     .padding(.vertical, 2)

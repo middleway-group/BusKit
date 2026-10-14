@@ -298,8 +298,11 @@ internal enum Buskit_BusKitService: Sendable {
         }
         /// Namespace for "GetTopicProperties" metadata.
         internal enum GetTopicProperties: Sendable {
+            /// Request type for "GetTopicProperties".
             internal typealias Input = Buskit_GetTopicPropertiesRequest
+            /// Response type for "GetTopicProperties".
             internal typealias Output = Buskit_GetTopicPropertiesReply
+            /// Descriptor for "GetTopicProperties".
             internal static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
                 method: "GetTopicProperties"
@@ -307,8 +310,11 @@ internal enum Buskit_BusKitService: Sendable {
         }
         /// Namespace for "GetTopicMetrics" metadata.
         internal enum GetTopicMetrics: Sendable {
+            /// Request type for "GetTopicMetrics".
             internal typealias Input = Buskit_GetTopicMetricsRequest
+            /// Response type for "GetTopicMetrics".
             internal typealias Output = Buskit_GetTopicMetricsReply
+            /// Descriptor for "GetTopicMetrics".
             internal static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
                 method: "GetTopicMetrics"
@@ -316,8 +322,11 @@ internal enum Buskit_BusKitService: Sendable {
         }
         /// Namespace for "GetQueueMetrics" metadata.
         internal enum GetQueueMetrics: Sendable {
+            /// Request type for "GetQueueMetrics".
             internal typealias Input = Buskit_GetQueueMetricsRequest
+            /// Response type for "GetQueueMetrics".
             internal typealias Output = Buskit_GetQueueMetricsReply
+            /// Descriptor for "GetQueueMetrics".
             internal static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
                 method: "GetQueueMetrics"
@@ -395,6 +404,18 @@ internal enum Buskit_BusKitService: Sendable {
                 method: "DeleteMessage"
             )
         }
+        /// Namespace for "DeleteMessages" metadata.
+        internal enum DeleteMessages: Sendable {
+            /// Request type for "DeleteMessages".
+            internal typealias Input = Buskit_DeleteMessagesRequest
+            /// Response type for "DeleteMessages".
+            internal typealias Output = Buskit_DeleteMessagesReply
+            /// Descriptor for "DeleteMessages".
+            internal static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "buskit.BusKitService"),
+                method: "DeleteMessages"
+            )
+        }
         /// Namespace for "SendMessageExtended" metadata.
         internal enum SendMessageExtended: Sendable {
             /// Request type for "SendMessageExtended".
@@ -438,6 +459,7 @@ internal enum Buskit_BusKitService: Sendable {
             CreateQueue.descriptor,
             DeleteQueue.descriptor,
             SetQueueStatus.descriptor,
+            SetTopicStatus.descriptor,
             CreateTopic.descriptor,
             DeleteTopic.descriptor,
             CreateSubscription.descriptor,
@@ -452,6 +474,7 @@ internal enum Buskit_BusKitService: Sendable {
             PeekMessages.descriptor,
             SendMessage.descriptor,
             DeleteMessage.descriptor,
+            DeleteMessages.descriptor,
             SendMessageExtended.descriptor,
             SubscribeMessages.descriptor
         ]
@@ -911,6 +934,16 @@ extension Buskit_BusKitService {
         ) async throws -> Result where Result: Sendable
 
         /// Call the "GetTopicProperties" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_GetTopicPropertiesRequest` message.
+        ///   - serializer: A serializer for `Buskit_GetTopicPropertiesRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_GetTopicPropertiesReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
         func getTopicProperties<Result>(
             request: GRPCCore.ClientRequest<Buskit_GetTopicPropertiesRequest>,
             serializer: some GRPCCore.MessageSerializer<Buskit_GetTopicPropertiesRequest>,
@@ -920,6 +953,16 @@ extension Buskit_BusKitService {
         ) async throws -> Result where Result: Sendable
 
         /// Call the "GetTopicMetrics" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_GetTopicMetricsRequest` message.
+        ///   - serializer: A serializer for `Buskit_GetTopicMetricsRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_GetTopicMetricsReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
         func getTopicMetrics<Result>(
             request: GRPCCore.ClientRequest<Buskit_GetTopicMetricsRequest>,
             serializer: some GRPCCore.MessageSerializer<Buskit_GetTopicMetricsRequest>,
@@ -929,6 +972,16 @@ extension Buskit_BusKitService {
         ) async throws -> Result where Result: Sendable
 
         /// Call the "GetQueueMetrics" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_GetQueueMetricsRequest` message.
+        ///   - serializer: A serializer for `Buskit_GetQueueMetricsRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_GetQueueMetricsReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
         func getQueueMetrics<Result>(
             request: GRPCCore.ClientRequest<Buskit_GetQueueMetricsRequest>,
             serializer: some GRPCCore.MessageSerializer<Buskit_GetQueueMetricsRequest>,
@@ -1049,6 +1102,25 @@ extension Buskit_BusKitService {
             deserializer: some GRPCCore.MessageDeserializer<Buskit_DeleteMessageReply>,
             options: GRPCCore.CallOptions,
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteMessageReply>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "DeleteMessages" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_DeleteMessagesRequest` message.
+        ///   - serializer: A serializer for `Buskit_DeleteMessagesRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_DeleteMessagesReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func deleteMessages<Result>(
+            request: GRPCCore.ClientRequest<Buskit_DeleteMessagesRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_DeleteMessagesRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_DeleteMessagesReply>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteMessagesReply>) async throws -> Result
         ) async throws -> Result where Result: Sendable
 
         /// Call the "SendMessageExtended" method.
@@ -1796,6 +1868,17 @@ extension Buskit_BusKitService {
             )
         }
 
+        /// Call the "GetTopicProperties" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_GetTopicPropertiesRequest` message.
+        ///   - serializer: A serializer for `Buskit_GetTopicPropertiesRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_GetTopicPropertiesReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
         internal func getTopicProperties<Result>(
             request: GRPCCore.ClientRequest<Buskit_GetTopicPropertiesRequest>,
             serializer: some GRPCCore.MessageSerializer<Buskit_GetTopicPropertiesRequest>,
@@ -1815,6 +1898,17 @@ extension Buskit_BusKitService {
             )
         }
 
+        /// Call the "GetTopicMetrics" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_GetTopicMetricsRequest` message.
+        ///   - serializer: A serializer for `Buskit_GetTopicMetricsRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_GetTopicMetricsReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
         internal func getTopicMetrics<Result>(
             request: GRPCCore.ClientRequest<Buskit_GetTopicMetricsRequest>,
             serializer: some GRPCCore.MessageSerializer<Buskit_GetTopicMetricsRequest>,
@@ -1834,6 +1928,17 @@ extension Buskit_BusKitService {
             )
         }
 
+        /// Call the "GetQueueMetrics" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_GetQueueMetricsRequest` message.
+        ///   - serializer: A serializer for `Buskit_GetQueueMetricsRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_GetQueueMetricsReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
         internal func getQueueMetrics<Result>(
             request: GRPCCore.ClientRequest<Buskit_GetQueueMetricsRequest>,
             serializer: some GRPCCore.MessageSerializer<Buskit_GetQueueMetricsRequest>,
@@ -2026,6 +2131,36 @@ extension Buskit_BusKitService {
             try await self.client.unary(
                 request: request,
                 descriptor: Buskit_BusKitService.Method.DeleteMessage.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "DeleteMessages" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Buskit_DeleteMessagesRequest` message.
+        ///   - serializer: A serializer for `Buskit_DeleteMessagesRequest` messages.
+        ///   - deserializer: A deserializer for `Buskit_DeleteMessagesReply` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        internal func deleteMessages<Result>(
+            request: GRPCCore.ClientRequest<Buskit_DeleteMessagesRequest>,
+            serializer: some GRPCCore.MessageSerializer<Buskit_DeleteMessagesRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Buskit_DeleteMessagesReply>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteMessagesReply>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Buskit_BusKitService.Method.DeleteMessages.descriptor,
                 serializer: serializer,
                 deserializer: deserializer,
                 options: options,
@@ -2671,6 +2806,15 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
+    /// Call the "GetTopicProperties" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_GetTopicPropertiesRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
     internal func getTopicProperties<Result>(
         request: GRPCCore.ClientRequest<Buskit_GetTopicPropertiesRequest>,
         options: GRPCCore.CallOptions = .defaults,
@@ -2687,6 +2831,15 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
+    /// Call the "GetTopicMetrics" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_GetTopicMetricsRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
     internal func getTopicMetrics<Result>(
         request: GRPCCore.ClientRequest<Buskit_GetTopicMetricsRequest>,
         options: GRPCCore.CallOptions = .defaults,
@@ -2703,6 +2856,15 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
+    /// Call the "GetQueueMetrics" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_GetQueueMetricsRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
     internal func getQueueMetrics<Result>(
         request: GRPCCore.ClientRequest<Buskit_GetQueueMetricsRequest>,
         options: GRPCCore.CallOptions = .defaults,
@@ -2718,13 +2880,15 @@ extension Buskit_BusKitService.ClientProtocol {
             onResponse: handleResponse
         )
     }
+
+    /// Call the "GetSubscriptionProperties" method.
     ///
     /// - Parameters:
     ///   - request: A request containing a single `Buskit_GetSubscriptionPropertiesRequest` message.
     ///   - options: Options to apply to this RPC.
     ///   - handleResponse: A closure which handles the response, the result of which is
     ///       returned to the caller. Returning from the closure will cancel the RPC if it
-    ///         hasn't already finished.
+    ///       hasn't already finished.
     /// - Returns: The result of `handleResponse`.
     internal func getSubscriptionProperties<Result>(
         request: GRPCCore.ClientRequest<Buskit_GetSubscriptionPropertiesRequest>,
@@ -2862,6 +3026,31 @@ extension Buskit_BusKitService.ClientProtocol {
             request: request,
             serializer: GRPCProtobuf.ProtobufSerializer<Buskit_DeleteMessageRequest>(),
             deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_DeleteMessageReply>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DeleteMessages" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Buskit_DeleteMessagesRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func deleteMessages<Result>(
+        request: GRPCCore.ClientRequest<Buskit_DeleteMessagesRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteMessagesReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.deleteMessages(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Buskit_DeleteMessagesRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Buskit_DeleteMessagesReply>(),
             options: options,
             onResponse: handleResponse
         )
@@ -3586,6 +3775,16 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
+    /// Call the "GetTopicProperties" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
     internal func getTopicProperties<Result>(
         _ message: Buskit_GetTopicPropertiesRequest,
         metadata: GRPCCore.Metadata = [:],
@@ -3605,6 +3804,16 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
+    /// Call the "GetTopicMetrics" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
     internal func getTopicMetrics<Result>(
         _ message: Buskit_GetTopicMetricsRequest,
         metadata: GRPCCore.Metadata = [:],
@@ -3624,6 +3833,16 @@ extension Buskit_BusKitService.ClientProtocol {
         )
     }
 
+    /// Call the "GetQueueMetrics" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
     internal func getQueueMetrics<Result>(
         _ message: Buskit_GetQueueMetricsRequest,
         metadata: GRPCCore.Metadata = [:],
@@ -3642,6 +3861,8 @@ extension Buskit_BusKitService.ClientProtocol {
             onResponse: handleResponse
         )
     }
+
+    /// Call the "GetSubscriptionProperties" method.
     ///
     /// - Parameters:
     ///   - message: request message to send.
@@ -3809,6 +4030,35 @@ extension Buskit_BusKitService.ClientProtocol {
             metadata: metadata
         )
         return try await self.deleteMessage(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DeleteMessages" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    internal func deleteMessages<Result>(
+        _ message: Buskit_DeleteMessagesRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Buskit_DeleteMessagesReply>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Buskit_DeleteMessagesRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.deleteMessages(
             request: request,
             options: options,
             onResponse: handleResponse

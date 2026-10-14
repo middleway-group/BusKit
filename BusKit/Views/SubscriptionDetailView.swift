@@ -941,7 +941,14 @@ private struct SubMessagesTab: View {
     }
 
     private var hasMoreMessages: Bool {
-        !allMessagesLoaded && Int64(messages.count) < totalCount
+        !allMessagesLoaded && (Int64(messages.count) < totalCount || messages.count >= Int(currentMaxCount))
+    }
+
+    /// Entity counts reported by Azure are approximate and can lag behind the real
+    /// contents, so a full page of results may still have more messages after it.
+    private var loadMoreCount: Int64 {
+        let remaining = totalCount - Int64(messages.count)
+        return remaining > 0 ? min(Int64(loadMoreBatchSize), remaining) : Int64(loadMoreBatchSize)
     }
 
     private func startDeepSearch() {
@@ -968,7 +975,7 @@ private struct SubMessagesTab: View {
 
     private var actionToolbar: some View {
         HStack(spacing: 0) {
-            if isDLQ {
+            do {
                 Button {
                     showBulkResubmitSheet = true
                 } label: {
@@ -979,7 +986,7 @@ private struct SubMessagesTab: View {
                 }
                 .buttonStyle(.borderless)
                 .disabled(selectedMessageIDs.isEmpty)
-                .help("Resubmit selected dead-letter messages, optionally stripping DLQ properties")
+                .help("Resubmit selected messages to a topic or queue for reprocessing")
 
                 subToolbarDivider
             }
@@ -1081,7 +1088,7 @@ private struct SubMessagesTab: View {
                                                 .foregroundStyle(.secondary)
                                         } else {
                                             Image(systemName: "arrow.down.circle")
-                                            Text("Load \(min(Int64(loadMoreBatchSize), max(0, totalCount - Int64(messages.count)))) More Messages…")
+                                            Text("Load \(loadMoreCount) More Messages…")
                                         }
                                     }
                                     .padding(.vertical, 2)
@@ -1192,7 +1199,7 @@ private struct SubMessagesTab: View {
                                 .width(65)
                             }
                             .contextMenu(forSelectionType: UUID.self) { ids in
-                                if isDLQ && !ids.isEmpty {
+                                if !ids.isEmpty {
                                     Button(ids.count == 1
                                            ? "Resubmit Selected Message"
                                            : "Resubmit \(ids.count) Messages") {
@@ -1276,6 +1283,7 @@ private struct SubMessagesTab: View {
             BulkResubmitSheet(messages: selectedMessages,
                               queueOrTopic: subscription.topicName,
                               subscriptionName: subscription.name,
+                              isDeadLetter: isDLQ,
                               didResubmit: $bulkResubmitDidSubmit)
         }
         .confirmationDialog(
