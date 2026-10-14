@@ -643,6 +643,8 @@ private struct MessagesTab: View {
     let requestedCount: Int32
 
     @State private var messages: [MessageItem] = []
+    @State private var sortOrder: [KeyPathComparator<MessageItem>] = []
+    private var sortedMessages: [MessageItem] { messages.sorted(using: sortOrder) }
     @State private var isLoading = false
     @State private var isLoadingMore = false
     @State private var loadError: String?
@@ -856,15 +858,15 @@ private struct MessagesTab: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
                         VStack(spacing: 0) {
-                            Table(messages, selection: $selectedMessageIDs) {
-                                TableColumn("Message ID") { msg in
+                            Table(sortedMessages, selection: $selectedMessageIDs, sortOrder: $sortOrder) {
+                                TableColumn("Message ID", value: \.messageId) { msg in
                                     Text(msg.messageId.isEmpty ? "—" : msg.messageId)
                                         .font(.system(.caption, design: .monospaced))
                                         .lineLimit(1)
                                 }
                                 .width(min: 120, ideal: 180)
 
-                                TableColumn("Sequence") { msg in
+                                TableColumn("Sequence", value: \.sequenceNumber) { msg in
                                     Text(String(msg.sequenceNumber))
                                         .font(.system(.caption, design: .monospaced))
                                         .foregroundStyle(.secondary)
@@ -872,14 +874,14 @@ private struct MessagesTab: View {
                                 }
                                 .width(min: 60, ideal: 80)
 
-                                TableColumn("Subject") { msg in
+                                TableColumn("Subject", value: \.subject) { msg in
                                     Text(msg.subject.isEmpty ? "—" : msg.subject)
                                         .font(.system(.caption))
                                         .lineLimit(1)
                                 }
                                 .width(min: 80, ideal: 120)
 
-                                TableColumn("Content Type") { msg in
+                                TableColumn("Content Type", value: \.contentType) { msg in
                                     Text(msg.contentType.isEmpty ? "—" : msg.contentType)
                                         .font(.system(.caption))
                                         .lineLimit(1)
@@ -887,7 +889,7 @@ private struct MessagesTab: View {
                                 }
                                 .width(min: 80, ideal: 120)
 
-                                TableColumn("Enqueued") { msg in
+                                TableColumn("Enqueued", value: \.enqueuedTime) { msg in
                                     Text(msg.enqueuedTime, style: .relative)
                                         .font(.system(.caption, weight: .light))
                                         .foregroundStyle(Color(nsColor: .systemGray))
@@ -896,7 +898,7 @@ private struct MessagesTab: View {
                                 }
                                 .width(min: 90, ideal: 110)
 
-                                TableColumn("Deliveries") { msg in
+                                TableColumn("Deliveries", value: \.deliveryCount) { msg in
                                     DeliveryBadge(count: msg.deliveryCount)
                                 }
                                 .width(65)
