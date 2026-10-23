@@ -12,7 +12,7 @@ builder.Services.AddGrpc(options =>
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient(nameof(PermissionEvaluationEngine));
 builder.Services.AddSingleton<PermissionEvaluationEngine>();
-builder.Services.AddSingleton<BusKitServiceImpl>();
+builder.Services.AddSingleton<BusKitGrpcService>();
 
 builder.WebHost.ConfigureKestrel(options =>
 {
@@ -21,7 +21,7 @@ builder.WebHost.ConfigureKestrel(options =>
 });
 
 var app = builder.Build();
-app.MapGrpcService<BusKitServiceImpl>();
+app.MapGrpcService<BusKitGrpcService>();
 
 Console.WriteLine("🚀 BusKit Sidecar listening on localhost:50051");
 app.Run();
