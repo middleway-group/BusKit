@@ -3,6 +3,17 @@
     <channel>
         <title>BusKit</title>
     <item>
+            <title>0.6.1</title>
+            <pubDate>Fri, 23 Oct 2026 22:57:09 +0000</pubDate>
+            <sparkle:version>601</sparkle:version>
+            <sparkle:shortVersionString>0.6.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<ul>
+<li>Minor bugfixes</li>
+</ul>]]></description>
+            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.6.1/BusKit-0.6.1-arm64.dmg" sparkle:edSignature="qGucI4hNu27UdogN6/s8T3oSSVNvbuYm5mXeidkItvUWEoSg7CJgK1Cy8faWtBK90hAnIguSCfQgbStMC3cPCQ==" length="71877307" type="application/octet-stream"/>
+        </item>
+    <item>
             <title>0.6.0</title>
             <pubDate>Wed, 14 Oct 2026 15:39:21 +0000</pubDate>
             <sparkle:version>600</sparkle:version>
@@ -24,18 +35,6 @@
 <li>UI fixes</li>
 </ul>]]></description>
             <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.13/BusKit-0.5.13-arm64.dmg" sparkle:edSignature="G0HTiu+4LZkNOGCc94zvleCdfmMMdQQK4BBH6xOgacQ8NlpcDtmVNumDMuqPahkAQv57ZCWwEtiOz9R5iKwZDg==" length="71922092" type="application/octet-stream"/>
-        </item>
-    <item>
-            <title>0.5.12</title>
-            <pubDate>Mon, 12 Oct 2026 14:34:52 +0000</pubDate>
-            <sparkle:version>512</sparkle:version>
-            <sparkle:shortVersionString>0.5.12</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<ul>
-<li>Small UI improvements</li>
-<li>Bug fixing</li>
-</ul>]]></description>
-            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.12/BusKit-0.5.12-arm64.dmg" sparkle:edSignature="LJ92G6ZetjdnFL60pKaC769taHcYo50hMOdtX3+Hpw+vFbjbiRXqDlRDUEff3/DLN0FuXqRlTcfLc1FvKZ7tDw==" length="71916371" type="application/octet-stream"/>
         </item>
         <item>
             <title>0.1.21</title>
