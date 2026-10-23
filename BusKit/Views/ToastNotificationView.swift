@@ -11,9 +11,12 @@ struct ToastOverlay: View {
     var body: some View {
         VStack(alignment: .trailing, spacing: 8) {
             ForEach(activityLog.toasts) { toast in
-                ToastNotificationView(toast: toast) {
+                ToastNotificationView(toast: toast, onDismiss: {
                     activityLog.dismissToast(id: toast.id)
-                }
+                }, onShowDetails: {
+                    activityLog.showInLog(entryId: toast.entryId)
+                    activityLog.dismissToast(id: toast.id)
+                })
                 .transition(
                     .asymmetric(
                         insertion: .move(edge: .trailing).combined(with: .opacity),
@@ -40,6 +43,7 @@ struct ToastOverlay: View {
 struct ToastNotificationView: View {
     let toast    : ToastItem
     let onDismiss: () -> Void
+    var onShowDetails: (() -> Void)? = nil
 
     @Environment(\.colorScheme) private var colorScheme
     @State private var isHovered = false
@@ -122,13 +126,19 @@ struct ToastNotificationView: View {
 
             // ── Optional details link ───────────────────────────
             if let details = toast.details {
-                HStack(spacing: 3) {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 9))
-                    Text("Details")
-                        .font(.system(size: 10))
+                Button {
+                    onShowDetails?()
+                } label: {
+                    HStack(spacing: 3) {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 9))
+                        Text("Details")
+                            .font(.system(size: 10))
+                    }
+                    .foregroundStyle(accentColor)
+                    .contentShape(Rectangle())
                 }
-                .foregroundStyle(accentColor)
+                .buttonStyle(.plain)
                 .help(details)
             }
         }

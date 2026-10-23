@@ -90,8 +90,10 @@ struct ToastItem: Identifiable {
     let timestamp : Date
     let result    : ActionResult
     let details   : String?
+    let entryId   : UUID?    // matching Activity Log entry, if any
 
-    init(action: String, messageId: String, result: ActionResult, details: String? = nil) {
+    init(action: String, messageId: String, result: ActionResult, details: String? = nil, entryId: UUID? = nil) {
+        self.entryId   = entryId
         self.action    = action
         self.messageId = messageId
         self.timestamp = Date()
@@ -114,6 +116,8 @@ final class ActivityLogStore {
     var entries     : [ActivityLogEntry] = []
     var toasts      : [ToastItem]        = []
     var isLogVisible: Bool               = false
+    /// Entry to scroll to and highlight in the Activity Log panel.
+    var focusedEntryId: UUID?
 
     // MARK: Computed
 
@@ -130,7 +134,7 @@ final class ActivityLogStore {
         entries.insert(entry, at: 0)
 
         if showToast {
-            postToast(action: action.rawValue, messageId: messageId, result: result, hint: hint)
+            postToast(action: action.rawValue, messageId: messageId, result: result, hint: hint, entryId: entry.id)
         }
 
         // Auto-open the log panel whenever a new error is recorded.
@@ -143,8 +147,9 @@ final class ActivityLogStore {
 
     /// Shows a toast without adding a log entry (e.g. one summary for a bulk operation).
     @MainActor
-    func postToast(action: String, messageId: String = "", result: ActionResult, hint: String? = nil) {
-        let toast = ToastItem(action: action, messageId: messageId, result: result, details: hint)
+    func postToast(action: String, messageId: String = "", result: ActionResult, hint: String? = nil,
+                   entryId: UUID? = nil) {
+        let toast = ToastItem(action: action, messageId: messageId, result: result, details: hint, entryId: entryId)
         withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
             toasts.append(toast)
         }
@@ -157,6 +162,16 @@ final class ActivityLogStore {
                 self?.dismissToast(id: toastId)
             }
         }
+    }
+
+    /// Opens the Activity Log and focuses the entry behind a toast.
+    @MainActor
+    func showInLog(entryId: UUID?) {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+            isLogVisible = true
+        }
+        // Summary toasts have no entry of their own; focus the latest error instead.
+        focusedEntryId = entryId ?? entries.first(where: { $0.result.isError })?.id
     }
 
     @MainActor

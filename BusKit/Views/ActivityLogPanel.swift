@@ -105,13 +105,15 @@ struct ActivityLogPanel: View {
     // MARK: - Log Table
 
     private var logTable: some View {
+        ScrollViewReader { proxy in
         ScrollView {
             LazyVStack(spacing: 0) {
                 columnHeader
                 Divider()
 
                 ForEach(Array(activityLog.entries.enumerated()), id: \.element.id) { index, entry in
-                    ActivityLogRow(entry: entry)
+                    ActivityLogRow(entry: entry, isFocused: activityLog.focusedEntryId == entry.id)
+                        .id(entry.id)
                     if index < activityLog.entries.count - 1 {
                         Divider()
                             .padding(.leading, 12)
@@ -119,6 +121,14 @@ struct ActivityLogPanel: View {
                     }
                 }
             }
+        }
+        .onChange(of: activityLog.focusedEntryId) { _, id in
+            guard let id else { return }
+            withAnimation { proxy.scrollTo(id, anchor: .center) }
+        }
+        .onAppear {
+            if let id = activityLog.focusedEntryId { proxy.scrollTo(id, anchor: .center) }
+        }
         }
     }
 
@@ -159,6 +169,7 @@ struct ActivityLogPanel: View {
 @available(macOS 15.0, *)
 private struct ActivityLogRow: View {
     let entry: ActivityLogEntry
+    var isFocused = false
 
     @State private var isHovered = false
 
@@ -217,7 +228,7 @@ private struct ActivityLogRow: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 5)
-            .background(isHovered ? Color.primary.opacity(0.04) : .clear)
+            .background(isFocused ? Color.accentColor.opacity(0.18) : (isHovered ? Color.primary.opacity(0.04) : .clear))
             .onHover { isHovered = $0 }
 
             // ── Hint sub-row (errors only) ──────────────────────
