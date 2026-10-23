@@ -12,6 +12,7 @@ builder.Services.AddGrpc(options =>
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient(nameof(PermissionEvaluationEngine));
 builder.Services.AddSingleton<PermissionEvaluationEngine>();
+builder.Services.AddSingleton<ConnectionService>();
 builder.Services.AddSingleton<BusKitGrpcService>();
 
 builder.WebHost.ConfigureKestrel(options =>

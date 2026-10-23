@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="BusKit.Sidecar.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Protobuf Include="Protos\buskit.proto" GrpcServices="Server" />
   </ItemGroup>
 
