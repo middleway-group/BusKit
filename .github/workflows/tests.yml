@@ -1,0 +1,42 @@
+name: Tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  sidecar-tests:
+    name: Sidecar (.NET)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Test
+        run: dotnet test Sidecar/BusKit.Sidecar.Tests/BusKit.Sidecar.Tests.csproj --configuration Release
+
+  app-tests:
+    name: App (Swift)
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Test
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project BusKit.xcodeproj \
+            -scheme BusKit \
+            -destination "platform=macOS" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            SWIFT_STRICT_CONCURRENCY=off \
+            2>&1 | grep -E "(error:|Test Suite 'All tests'|Executed|TEST SUCCEEDED|TEST FAILED)"

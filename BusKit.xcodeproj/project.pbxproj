@@ -16,12 +16,28 @@
 /* Begin PBXFileReference section */
 		4FC8890E2F59C09700DC035E /* BusKit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BusKit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6F94B72AAAA44ABCB6E691A0 /* SidecarBin */ = {isa = PBXFileReference; lastKnownFileType = folder; path = SidecarBin; sourceTree = "<group>"; };
+		7A1000012F6000000DC035E1 /* BusKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BusKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXContainerItemProxy section */
+		7A1000062F6000000DC035E1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4FC889062F59C09700DC035E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4FC8890D2F59C09700DC035E;
+			remoteInfo = BusKit;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		4FC889102F59C09700DC035E /* BusKit */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = BusKit;
+			sourceTree = "<group>";
+		};
+		7A1000022F6000000DC035E1 /* BusKitTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BusKitTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -36,6 +52,11 @@
 				AABB00022222333344445555 /* Sparkle in Frameworks */,
 			);
 		};
+		7A1000032F6000000DC035E1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -44,6 +65,7 @@
 			children = (
 				6F94B72AAAA44ABCB6E691A0 /* SidecarBin */,
 				4FC889102F59C09700DC035E /* BusKit */,
+				7A1000022F6000000DC035E1 /* BusKitTests */,
 				4FC8890F2F59C09700DC035E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -52,6 +74,7 @@
 			isa = PBXGroup;
 			children = (
 				4FC8890E2F59C09700DC035E /* BusKit.app */,
+				7A1000012F6000000DC035E1 /* BusKitTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -85,6 +108,28 @@
 			productReference = 4FC8890E2F59C09700DC035E /* BusKit.app */;
 			productType = "com.apple.product-type.application";
 		};
+		7A1000042F6000000DC035E1 /* BusKitTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7A1000092F6000000DC035E1 /* Build configuration list for PBXNativeTarget "BusKitTests" */;
+			buildPhases = (
+				7A1000052F6000000DC035E1 /* Sources */,
+				7A1000032F6000000DC035E1 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7A1000072F6000000DC035E1 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				7A1000022F6000000DC035E1 /* BusKitTests */,
+			);
+			name = BusKitTests;
+			packageProductDependencies = (
+			);
+			productName = BusKitTests;
+			productReference = 7A1000012F6000000DC035E1 /* BusKitTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -98,6 +143,10 @@
 				TargetAttributes = {
 					4FC8890D2F59C09700DC035E = {
 						CreatedOnToolsVersion = 26.2;
+					};
+					7A1000042F6000000DC035E1 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 4FC8890D2F59C09700DC035E;
 					};
 				};
 			};
@@ -122,6 +171,7 @@
 			projectRoot = "";
 			targets = (
 				4FC8890D2F59C09700DC035E /* BusKit */,
+				7A1000042F6000000DC035E1 /* BusKitTests */,
 			);
 		};
 /* End PBXProject section */
@@ -171,7 +221,20 @@
 			files = (
 			);
 		};
+		7A1000052F6000000DC035E1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		7A1000072F6000000DC035E1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4FC8890D2F59C09700DC035E /* BusKit */;
+			targetProxy = 7A1000062F6000000DC035E1 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		4FC889172F59C09800DC035E /* Debug configuration for PBXProject "BusKit" */ = {
@@ -382,6 +445,34 @@
 			};
 			name = Release;
 		};
+		7A10000A2F6000000DC035E1 /* Debug configuration for PBXNativeTarget "BusKitTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = PKA.BusKitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BusKit.app/Contents/MacOS/BusKit";
+			};
+			name = Debug;
+		};
+		7A10000B2F6000000DC035E1 /* Release configuration for PBXNativeTarget "BusKitTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = PKA.BusKitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BusKit.app/Contents/MacOS/BusKit";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -398,6 +489,14 @@
 			buildConfigurations = (
 				4FC8891A2F59C09800DC035E /* Debug configuration for PBXNativeTarget "BusKit" */,
 				4FC8891B2F59C09800DC035E /* Release configuration for PBXNativeTarget "BusKit" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		7A1000092F6000000DC035E1 /* Build configuration list for PBXNativeTarget "BusKitTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7A10000A2F6000000DC035E1 /* Debug configuration for PBXNativeTarget "BusKitTests" */,
+				7A10000B2F6000000DC035E1 /* Release configuration for PBXNativeTarget "BusKitTests" */,
 			);
 			defaultConfigurationName = Release;
 		};
