@@ -491,310 +491,37 @@ public class BusKitGrpcService : BusKitService.BusKitServiceBase
         DeleteSubscriptionRequest request, ServerCallContext context)
         => Entities.DeleteSubscriptionAsync(request);
 
-    // ── Get Queue Properties ─────────────────────────────
+    // ── Entity properties ────────────────────────────────
 
-    public override async Task<GetQueuePropertiesReply> GetQueueProperties(
+    private EntityPropertiesOperations Properties => new(_adminClient);
+
+    public override Task<GetQueuePropertiesReply> GetQueueProperties(
         GetQueuePropertiesRequest request, ServerCallContext context)
-    {
-        if (_adminClient == null)
-            return new GetQueuePropertiesReply();
+        => Properties.GetQueuePropertiesAsync(request);
 
-        var props = await _adminClient.GetQueueAsync(request.Name);
-        var runtime = await _adminClient.GetQueueRuntimePropertiesAsync(request.Name);
-
-        var q = props.Value;
-        var r = runtime.Value;
-
-        return new GetQueuePropertiesReply
-        {
-            Properties = new QueueDetails
-            {
-                Name = q.Name,
-                MaxSizeMb = q.MaxSizeInMegabytes,
-                DefaultMessageTtlSeconds = (long)q.DefaultMessageTimeToLive.TotalSeconds,
-                LockDurationSeconds = (long)q.LockDuration.TotalSeconds,
-                RequiresDuplicateDetection = q.RequiresDuplicateDetection,
-                RequiresSession = q.RequiresSession,
-                MaxDeliveryCount = q.MaxDeliveryCount,
-                DeadLetteringOnExpiration = q.DeadLetteringOnMessageExpiration,
-                Status = q.Status.ToString(),
-                CreatedAtUnix = r.CreatedAt.ToUnixTimeSeconds(),
-                UpdatedAtUnix = r.UpdatedAt.ToUnixTimeSeconds(),
-                ActiveMessageCount = r.ActiveMessageCount,
-                DeadLetterCount = r.DeadLetterMessageCount,
-                SizeBytes = r.SizeInBytes,
-                ForwardTo = q.ForwardTo ?? "",
-                AutoDeleteOnIdleSeconds = (long)q.AutoDeleteOnIdle.TotalSeconds,
-                ScheduledMessageCount = r.ScheduledMessageCount,
-                TransferMessageCount = r.TransferMessageCount,
-                TransferDeadLetterCount = r.TransferDeadLetterMessageCount,
-                MaxMessageSizeBytes = (q.MaxMessageSizeInKilobytes ?? 0) * 1024,
-                DuplicateDetectionWindowSeconds = (long)q.DuplicateDetectionHistoryTimeWindow.TotalSeconds,
-                UserMetadata = q.UserMetadata ?? "",
-                EnablePartitioning = q.EnablePartitioning,
-            }
-        };
-    }
-
-    // ── Get Topic Properties ──────────────────────────────
-
-    public override async Task<GetTopicPropertiesReply> GetTopicProperties(
+    public override Task<GetTopicPropertiesReply> GetTopicProperties(
         GetTopicPropertiesRequest request, ServerCallContext context)
-    {
-        if (_adminClient == null)
-            return new GetTopicPropertiesReply();
+        => Properties.GetTopicPropertiesAsync(request);
 
-        var props   = await _adminClient.GetTopicAsync(request.Name);
-        var runtime = await _adminClient.GetTopicRuntimePropertiesAsync(request.Name);
-
-        var t = props.Value;
-        var r = runtime.Value;
-
-        return new GetTopicPropertiesReply
-        {
-            Properties = new TopicDetails
-            {
-                Name                        = t.Name,
-                MaxSizeMb                   = t.MaxSizeInMegabytes,
-                DefaultMessageTtlSeconds    = (long)t.DefaultMessageTimeToLive.TotalSeconds,
-                RequiresDuplicateDetection  = t.RequiresDuplicateDetection,
-                SupportOrdering             = t.SupportOrdering,
-                EnablePartitioning          = t.EnablePartitioning,
-                Status                      = t.Status.ToString(),
-                CreatedAtUnix               = r.CreatedAt.ToUnixTimeSeconds(),
-                UpdatedAtUnix               = r.UpdatedAt.ToUnixTimeSeconds(),
-                ScheduledMessageCount       = r.ScheduledMessageCount,
-                SizeBytes                   = r.SizeInBytes,
-                MaxMessageSizeBytes         = (t.MaxMessageSizeInKilobytes ?? 0) * 1024,
-                AutoDeleteOnIdleSeconds     = (long)t.AutoDeleteOnIdle.TotalSeconds,
-                UserMetadata                = t.UserMetadata ?? "",
-            }
-        };
-    }
-
-    // ── Get Topic Metrics (Azure Monitor) ────────────────
-
-    public override async Task<GetTopicMetricsReply> GetTopicMetrics(
-        GetTopicMetricsRequest request, ServerCallContext context)
-    {
-        var reply = new GetTopicMetricsReply();
-
-        if (_azureCredential == null || _subscriptionId == null ||
-            _resourceGroup == null || _namespaceName == null)
-        {
-            reply.Error = "Azure AD connection required for metrics.";
-            return reply;
-        }
-
-        try
-        {
-            var resourceId = $"/subscriptions/{_subscriptionId}/resourceGroups/{_resourceGroup}" +
-                             $"/providers/Microsoft.ServiceBus/namespaces/{_namespaceName}";
-
-            var hours = Math.Max(1, request.Hours);
-            var end   = DateTimeOffset.UtcNow;
-            var start = end.AddHours(-hours);
-
-            var granularity = hours switch
-            {
-                <= 1   => TimeSpan.FromMinutes(1),
-                <= 12  => TimeSpan.FromMinutes(5),
-                <= 24  => TimeSpan.FromMinutes(15),
-                <= 168 => TimeSpan.FromHours(1),
-                _      => TimeSpan.FromHours(6),
-            };
-
-            var metricsClient = new MetricsQueryClient(_azureCredential);
-
-            var metricNames = new[]
-            {
-                "IncomingRequests", "SuccessfulRequests", "ServerErrors",
-                "UserErrors", "ThrottledRequests",
-                "IncomingMessages", "OutgoingMessages",
-            };
-
-            var options = new MetricsQueryOptions
-            {
-                Granularity       = granularity,
-                Filter            = $"EntityName eq '{request.TopicName}'",
-                TimeRange         = new QueryTimeRange(start, end),
-            };
-            options.MetricNamespace = "Microsoft.ServiceBus/namespaces";
-
-            var response = await metricsClient.QueryResourceAsync(
-                resourceId,
-                metricNames,
-                options,
-                context.CancellationToken);
-
-            foreach (var metric in response.Value.Metrics)
-            {
-                var series = new MetricSeries { Name = metric.Name };
-                foreach (var ts in metric.TimeSeries)
-                {
-                    foreach (var dp in ts.Values)
-                    {
-                        if (dp.TimeStamp == default) continue;
-                        var val = dp.Total ?? dp.Average ?? dp.Count ?? 0;
-                        series.Points.Add(new MetricDataPoint
-                        {
-                            TimestampUnix = dp.TimeStamp.ToUnixTimeSeconds(),
-                            Value         = val,
-                        });
-                    }
-                }
-                reply.Series.Add(series);
-            }
-        }
-        catch (Exception ex)
-        {
-            reply.Error = ex.Message;
-        }
-
-        return reply;
-    }
-
-    public override async Task<GetQueueMetricsReply> GetQueueMetrics(
-        GetQueueMetricsRequest request, ServerCallContext context)
-    {
-        var reply = new GetQueueMetricsReply();
-
-        if (_azureCredential == null || _subscriptionId == null ||
-            _resourceGroup == null || _namespaceName == null)
-        {
-            reply.Error = "Azure AD connection required for metrics.";
-            return reply;
-        }
-
-        try
-        {
-            var resourceId = $"/subscriptions/{_subscriptionId}/resourceGroups/{_resourceGroup}" +
-                             $"/providers/Microsoft.ServiceBus/namespaces/{_namespaceName}";
-
-            var hours = Math.Max(1, request.Hours);
-            var end   = DateTimeOffset.UtcNow;
-            var start = end.AddHours(-hours);
-
-            var granularity = hours switch
-            {
-                <= 1   => TimeSpan.FromMinutes(1),
-                <= 12  => TimeSpan.FromMinutes(5),
-                <= 24  => TimeSpan.FromMinutes(15),
-                <= 168 => TimeSpan.FromHours(1),
-                _      => TimeSpan.FromHours(6),
-            };
-
-            var metricsClient = new MetricsQueryClient(_azureCredential);
-
-            var metricNames = new[]
-            {
-                "IncomingRequests", "SuccessfulRequests", "ServerErrors",
-                "UserErrors", "ThrottledRequests",
-                "IncomingMessages", "OutgoingMessages",
-            };
-
-            var options = new MetricsQueryOptions
-            {
-                Granularity       = granularity,
-                Filter            = $"EntityName eq '{request.QueueName}'",
-                TimeRange         = new QueryTimeRange(start, end),
-            };
-            options.MetricNamespace = "Microsoft.ServiceBus/namespaces";
-
-            var response = await metricsClient.QueryResourceAsync(
-                resourceId,
-                metricNames,
-                options,
-                context.CancellationToken);
-
-            foreach (var metric in response.Value.Metrics)
-            {
-                var series = new MetricSeries { Name = metric.Name };
-                foreach (var ts in metric.TimeSeries)
-                {
-                    foreach (var dp in ts.Values)
-                    {
-                        if (dp.TimeStamp == default) continue;
-                        var val = dp.Total ?? dp.Average ?? dp.Count ?? 0;
-                        series.Points.Add(new MetricDataPoint
-                        {
-                            TimestampUnix = dp.TimeStamp.ToUnixTimeSeconds(),
-                            Value         = val,
-                        });
-                    }
-                }
-                reply.Series.Add(series);
-            }
-        }
-        catch (Exception ex)
-        {
-            reply.Error = ex.Message;
-        }
-
-        return reply;
-    }
-
-    // ── Get Subscription Properties ──────────────────────
-
-    public override async Task<GetSubscriptionPropertiesReply> GetSubscriptionProperties(
+    public override Task<GetSubscriptionPropertiesReply> GetSubscriptionProperties(
         GetSubscriptionPropertiesRequest request, ServerCallContext context)
-    {
-        if (_adminClient == null)
-            return new GetSubscriptionPropertiesReply();
+        => Properties.GetSubscriptionPropertiesAsync(request);
 
-        var props = await _adminClient.GetSubscriptionAsync(request.TopicName, request.SubscriptionName);
-        var runtime = await _adminClient.GetSubscriptionRuntimePropertiesAsync(request.TopicName, request.SubscriptionName);
-
-        var s = props.Value;
-        var r = runtime.Value;
-
-        return new GetSubscriptionPropertiesReply
-        {
-            Properties = new SubscriptionDetails
-            {
-                TopicName = s.TopicName,
-                Name = s.SubscriptionName,
-                DefaultMessageTtlSeconds = (long)s.DefaultMessageTimeToLive.TotalSeconds,
-                LockDurationSeconds = (long)s.LockDuration.TotalSeconds,
-                MaxDeliveryCount = s.MaxDeliveryCount,
-                DeadLetteringOnExpiration = s.DeadLetteringOnMessageExpiration,
-                DeadLetteringOnFilterEvaluation = s.EnableDeadLetteringOnFilterEvaluationExceptions,
-                Status = s.Status.ToString(),
-                CreatedAtUnix = r.CreatedAt.ToUnixTimeSeconds(),
-                UpdatedAtUnix = r.UpdatedAt.ToUnixTimeSeconds(),
-                ActiveMessageCount = r.ActiveMessageCount,
-                DeadLetterCount = r.DeadLetterMessageCount,
-                ForwardTo = s.ForwardTo ?? "",
-                AutoDeleteOnIdleSeconds = (long)s.AutoDeleteOnIdle.TotalSeconds,
-            }
-        };
-    }
-
-    // ── Update Subscription TTL ──────────────────────────
-
-    public override async Task<UpdateSubscriptionTtlReply> UpdateSubscriptionTtl(
+    public override Task<UpdateSubscriptionTtlReply> UpdateSubscriptionTtl(
         UpdateSubscriptionTtlRequest request, ServerCallContext context)
-    {
-        var reply = new UpdateSubscriptionTtlReply();
-        try
-        {
-            if (_adminClient == null)
-            {
-                reply.Error = "Not connected.";
-                return reply;
-            }
+        => Properties.UpdateSubscriptionTtlAsync(request);
 
-            var props = await _adminClient.GetSubscriptionAsync(request.TopicName, request.SubscriptionName);
-            var s = props.Value;
-            s.DefaultMessageTimeToLive = TimeSpan.FromSeconds(request.DefaultMessageTtlSeconds);
-            await _adminClient.UpdateSubscriptionAsync(s);
-        }
-        catch (Exception ex)
-        {
-            reply.Error = ex.Message;
-        }
-        return reply;
-    }
+    // ── Metrics (Azure Monitor) ──────────────────────────
+
+    private MetricsOperations Metrics => new(_azureCredential, _subscriptionId, _resourceGroup, _namespaceName);
+
+    public override Task<GetTopicMetricsReply> GetTopicMetrics(
+        GetTopicMetricsRequest request, ServerCallContext context)
+        => Metrics.GetTopicMetricsAsync(request, context.CancellationToken);
+
+    public override Task<GetQueueMetricsReply> GetQueueMetrics(
+        GetQueueMetricsRequest request, ServerCallContext context)
+        => Metrics.GetQueueMetricsAsync(request, context.CancellationToken);
 
     // ── Peek / Purge ─────────────────────────────────────
 
