@@ -6,7 +6,7 @@ namespace BusKit.Sidecar.Tests;
 
 public class MessageOperationsTests
 {
-    // ── Peek ─────────────────────────────────────────────────────────────────
+    // ── Peek ──────────────────────────────────────P───────────────────────────
 
     [Fact]
     public async Task Peek_PaginatesInPagesOf250_AndMapsFields()
