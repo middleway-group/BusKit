@@ -11,6 +11,9 @@ struct StatusBarView: View {
     @Environment(ActivityLogStore.self) var activityLog
 
     @State private var isActivityLogButtonHovering = false
+    @State private var showAutoRefreshPopover = false
+    @AppStorage("autoRefreshEnabled") private var autoRefreshEnabled = false
+    @AppStorage("autoRefreshSeconds") private var autoRefreshSeconds = 30
 
     var body: some View {
         HStack(spacing: 0) {
@@ -28,19 +31,68 @@ struct StatusBarView: View {
             statusDivider
 
             // ── Last refresh ────────────────────────────────────
-            if let t = appStatus.lastRefreshTime {
+            if appStatus.isRefreshing {
+                HStack(spacing: 5) {
+                    ProgressView()
+                        .controlSize(.mini)
+                        .scaleEffect(0.7)
+                        .frame(width: 10, height: 10)
+                    Text("Refreshing…")
+                }
+                .font(.system(size: 11).monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(width: 190, alignment: .leading)
+                .padding(.horizontal, 12)
+
+                statusDivider
+            } else if let t = appStatus.lastRefreshTime {
                 HStack(spacing: 5) {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                     Text("Refreshed \(t, style: .relative) ago")
                 }
-                .font(.system(size: 11))
+                .font(.system(size: 11).monospacedDigit())
                 .foregroundStyle(.secondary)
+                .frame(width: 190, alignment: .leading)
                 .padding(.horizontal, 12)
 
                 statusDivider
             }
+
+            // ── Auto-refresh ────────────────────────────────────
+            Button {
+                showAutoRefreshPopover.toggle()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: autoRefreshEnabled ? "timer.circle.fill" : "timer")
+                        .font(.system(size: 10))
+                    Text(autoRefreshEnabled ? "Auto-Refresh: \(autoRefreshSeconds)s" : "Auto-Refresh")
+                }
+                .font(.system(size: 11))
+                .foregroundStyle(autoRefreshEnabled ? Color.accentColor : .secondary)
+                .padding(.horizontal, 12)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("Configure automatic refresh")
+            .popover(isPresented: $showAutoRefreshPopover, arrowEdge: .top) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Toggle("Enable Auto-Refresh", isOn: $autoRefreshEnabled)
+                    HStack {
+                        Text("Every")
+                        Stepper(value: $autoRefreshSeconds, in: 30...3600, step: 5) {
+                            Text("\(autoRefreshSeconds) seconds")
+                                .monospacedDigit()
+                        }
+                    }
+                    .disabled(!autoRefreshEnabled)
+                }
+                .padding(16)
+                .frame(width: 260)
+            }
+
+            statusDivider
 
             Spacer()
 
@@ -105,6 +157,19 @@ struct StatusBarView: View {
         // bottom status bar instead of the sharp/square native macOS look.
         .background(.bar, in: Rectangle())
         .overlay(alignment: .top) { Divider() }
+        .task(id: autoRefreshTaskID) {
+            guard autoRefreshEnabled, grpc.connectionState == .connected else { return }
+            let interval = max(30, autoRefreshSeconds)
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(interval))
+                if Task.isCancelled { break }
+                appStatus.autoRefreshTick = UUID()
+            }
+        }
+    }
+
+    private var autoRefreshTaskID: String {
+        "\(autoRefreshEnabled)-\(autoRefreshSeconds)-\(grpc.connectionState == .connected)"
     }
 
     // MARK: - Helpers

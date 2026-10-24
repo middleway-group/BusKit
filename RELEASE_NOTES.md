@@ -12,4 +12,6 @@ Supported syntax (minimal Markdown subset):
 
 After a successful release, this file is reset to the placeholder below.
 -->
-- No notable changes.
+- Added "Send Message" button to the message toolbar for the queues
+- Added "Auto-Refresh" button to the app status bar (_experimental support_)
+- Updated docs and test coverage

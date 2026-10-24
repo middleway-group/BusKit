@@ -1268,6 +1268,10 @@ private struct SubMessagesTab: View {
             Task { await loadMessages() }
         }
         .onChange(of: trigger)           { _, _ in Task { await loadMessages() } }
+        .onChange(of: appStatus.autoRefreshTick) { _, _ in
+            guard !isLoading else { return }
+            Task { await appStatus.trackRefresh { await loadMessages() } }
+        }
         .sheet(isPresented: $showRepairSheet) {
             if let msg = selectedMessage {
                 RepairResubmitSheet(message: msg, queueOrTopic: subscription.topicName, subscriptionName: subscription.name, isDeadLetter: isDLQ)

@@ -656,6 +656,7 @@ private struct MessagesTab: View {
     @State private var allMessagesLoaded = false
     @State private var selectedMessageIDs: Set<UUID> = []
     @State private var showRepairSheet = false
+    @State private var showSendMessageSheet = false
     @State private var showBulkResubmitSheet = false
     @State private var bulkResubmitDidSubmit = false
     @State private var showDeleteConfirm = false
@@ -712,6 +713,19 @@ private struct MessagesTab: View {
 
     private var actionToolbar: some View {
         HStack(spacing: 0) {
+            if !isDLQ {
+                Button {
+                    showSendMessageSheet = true
+                } label: {
+                    Label("Send Message", systemImage: "paperplane")
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                }
+                .buttonStyle(.borderless)
+                .help("Send a new message to this queue")
+
+                toolbarDivider
+            }
+
             if isDLQ {
                 Button {
                     showBulkResubmitSheet = true
@@ -948,12 +962,17 @@ private struct MessagesTab: View {
                                     Divider()
                                 }
                                 if ids.count == 1, let id = ids.first,
-                                   let msg = displayedMessages.first(where: { $0.id == id }) {
+                                   displayedMessages.contains(where: { $0.id == id }) {
                                     Button("Repair and Resubmit") {
                                         selectedMessageIDs = [id]
                                         showRepairSheet = true
                                     }
                                     Divider()
+                                }
+                                if !isDLQ {
+                                    Button("Send Message") {
+                                        showSendMessageSheet = true
+                                    }
                                 }
                                 if !ids.isEmpty {
                                     Button(ids.count == 1 ? "Save Message" : "Save \(ids.count) Messages") {
@@ -1008,10 +1027,19 @@ private struct MessagesTab: View {
             Task { await loadMessages() }
         }
         .onChange(of: trigger)    { _, _ in Task { await loadMessages() } }
+        .onChange(of: appStatus.autoRefreshTick) { _, _ in
+            guard !isLoading else { return }
+            Task { await appStatus.trackRefresh { await loadMessages() } }
+        }
         .sheet(isPresented: $showRepairSheet) {
             if let msg = selectedMessage {
                 RepairResubmitSheet(message: msg, queueOrTopic: queue.name, isDeadLetter: isDLQ)
             }
+        }
+        .sheet(isPresented: $showSendMessageSheet) {
+            SendMessageSheet(queueOrTopic: queue.name, entityLabel: "Queue")
+                .environment(grpc)
+                .environment(activityLog)
         }
         .sheet(isPresented: $showBulkResubmitSheet, onDismiss: {
             if bulkResubmitDidSubmit {

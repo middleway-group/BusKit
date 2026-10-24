@@ -949,6 +949,9 @@ struct SidebarView: View {
                 }
             }
         }
+        .onChange(of: appStatus.autoRefreshTick) { _, _ in
+            Task { await appStatus.trackRefresh { await autoRefreshLists() } }
+        }
         .onChange(of: actionStore.pendingRulesRefresh) { _, req in
             guard let req else { return }
             invalidateRules(topicName: req.topicName, subName: req.subscriptionName)
@@ -1367,6 +1370,22 @@ struct SidebarView: View {
     }
 
     // MARK: - Data loading
+
+    /// Silently reloads queue/topic lists (and counts) without clearing cached subscriptions.
+    private func autoRefreshLists() async {
+        guard grpc.connectionState == .connected, !model.isLoading else { return }
+        async let q = grpc.listQueues()
+        async let t = grpc.listTopics()
+        do {
+            let (queueInfos, topicInfos) = try await (q, t)
+            model.queues = queueInfos.map {
+                QueueItem(name: $0.name, messageCount: $0.messageCount,
+                          deadLetterCount: $0.deadLetterCount, status: $0.status)
+            }
+            model.topics = topicInfos.map { TopicItem(name: $0.name, status: $0.status) }
+            appStatus.lastRefreshTime = Date()
+        } catch { }
+    }
 
     private func load() async {
         guard grpc.connectionState == .connected else { return }
