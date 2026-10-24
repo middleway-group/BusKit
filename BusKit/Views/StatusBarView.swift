@@ -61,38 +61,40 @@ struct StatusBarView: View {
             }
 
             // ── Auto-refresh ────────────────────────────────────
-            Button {
-                showAutoRefreshPopover.toggle()
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: autoRefreshEnabled ? "timer.circle.fill" : "timer")
-                        .font(.system(size: 10))
-                    Text(autoRefreshEnabled ? "Auto-Refresh: \(autoRefreshSeconds)s" : "Auto-Refresh")
-                }
-                .font(.system(size: 11))
-                .foregroundStyle(autoRefreshEnabled ? Color.accentColor : .secondary)
-                .padding(.horizontal, 12)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help("Configure automatic refresh")
-            .popover(isPresented: $showAutoRefreshPopover, arrowEdge: .top) {
-                VStack(alignment: .leading, spacing: 12) {
-                    Toggle("Enable Auto-Refresh", isOn: $autoRefreshEnabled)
-                    HStack {
-                        Text("Every")
-                        Stepper(value: $autoRefreshSeconds, in: 30...3600, step: 5) {
-                            Text("\(autoRefreshSeconds) seconds")
-                                .monospacedDigit()
-                        }
+            if grpc.connectionState == .connected {
+                Button {
+                    showAutoRefreshPopover.toggle()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: autoRefreshEnabled ? "timer.circle.fill" : "timer")
+                            .font(.system(size: 10))
+                        Text(autoRefreshEnabled ? "Auto-Refresh: \(autoRefreshSeconds)s" : "Auto-Refresh")
                     }
-                    .disabled(!autoRefreshEnabled)
+                    .font(.system(size: 11))
+                    .foregroundStyle(autoRefreshEnabled ? Color.accentColor : .secondary)
+                    .padding(.horizontal, 12)
+                    .contentShape(Rectangle())
                 }
-                .padding(16)
-                .frame(width: 260)
-            }
+                .buttonStyle(.plain)
+                .help("Configure automatic refresh")
+                .popover(isPresented: $showAutoRefreshPopover, arrowEdge: .top) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Toggle("Enable Auto-Refresh", isOn: $autoRefreshEnabled)
+                        HStack {
+                            Text("Every")
+                            Stepper(value: $autoRefreshSeconds, in: 30...3600, step: 5) {
+                                Text("\(autoRefreshSeconds) seconds")
+                                    .monospacedDigit()
+                            }
+                        }
+                        .disabled(!autoRefreshEnabled)
+                    }
+                    .padding(16)
+                    .frame(width: 260)
+                }
 
-            statusDivider
+                statusDivider
+            }
 
             Spacer()
 
