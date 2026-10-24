@@ -3,6 +3,17 @@
     <channel>
         <title>BusKit</title>
     <item>
+            <title>0.6.3</title>
+            <pubDate>Sat, 24 Oct 2026 16:29:30 +0000</pubDate>
+            <sparkle:version>603</sparkle:version>
+            <sparkle:shortVersionString>0.6.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<ul>
+<li>Minor UI updates</li>
+</ul>]]></description>
+            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.6.3/BusKit-0.6.3-arm64.dmg" sparkle:edSignature="inkwI8CClV7DZUwoDziogCiTlOFkSyfeH8Jihg0NKkepge0oirAwIduCU5/qS2D/Q5FKOhJiM2eghZcdA1YzBQ==" length="72365942" type="application/octet-stream"/>
+        </item>
+    <item>
             <title>0.6.2</title>
             <pubDate>Sat, 24 Oct 2026 15:10:15 +0000</pubDate>
             <sparkle:version>602</sparkle:version>
@@ -25,18 +36,6 @@
 <li>Minor bugfixes</li>
 </ul>]]></description>
             <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.6.1/BusKit-0.6.1-arm64.dmg" sparkle:edSignature="qGucI4hNu27UdogN6/s8T3oSSVNvbuYm5mXeidkItvUWEoSg7CJgK1Cy8faWtBK90hAnIguSCfQgbStMC3cPCQ==" length="71877307" type="application/octet-stream"/>
-        </item>
-    <item>
-            <title>0.6.0</title>
-            <pubDate>Wed, 14 Oct 2026 15:39:21 +0000</pubDate>
-            <sparkle:version>600</sparkle:version>
-            <sparkle:shortVersionString>0.6.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<ul>
-<li>Message search by Message ID or Subject</li>
-<li>Performance improvements and bug fixes</li>
-</ul>]]></description>
-            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.6.0/BusKit-0.6.0-arm64.dmg" sparkle:edSignature="kmVn4vaCEitmlbh2ExQRl2A70njWjInpLvfuM1a/FdTvKem8sGm9vUOTdaJ4omoSPd1WVQwNR56+sZ2vRL59Cg==" length="71483770" type="application/octet-stream"/>
         </item>
         <item>
             <title>0.1.21</title>

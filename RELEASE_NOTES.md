@@ -12,4 +12,4 @@ Supported syntax (minimal Markdown subset):
 
 After a successful release, this file is reset to the placeholder below.
 -->
-- Minor UI updates
+- No notable changes.
