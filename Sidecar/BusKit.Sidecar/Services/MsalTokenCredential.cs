@@ -9,13 +9,13 @@ namespace BusKit.Sidecar.Services;
 // if the refresh token itself has expired.
 internal sealed class MsalTokenCredential : Azure.Core.TokenCredential
 {
-    private readonly IPublicClientApplication _app;
+    private readonly IMsalClient _client;
     private IAccount _account;
     private readonly string? _tenantId;
 
-    public MsalTokenCredential(IPublicClientApplication app, IAccount account, string? tenantId = null)
+    public MsalTokenCredential(IMsalClient client, IAccount account, string? tenantId = null)
     {
-        _app = app;
+        _client = client;
         _account = account;
         _tenantId = tenantId;
     }
@@ -27,23 +27,18 @@ internal sealed class MsalTokenCredential : Azure.Core.TokenCredential
     public override async ValueTask<Azure.Core.AccessToken> GetTokenAsync(
         Azure.Core.TokenRequestContext requestContext, CancellationToken cancellationToken)
     {
+        MsalToken token;
         try
         {
-            var builder = _app.AcquireTokenSilent(requestContext.Scopes, _account);
-            if (_tenantId != null)
-                builder = builder.WithTenantId(_tenantId);
-            var result = await builder.ExecuteAsync(cancellationToken);
-            _account = result.Account;
-            return new Azure.Core.AccessToken(result.AccessToken, result.ExpiresOn);
+            token = await _client.AcquireSilentAsync(requestContext.Scopes, _account, _tenantId, cancellationToken);
         }
         catch (MsalUiRequiredException)
         {
-            var builder = _app.AcquireTokenInteractive(requestContext.Scopes).WithAccount(_account);
-            if (_tenantId != null)
-                builder = builder.WithTenantId(_tenantId);
-            var result = await builder.ExecuteAsync(cancellationToken);
-            _account = result.Account;
-            return new Azure.Core.AccessToken(result.AccessToken, result.ExpiresOn);
+            token = await _client.AcquireInteractiveAsync(
+                requestContext.Scopes, _account, _tenantId, false, cancellationToken);
         }
+
+        _account = token.Account;
+        return new Azure.Core.AccessToken(token.AccessToken, token.ExpiresOn);
     }
 }

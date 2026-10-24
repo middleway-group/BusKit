@@ -1,7 +1,5 @@
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
-using Azure.ResourceManager;
-using Azure.ResourceManager.ServiceBus;
 using BusKit.Sidecar.Grpc;
 using Microsoft.Identity.Client;
 using GrpcAccessTier = BusKit.Sidecar.Grpc.AccessTier;
@@ -20,8 +18,9 @@ public class ConnectionService
 
     private string? _connectionString;
     private string? _userObjectId;
-    private IPublicClientApplication? _msalApp;
-    private IAccount? _msalAccount;
+    private readonly IAzureAuthenticator _authenticator;
+    private readonly IAzureResourceCatalog _catalog;
+    private AzureSession? _session;
 
     public ServiceBusClient? Client { get; private set; }
     public ServiceBusAdministrationClient? AdminClient { get; private set; }
@@ -43,8 +42,12 @@ public class ConnectionService
     internal ConnectionService(
         PermissionEvaluationEngine permissionEngine,
         Func<string, (ServiceBusClient, ServiceBusAdministrationClient)> connectionStringFactory,
-        Func<string, Azure.Core.TokenCredential, (ServiceBusClient, ServiceBusAdministrationClient)> tokenFactory)
+        Func<string, Azure.Core.TokenCredential, (ServiceBusClient, ServiceBusAdministrationClient)> tokenFactory,
+        IAzureAuthenticator? authenticator = null,
+        IAzureResourceCatalog? catalog = null)
     {
+        _authenticator = authenticator ?? new MsalAzureAuthenticator();
+        _catalog = catalog ?? new ArmResourceCatalog();
         _permissionEngine = permissionEngine;
         _connectionStringFactory = connectionStringFactory;
         _tokenFactory = tokenFactory;
@@ -176,53 +179,29 @@ public class ConnectionService
             _connectionString = null;
             AzureCredential = null;
             _userObjectId = null;
-            _msalApp = null;
-            _msalAccount = null;
+            _session = null;
 
-            // Build a fresh MSAL public client with an in-memory cache.
-            // A new instance every time means no cached accounts are carried
-            // over, so the account picker is always shown regardless of any
-            // prior sign-in — the user can switch accounts freely.
-            var msalApp = PublicClientApplicationBuilder
-                .Create("04b07795-8ddb-461a-bbee-02f9e1bf7b46") // Azure CLI public client
-                .WithAuthority(AzureCloudInstance.AzurePublic,
-                               AadAuthorityAudience.AzureAdAndPersonalMicrosoftAccount)
-                .WithDefaultRedirectUri()
-                .Build();
-            _msalApp = msalApp;
+            _session = await _authenticator.SignInAsync(CancellationToken.None);
+            AzureCredential = _session.Credential;
+            _userObjectId = _session.UserObjectId;
 
-            // Prompt.SelectAccount always shows the account picker in the
-            // browser — SSO never auto-signs in the previous account.
-            var authResult = await msalApp
-                .AcquireTokenInteractive(new[] { "https://management.azure.com/.default" })
-                .WithPrompt(Prompt.SelectAccount)
-                .ExecuteAsync(CancellationToken.None);
-            _msalAccount = authResult.Account;
-
-            AzureCredential = new MsalTokenCredential(msalApp, authResult.Account);
-            _userObjectId   = authResult.Account.HomeAccountId.ObjectId;
-
-            var armClient = new ArmClient(AzureCredential);
-
-            await foreach (var sub in armClient.GetSubscriptions().GetAllAsync())
+            await foreach (var sub in _catalog.ListSubscriptionsAsync(AzureCredential))
             {
                 reply.Subscriptions.Add(new AzureSubscriptionInfo
                 {
-                    SubscriptionId = sub.Data.SubscriptionId,
-                    DisplayName = sub.Data.DisplayName ?? sub.Data.SubscriptionId
+                    SubscriptionId = sub.Id,
+                    DisplayName = sub.DisplayName
                 });
             }
 
-            await foreach (var tenant in armClient.GetTenants().GetAllAsync())
+            await foreach (var tenant in _catalog.ListTenantsAsync(AzureCredential))
             {
-                var tenantId = tenant.Data.TenantId?.ToString() ?? "";
-                var displayName = tenant.Data.DisplayName;
-                if (!string.IsNullOrEmpty(tenantId))
+                if (!string.IsNullOrEmpty(tenant.TenantId))
                 {
                     reply.Tenants.Add(new AzureTenantInfo
                     {
-                        TenantId = tenantId,
-                        DisplayName = string.IsNullOrEmpty(displayName) ? tenantId : displayName
+                        TenantId = tenant.TenantId,
+                        DisplayName = string.IsNullOrEmpty(tenant.DisplayName) ? tenant.TenantId : tenant.DisplayName
                     });
                 }
             }
@@ -256,41 +235,22 @@ public class ConnectionService
         var reply = new SelectAzureTenantReply();
         try
         {
-            if (_msalApp == null || _msalAccount == null)
+            if (_session == null)
             {
                 reply.Error = "Not signed in. Call ListAzureSubscriptions first.";
                 return reply;
             }
 
-            AuthenticationResult authResult;
-            try
-            {
-                authResult = await _msalApp
-                    .AcquireTokenSilent(new[] { "https://management.azure.com/.default" }, _msalAccount)
-                    .WithTenantId(request.TenantId)
-                    .ExecuteAsync(CancellationToken.None);
-            }
-            catch (MsalUiRequiredException)
-            {
-                authResult = await _msalApp
-                    .AcquireTokenInteractive(new[] { "https://management.azure.com/.default" })
-                    .WithAccount(_msalAccount)
-                    .WithTenantId(request.TenantId)
-                    .ExecuteAsync(CancellationToken.None);
-            }
+            _session = await _authenticator.SelectTenantAsync(_session, request.TenantId, CancellationToken.None);
+            AzureCredential = _session.Credential;
+            _userObjectId = _session.UserObjectId;
 
-            _msalAccount = authResult.Account;
-            AzureCredential = new MsalTokenCredential(_msalApp, authResult.Account, request.TenantId);
-            _userObjectId   = authResult.Account.HomeAccountId.ObjectId;
-
-            var armClient = new ArmClient(AzureCredential);
-
-            await foreach (var sub in armClient.GetSubscriptions().GetAllAsync())
+            await foreach (var sub in _catalog.ListSubscriptionsAsync(AzureCredential))
             {
                 reply.Subscriptions.Add(new AzureSubscriptionInfo
                 {
-                    SubscriptionId = sub.Data.SubscriptionId,
-                    DisplayName = sub.Data.DisplayName ?? sub.Data.SubscriptionId
+                    SubscriptionId = sub.Id,
+                    DisplayName = sub.DisplayName
                 });
             }
 
@@ -326,19 +286,13 @@ public class ConnectionService
                 return reply;
             }
 
-            var armClient = new ArmClient(AzureCredential);
-            var subscriptionId = new Azure.Core.ResourceIdentifier($"/subscriptions/{request.SubscriptionId}");
-            var subscription = armClient.GetSubscriptionResource(subscriptionId);
-
-            await foreach (var ns in subscription.GetServiceBusNamespacesAsync())
+            await foreach (var ns in _catalog.ListNamespacesAsync(AzureCredential, request.SubscriptionId))
             {
-                var fqns = $"{ns.Data.Name}.servicebus.windows.net";
-                var resourceGroup = ns.Id.ResourceGroupName ?? "";
                 reply.Namespaces.Add(new ServiceBusNamespaceInfo
                 {
-                    Name = ns.Data.Name,
-                    FullyQualifiedNamespace = fqns,
-                    ResourceGroup = resourceGroup
+                    Name = ns.Name,
+                    FullyQualifiedNamespace = $"{ns.Name}.servicebus.windows.net",
+                    ResourceGroup = ns.ResourceGroup
                 });
             }
         }

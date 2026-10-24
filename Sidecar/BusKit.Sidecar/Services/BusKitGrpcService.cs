@@ -11,9 +11,18 @@ public class BusKitGrpcService : BusKitService.BusKitServiceBase
     private ServiceBusClient? _client => _connection.Client;
     private Azure.Messaging.ServiceBus.Administration.ServiceBusAdministrationClient? _adminClient => _connection.AdminClient;
 
+    private readonly Func<ServiceBusClient, string, IMessageProcessor> _processorFactory;
+
     public BusKitGrpcService(ConnectionService connection)
+        : this(connection, static (client, queue) => new ServiceBusMessageProcessor(client.CreateProcessor(queue)))
+    {
+    }
+
+    internal BusKitGrpcService(
+        ConnectionService connection, Func<ServiceBusClient, string, IMessageProcessor> processorFactory)
     {
         _connection = connection;
+        _processorFactory = processorFactory;
     }
 
     // ── Connection & authentication ──────────────────────
@@ -226,29 +235,23 @@ public class BusKitGrpcService : BusKitService.BusKitServiceBase
     {
         if (_client == null) return;
 
-        var processor = _client.CreateProcessor(request.QueueName);
+        var processor = _processorFactory(_client, request.QueueName);
 
-        processor.ProcessMessageAsync += async args =>
+        processor.MessageReceived += message => responseStream.WriteAsync(new BusMessage
         {
-            var busMsg = new BusMessage
-            {
-                MessageId = args.Message.MessageId ?? "",
-                Body = args.Message.Body.ToString(),
-                ContentType = args.Message.ContentType ?? "",
-                EnqueuedTimeUnix = args.Message.EnqueuedTime.ToUnixTimeSeconds()
-            };
+            MessageId = message.MessageId,
+            Body = message.Body,
+            ContentType = message.ContentType,
+            EnqueuedTimeUnix = message.EnqueuedTimeUnix
+        });
 
-            await responseStream.WriteAsync(busMsg);
-            await args.CompleteMessageAsync(args.Message);
-        };
-
-        processor.ProcessErrorAsync += args =>
+        processor.ErrorOccurred += ex =>
         {
-            Console.WriteLine($"Error: {args.Exception.Message}");
+            Console.WriteLine($"Error: {ex.Message}");
             return Task.CompletedTask;
         };
 
-        await processor.StartProcessingAsync();
+        await processor.StartAsync();
 
         // Wait until client cancels
         try
@@ -257,7 +260,7 @@ public class BusKitGrpcService : BusKitService.BusKitServiceBase
         }
         catch (OperationCanceledException) { }
 
-        await processor.StopProcessingAsync();
+        await processor.StopAsync();
         await processor.DisposeAsync();
     }
 }
