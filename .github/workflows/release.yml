@@ -128,22 +128,22 @@ jobs:
           git add releases/appcast.xml
 
           cat > RELEASE_NOTES.md <<'EOF'
-<!--
-Release notes for the NEXT release.
+          <!--
+          Release notes for the NEXT release.
 
-Edit this file before running ./Scripts/release.sh to describe what's new.
-It's rendered into the Sparkle appcast <description> and shown to users in
-the "Software Update" dialog when an update is found.
+          Edit this file before running ./Scripts/release.sh to describe what's new.
+          It's rendered into the Sparkle appcast <description> and shown to users in
+          the "Software Update" dialog when an update is found.
 
-Supported syntax (minimal Markdown subset):
-  # Heading
-  - Bullet point
-  Plain paragraph text
+          Supported syntax (minimal Markdown subset):
+            # Heading
+            - Bullet point
+            Plain paragraph text
 
-After a successful release, this file is reset to the placeholder below.
--->
-- No notable changes.
-EOF
+          After a successful release, this file is reset to the placeholder below.
+          -->
+          - No notable changes.
+          EOF
           git add RELEASE_NOTES.md
 
           git commit -m "chore: update appcast for $VERSION [skip ci]"
