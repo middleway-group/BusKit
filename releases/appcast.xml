@@ -3,6 +3,19 @@
     <channel>
         <title>BusKit</title>
     <item>
+            <title>0.6.2</title>
+            <pubDate>Sat, 24 Oct 2026 15:10:15 +0000</pubDate>
+            <sparkle:version>602</sparkle:version>
+            <sparkle:shortVersionString>0.6.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<ul>
+<li>Added &quot;Send Message&quot; button to the message toolbar for the queues</li>
+<li>Added &quot;Auto-Refresh&quot; button to the app status bar (_experimental support_)</li>
+<li>Updated docs and test coverage</li>
+</ul>]]></description>
+            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.6.2/BusKit-0.6.2-arm64.dmg" sparkle:edSignature="sTHjoWH024QsMC1tcgm6tQfdguKIEa9FBRVuKC/Fbr5ZswbRc+llDx/HVsF/IvUPm5owBogQCBu8GPrxWLrkAA==" length="72380146" type="application/octet-stream"/>
+        </item>
+    <item>
             <title>0.6.1</title>
             <pubDate>Fri, 23 Oct 2026 22:57:09 +0000</pubDate>
             <sparkle:version>601</sparkle:version>
@@ -24,17 +37,6 @@
 <li>Performance improvements and bug fixes</li>
 </ul>]]></description>
             <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.6.0/BusKit-0.6.0-arm64.dmg" sparkle:edSignature="kmVn4vaCEitmlbh2ExQRl2A70njWjInpLvfuM1a/FdTvKem8sGm9vUOTdaJ4omoSPd1WVQwNR56+sZ2vRL59Cg==" length="71483770" type="application/octet-stream"/>
-        </item>
-    <item>
-            <title>0.5.13</title>
-            <pubDate>Mon, 12 Oct 2026 17:07:28 +0000</pubDate>
-            <sparkle:version>513</sparkle:version>
-            <sparkle:shortVersionString>0.5.13</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<ul>
-<li>UI fixes</li>
-</ul>]]></description>
-            <enclosure url="https://github.com/middleway-group/BusKit/releases/download/v0.5.13/BusKit-0.5.13-arm64.dmg" sparkle:edSignature="G0HTiu+4LZkNOGCc94zvleCdfmMMdQQK4BBH6xOgacQ8NlpcDtmVNumDMuqPahkAQv57ZCWwEtiOz9R5iKwZDg==" length="71922092" type="application/octet-stream"/>
         </item>
         <item>
             <title>0.1.21</title>
